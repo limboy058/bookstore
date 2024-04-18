@@ -116,7 +116,7 @@ class Scraper:
     def create_tables(self):
         conn = sqlite3.connect(self.database)
         try:
-            conn.execute("drop table tags")
+            conn.execute("drop table if exists tags")
             conn.execute("CREATE TABLE if not exists tags (tag TEXT PRIMARY KEY)")
             conn.commit()
         except sqlite3.Error as e:
@@ -124,7 +124,7 @@ class Scraper:
             logging.error(str(e))
             conn.rollback()
         try:
-            conn.execute("drop table book")
+            conn.execute("drop table if exists book")
             conn.execute(
                 "CREATE TABLE if not exists book ("
                 "id TEXT PRIMARY KEY, title TEXT, author TEXT, "
@@ -141,7 +141,7 @@ class Scraper:
             conn.rollback()
 
         try:
-            conn.execute("drop table progress")
+            conn.execute("drop table if exists progress")
             conn.execute(
                 "CREATE TABLE if not exists progress (id TEXT PRIMARY KEY, tag TEXT, page integer )"
             )
@@ -159,9 +159,7 @@ class Scraper:
         h: etree.ElementBase = etree.HTML(r.text)
         for i in range(1,7):
             tags: [] = h.xpath(
-            '/html/body/div[@id="wrapper"]/div[@id="content"]'
-            '/div[@class="grid-16-8 clearfix"]/div[@class="article"]'
-            '/div[@class=""]/div[@class="tagCol"]'
+            '/html/body/div[3]/div[1]/div/div[1]/div[2]/div[1]'
             "/table/tbody/tr/td/a/@href")
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
