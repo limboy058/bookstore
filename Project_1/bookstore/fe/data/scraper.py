@@ -103,9 +103,11 @@ class Scraper:
         self.create_tables()
         scraper.grab_tag()
         current_tag, current_page = self.get_current_progress()
+        
         tags = self.get_tag_list()
         for i in range(0, len(tags)):
             no = 0
+            print(i)
             if i == 0 and current_tag == tags[i]:
                 no = current_page
             while self.grab_book_list(tags[i], no):
@@ -115,15 +117,17 @@ class Scraper:
     def create_tables(self):
         conn = sqlite3.connect(self.database)
         try:
-            conn.execute("CREATE TABLE tags (tag TEXT PRIMARY KEY)")
+            conn.execute("drop table tags")
+            conn.execute("CREATE TABLE if not exists tags (tag TEXT PRIMARY KEY)")
             conn.commit()
         except sqlite3.Error as e:
+            print(e)
             logging.error(str(e))
             conn.rollback()
-
         try:
+            conn.execute("drop table book")
             conn.execute(
-                "CREATE TABLE book ("
+                "CREATE TABLE if not exists book ("
                 "id TEXT PRIMARY KEY, title TEXT, author TEXT, "
                 "publisher TEXT, original_title TEXT, "
                 "translator TEXT, pub_year TEXT, pages INTEGER, "
@@ -133,16 +137,19 @@ class Scraper:
             )
             conn.commit()
         except sqlite3.Error as e:
+            print(e)
             logging.error(str(e))
             conn.rollback()
 
         try:
+            conn.execute("drop table progress")
             conn.execute(
-                "CREATE TABLE progress (id TEXT PRIMARY KEY, tag TEXT, page integer )"
+                "CREATE TABLE if not exists progress (id TEXT PRIMARY KEY, tag TEXT, page integer )"
             )
             conn.execute("INSERT INTO progress values('0', '', 0)")
             conn.commit()
         except sqlite3.Error as e:
+            print(e)
             logging.error(str(e))
             conn.rollback()
 
@@ -151,26 +158,28 @@ class Scraper:
         r = requests.get(url, headers=get_user_agent())
         r.encoding = "utf-8"
         h: etree.ElementBase = etree.HTML(r.text)
-        tags: [] = h.xpath(
-            '/html/body/div[@id="wrapper"]/div[@id="content"]'
-            '/div[@class="grid-16-8 clearfix"]/div[@class="article"]'
-            '/div[@class=""]/div[@class="indent tag_cloud"]'
-            "/table/tbody/tr/td/a/@href"
-        )
-        conn = sqlite3.connect(self.database)
-        c = conn.cursor()
-        try:
-            for tag in tags:
-                t: str = tag.strip("/tag")
-                c.execute("INSERT INTO tags VALUES ('{}')".format(t))
-            c.close()
-            conn.commit()
-            conn.close()
-        except sqlite3.Error as e:
-            logging.error(str(e))
-            conn.rollback()
-            return False
+        for i in range(1,7):
+            tags: [] = h.xpath(
+                '/html/body/div[3]/div[1]/div/div[1]/div[2]/div['+str(i)+']'
+                "/table/tbody/tr/td/a/@href"
+            )
+            conn = sqlite3.connect(self.database)
+            c = conn.cursor()
+            print(len(tags))
+            try:
+                for tag in tags:
+                    t: str = tag.strip("/tag")
+                    c.execute("INSERT INTO tags VALUES ('{}')".format(t))
+                c.close()
+                conn.commit()
+                conn.close()
+            except sqlite3.Error as e:
+                print(e)
+                logging.error(str(e))
+                conn.rollback()
+                return False
         return True
+    
 
     def grab_book_list(self, tag="小说", pageno=1) -> bool:
         logging.info("start to grab tag {} page {}...".format(tag, pageno))
