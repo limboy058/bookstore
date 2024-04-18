@@ -69,7 +69,7 @@ def get_user_agent():
     headers = {"User-Agent": random.choice(user_agent)}
     return headers
 
-
+import sys
 class Scraper:
     database: str
     tag: str
@@ -81,7 +81,6 @@ class Scraper:
         self.page = 0
         self.pattern_number = re.compile(r"\d+\.?\d*")
         logging.basicConfig(filename="scraper.log", level=logging.ERROR)
-
     def get_current_progress(self) -> ():
         conn = sqlite3.connect(self.database)
         results = conn.execute("SELECT tag, page from progress where id = '0'")
@@ -160,9 +159,10 @@ class Scraper:
         h: etree.ElementBase = etree.HTML(r.text)
         for i in range(1,7):
             tags: [] = h.xpath(
-                '/html/body/div[3]/div[1]/div/div[1]/div[2]/div['+str(i)+']'
-                "/table/tbody/tr/td/a/@href"
-            )
+            '/html/body/div[@id="wrapper"]/div[@id="content"]'
+            '/div[@class="grid-16-8 clearfix"]/div[@class="article"]'
+            '/div[@class=""]/div[@class="tagCol"]'
+            "/table/tbody/tr/td/a/@href")
             conn = sqlite3.connect(self.database)
             c = conn.cursor()
             print(len(tags))
@@ -206,12 +206,14 @@ class Scraper:
             has_next = False
         if len(li_list) == 0:
             return False
-
+        cnt=0
         for li in li_list:
             li.strip("")
             book_id = li.strip("/").split("/")[-1]
             try:
                 delay = float(random.randint(0, 200)) / 100.0
+                cnt+=1
+                print(cnt)
                 time.sleep(delay)
                 self.crow_book_info(book_id)
             except BaseException as e:
