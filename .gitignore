@@ -1,0 +1,12 @@
+Project_1/bookstore/fe/__pycache__/__init__.cpython-312.pyc
+Project_1/bookstore/fe/__pycache__/conftest.cpython-312-pytest-8.1.1.pyc
+Project_1/bookstore/be/view/__pycache__/__init__.cpython-312.pyc
+Project_1/bookstore/be/view/__pycache__/auth.cpython-312.pyc
+Project_1/bookstore/be/model/__pycache__/__init__.cpython-312.pyc
+Project_1/bookstore/be/model/__pycache__/db_conn.cpython-312.pyc
+Project_1/bookstore/be/model/__pycache__/error.cpython-312.pyc
+Project_1/bookstore/be/model/__pycache__/store.cpython-312.pyc
+Project_1/bookstore/be/model/__pycache__/user.cpython-312.pyc
+Project_1/bookstore/be/__pycache__/__init__.cpython-312.pyc
+Project_1/bookstore/be/__pycache__/serve.cpython-312.pyc
+Project_1/bookstore/.coverage
