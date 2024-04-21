@@ -1,8 +1,8 @@
 import jwt
 import time
 import logging
-import error
-import db_conn
+from be.model import error
+from be.model import db_conn
 import pymongo
 
 # encode a json string like:
@@ -125,7 +125,7 @@ class User(db_conn.DBConn):
                 return code, message
             ret=self.conn['user'].delete_one({'user_id':user_id})
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
-            if ret.modified_count == 0:
+            if ret.deleted_count == 0:
                 return error.error_authorization_fail()
         except BaseException as e:
             return 530, "{}".format(str(e))
@@ -149,16 +149,16 @@ class User(db_conn.DBConn):
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-if __name__ == "__main__":
-    tmp=User()
+# if __name__ == "__main__":
+#     tmp=User()
 
-    print(tmp.register('uid1','333'))
-    print(tmp.register('uid1','333'))
-    for item in tmp.conn['user'].find():
-        print(item)
+#     print(tmp.register('uid1','333'))
+#     print(tmp.register('uid1','333'))
+#     for item in tmp.conn['user'].find():
+#         print(item)
 
-    print(tmp.change_password('uid1','333','334'))
-    for item in tmp.conn['user'].find():
-        print(item)
+#     print(tmp.change_password('uid1','333','334'))
+#     for item in tmp.conn['user'].find():
+#         print(item)
 
     

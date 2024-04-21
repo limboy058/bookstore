@@ -1,7 +1,7 @@
 import pymongo
-import error
-import user# 仅用于测试
-import db_conn
+from be.model import error
+from be.model import user# 仅用于测试
+from be.model import db_conn
 # 未做事务处理
 
 class Seller(db_conn.DBConn):
@@ -60,26 +60,26 @@ class Seller(db_conn.DBConn):
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-if __name__ == "__main__":
-    tmp=Seller()
-    us=user.User()
-    print(us.register('uid1','333'))
-    for item in tmp.conn['user'].find():
-        print(item)
+# if __name__ == "__main__":
+#     tmp=Seller()
+#     us=user.User()
+#     print(us.register('uid1','333'))
+#     for item in tmp.conn['user'].find():
+#         print(item)
     
-    print(tmp.create_store('uid2','sid1'))
-    print(tmp.create_store('uid1','sid1'))
-    for item in tmp.conn['user_store'].find():
-        print(item)
+#     print(tmp.create_store('uid2','sid1'))
+#     print(tmp.create_store('uid1','sid1'))
+#     for item in tmp.conn['user_store'].find():
+#         print(item)
 
-    print(tmp.add_book('uid1','sid2','bid1','hellow orld',10))
-    print(tmp.add_book('uid2','sid1','bid3','hellow orld',10))
+#     print(tmp.add_book('uid1','sid2','bid1','hellow orld',10))
+#     print(tmp.add_book('uid2','sid1','bid3','hellow orld',10))
 
-    print(tmp.add_book('uid1','sid1','bid1','hellow orld',10))
-    for item in tmp.conn['store'].find():
-        print(item)
+#     print(tmp.add_book('uid1','sid1','bid1','hellow orld',10))
+#     for item in tmp.conn['store'].find():
+#         print(item)
 
-    print(tmp.add_stock_level('uid1','sid1','bid1',10))
-    for item in tmp.conn['store'].find():
-        print(item)
+#     print(tmp.add_stock_level('uid1','sid1','bid1',10))
+#     for item in tmp.conn['store'].find():
+#         print(item)
     
