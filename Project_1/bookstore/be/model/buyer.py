@@ -8,6 +8,7 @@ from be.model import db_conn
 from be.model import error
 # import db_conn
 # import error
+from be.model.order import Order
 
 
 class Buyer(db_conn.DBConn):
@@ -187,3 +188,54 @@ class Buyer(db_conn.DBConn):
 #     res=buyer.conn['new_order'].find()
 #     for i in res:
 #         print(i)
+    def cancel(self, user_id, order_id) -> (int, str):
+        invalid_order_available = "canceled"
+        invalid_order_status = "canceled"
+        try:
+            cursor = self.conn.execute("SELECT status, order_available, user_id FROM new_order WHERE order_id = ?;",
+                                       (order_id),
+            )
+            row = cursor.fetchone()
+
+            if row[0] == invalid_order_status:
+                return error.error_order_status()
+
+            if row[1] == invalid_order_available:
+                return error.error_order_available()
+
+            if row[2] == user_id:
+                return error.error_order_user_id()
+
+            o = Order()
+            o.cancel_order(order_id)
+
+        except sqlite.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
+
+    #历史订单，表项要返回什么捏
+    def search_order(self, user_id) -> (int, str):
+        try:
+            cursor = self.conn.execute("SELECT * FROM new_order WHERE user_id = ?;",
+                                       (user_id),
+            )
+            rows = cursor.fetchone()
+
+            result = []
+            for row in rows:
+                book = {
+                    # "bid": row[0],
+                    # "title": row[1],
+                    # "author": row[2]
+                }
+                result.append(book)
+
+            self.conn.commit()
+
+        except sqlite.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
