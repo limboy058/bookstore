@@ -12,53 +12,17 @@ class Store:
         #self.bookdatabase=os.path.join(db_path, "book.db")
         self.client= pymongo.MongoClient()
         self.conn=self.client['609']
-        self.init_tables()
     def clear_tables(self):
-        conn["user"].delete_many({})
-        conn["user_store"].delete_many({})
-        conn["store"].delete_many({})
-        conn["new_order"].delete_many({})
-        conn["new_order_detail"].delete_many({})
-    def init_tables(self):
-        # try:
-            conn = self.get_db_conn()
-            
-            # conn.execute(
-            #     "CREATE TABLE IF NOT EXISTS user ("
-            #     "user_id TEXT PRIMARY KEY, password TEXT NOT NULL, "
-            #     "balance INTEGER NOT NULL, token TEXT, terminal TEXT);"
-            # )
-            
-            # conn.execute(
-            #     "CREATE TABLE IF NOT EXISTS user_store("
-            #     "user_id TEXT, store_id, PRIMARY KEY(user_id, store_id));"
-            # )
-           
-            # conn.execute(
-            #     "CREATE TABLE IF NOT EXISTS store( "
-            #     "store_id TEXT, book_id TEXT, book_info TEXT, stock_level INTEGER,"
-            #     " PRIMARY KEY(store_id, book_id))"
-            # )
-            
-            # conn.execute(
-            #     "CREATE TABLE IF NOT EXISTS new_order( "
-            #     "order_id TEXT PRIMARY KEY, user_id TEXT, store_id TEXT)"
-            # )
-            # conn.execute(
-            #     "CREATE TABLE IF NOT EXISTS new_order_detail( "
-            #     "order_id TEXT, book_id TEXT, count INTEGER, price INTEGER,  "
-            #     "PRIMARY KEY(order_id, book_id))"
-            # )
-            #conn.commit()
-        # except sqlite.Error as e:
-        #     logging.error(e)
-        #     conn.rollback()
+        self.conn["user"].delete_many({})
+        self.conn["user_store"].delete_many({})
+        self.conn["store"].delete_many({})
+        self.conn["new_order"].delete_many({})
+        self.conn["new_order_detail"].delete_many({})
+    def get_db_client(self):
+         return self.client
 
     def get_db_conn(self):
         return self.conn
-    # def get_db_book_conn(self) -> sqlite.Connection:
-    #     return sqlite.connect(self.database)
-
 
 database_instance: Store = None
 # global variable for database sync
@@ -76,10 +40,33 @@ def get_db_conn():
          init_database()
     return database_instance.get_db_conn()
 
-if __name__ == "__main__":
-     init_database()
-     conn=get_db_conn()
-     conn['user'].insert_one({'name':'test','user_id':1234})
-     conn['user'].insert_one({'name':'test'})
-     for i in conn['user'].find():
-          print(i)
+def get_db_client():
+    global database_instance
+    if(database_instance==None):
+        init_database()
+    return database_instance.get_db_client()
+
+def clear_db():
+    global database_instance
+    if(database_instance==None):
+        init_database()
+    database_instance.clear_tables()
+
+# if __name__ == "__main__":
+
+#     init_database()
+#     clear_db()
+#     conn=get_db_conn()
+#     client=get_db_client()
+#     session=client.start_session()
+#     session.start_transaction()
+#     conn['user'].insert_one({'name':'test','user_id':1234},session=session)
+#     conn['user'].insert_one({'name':'test'},session=session)
+#     session.commit_transaction()
+#     session.start_transaction()
+#     conn['user'].insert_one({'name':'test','user_id':1234},session=session)
+#     conn['user'].insert_one({'name':'test'},session=session)
+#     session.abort_transaction()
+#     for i in conn['user'].find():
+#         print(i)
+#     session.end_session()
