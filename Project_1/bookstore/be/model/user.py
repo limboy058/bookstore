@@ -55,6 +55,9 @@ class User(db_conn.DBConn):
 
     def register(self, user_id: str, password: str):
         try:
+            ret = self.conn['user'].find_one({'user_id':user_id})
+            if ret is not None:
+                return error.error_exist_user_id(user_id)
             terminal = "terminal_{}".format(str(time.time()))
             token = jwt_encode(user_id, terminal)
             ret=self.conn['user'].insert_one({'user_id':user_id,'password':password,'balance':0,'token':token,'terminal':terminal})
@@ -150,9 +153,10 @@ if __name__ == "__main__":
     tmp=User()
 
     print(tmp.register('uid1','333'))
+    print(tmp.register('uid1','333'))
     for item in tmp.conn['user'].find():
         print(item)
-        
+
     print(tmp.change_password('uid1','333','334'))
     for item in tmp.conn['user'].find():
         print(item)
