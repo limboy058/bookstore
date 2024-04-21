@@ -1,9 +1,13 @@
-import sqlite3 as sqlite
+import pymongo
 import uuid
 import json
 import logging
+
+import pymongo.errors
 from be.model import db_conn
 from be.model import error
+# import db_conn
+# import error
 
 
 class Buyer(db_conn.DBConn):
@@ -20,170 +24,166 @@ class Buyer(db_conn.DBConn):
             if not self.store_id_exist(store_id):
                 return error.error_non_exist_store_id(store_id) + (order_id,)
             uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
-
+            session=self.client.start_session()
+            session.start_transaction()
             for book_id, count in id_and_count:
-                cursor = self.conn.execute(
-                    "SELECT book_id, stock_level, book_info FROM store "
-                    "WHERE store_id = ? AND book_id = ?;",
-                    (store_id, book_id),
-                )
-                row = cursor.fetchone()
-                if row is None:
+                cursor=self.conn['store'].find_one({'store_id':store_id,'book_id':book_id},session=session)
+                results=cursor
+                if results==None:
+                    session.abort_transaction()
+                    session.end_session()
                     return error.error_non_exist_book_id(book_id) + (order_id,)
-
-                stock_level = row[1]
-                book_info = row[2]
+                stock_level = int(results['stock_level'])
+                book_info = results['book_info']
                 book_info_json = json.loads(book_info)
                 price = book_info_json.get("price")
-
                 if stock_level < count:
+                    session.abort_transaction()
+                    session.end_session()
                     return error.error_stock_level_low(book_id) + (order_id,)
-
-                cursor = self.conn.execute(
-                    "UPDATE store set stock_level = stock_level - ? "
-                    "WHERE store_id = ? and book_id = ? and stock_level >= ?; ",
-                    (count, store_id, book_id, count),
-                )
-                if cursor.rowcount == 0:
+                cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':count}},
+                                                        {"$inc":{"stock_level":-count}},session=session)
+                results=cursor
+                if results==None:
+                    session.abort_transaction()
+                    session.end_session()
                     return error.error_stock_level_low(book_id) + (order_id,)
-
-                self.conn.execute(
-                    "INSERT INTO new_order_detail(order_id, book_id, count, price) "
-                    "VALUES(?, ?, ?, ?);",
-                    (uid, book_id, count, price),
-                )
-
-            self.conn.execute(
-                "INSERT INTO new_order(order_id, store_id, user_id) "
-                "VALUES(?, ?, ?);",
-                (uid, store_id, user_id),
-            )
-            self.conn.commit()
+                
+                cursor=self.conn['new_order_detail'].insert_one({'order_id':uid,'book_id':book_id,'count':count,'price':price},session=session)
+            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id},session=session)
+            session.commit_transaction()
             order_id = uid
-        except sqlite.Error as e:
+        except pymongo.errors as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e)), ""
         except BaseException as e:
             logging.info("530, {}".format(str(e)))
             return 530, "{}".format(str(e)), ""
-
         return 200, "ok", order_id
 
     def payment(self, user_id: str, password: str, order_id: str) -> (int, str):
         conn = self.conn
+        session=self.client.start_session()
+        session.start_transaction()
         try:
-            cursor = conn.execute(
-                "SELECT order_id, user_id, store_id FROM new_order WHERE order_id = ?",
-                (order_id,),
-            )
-            row = cursor.fetchone()
-            if row is None:
+            cursor=conn['new_order'].find_one({'order_id':order_id},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_invalid_order_id(order_id)
-
-            order_id = row[0]
-            buyer_id = row[1]
-            store_id = row[2]
-
+            order_id = cursor['order_id']
+            buyer_id = cursor['user_id']
+            store_id = cursor['store_id']
             if buyer_id != user_id:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_authorization_fail()
-
-            cursor = conn.execute(
-                "SELECT balance, password FROM user WHERE user_id = ?;", (buyer_id,)
-            )
-            row = cursor.fetchone()
-            if row is None:
+            cursor=conn['user'].find_one({'user_id':user_id},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_non_exist_user_id(buyer_id)
-            balance = row[0]
-            if password != row[1]:
+            balance = cursor['balance']
+            if password != cursor['password']:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_authorization_fail()
-
-            cursor = conn.execute(
-                "SELECT store_id, user_id FROM user_store WHERE store_id = ?;",
-                (store_id,),
-            )
-            row = cursor.fetchone()
-            if row is None:
+            cursor=conn['user_store'].find_one({'store_id':store_id},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_non_exist_store_id(store_id)
-
-            seller_id = row[1]
-
+            seller_id = cursor['user_id']
             if not self.user_id_exist(seller_id):
+                session.abort_transaction()
+                session.end_session()
                 return error.error_non_exist_user_id(seller_id)
-
-            cursor = conn.execute(
-                "SELECT book_id, count, price FROM new_order_detail WHERE order_id = ?;",
-                (order_id,),
-            )
+            cursor=conn['new_order_detail'].find({'order_id':order_id},session=session)
             total_price = 0
             for row in cursor:
-                count = row[1]
-                price = row[2]
+                count = row['count']
+                price = row['price']
                 total_price = total_price + price * count
-
             if balance < total_price:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_not_sufficient_funds(order_id)
-
-            cursor = conn.execute(
-                "UPDATE user set balance = balance - ?"
-                "WHERE user_id = ? AND balance >= ?",
-                (total_price, buyer_id, total_price),
-            )
-            if cursor.rowcount == 0:
+            cursor=conn['user'].find_one_and_update({'user_id':user_id,'balance':{'$gte':total_price}},{'$inc':{'balance':-total_price}},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_not_sufficient_funds(order_id)
-
-            cursor = conn.execute(
-                "UPDATE user set balance = balance + ?" "WHERE user_id = ?",
-                (total_price, seller_id),
-            )
-
-            if cursor.rowcount == 0:
+            cursor=conn['user'].find_one_and_update({'user_id':seller_id},{'$inc':{'balance':total_price}},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_non_exist_user_id(seller_id)
-
-            cursor = conn.execute(
-                "DELETE FROM new_order WHERE order_id = ?", (order_id,)
-            )
-            if cursor.rowcount == 0:
+            cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_invalid_order_id(order_id)
-
-            cursor = conn.execute(
-                "DELETE FROM new_order_detail where order_id = ?", (order_id,)
-            )
-            if cursor.rowcount == 0:
+            cursor=conn['new_order_detail'].delete_one({'order_id':order_id},session=session)
+            if cursor is None:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_invalid_order_id(order_id)
-
-            conn.commit()
-
-        except sqlite.Error as e:
-            return 528, "{}".format(str(e))
-
         except BaseException as e:
             return 530, "{}".format(str(e))
-
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
 
     def add_funds(self, user_id, password, add_value) -> (int, str):
+        session=self.client.start_session()
+        session.start_transaction()
         try:
-            cursor = self.conn.execute(
-                "SELECT password  from user where user_id=?", (user_id,)
-            )
-            row = cursor.fetchone()
-            if row is None:
+            cursor=self.conn['user'].find_one({'user_id':user_id},session=session)
+            if(len(cursor)==0):
+                session.abort_transaction()
+                session.end_session()
                 return error.error_authorization_fail()
-
-            if row[0] != password:
+            if(cursor['password']!=password):
+                session.abort_transaction()
+                session.end_session()
                 return error.error_authorization_fail()
-
-            cursor = self.conn.execute(
-                "UPDATE user SET balance = balance + ? WHERE user_id = ?",
-                (add_value, user_id),
-            )
-            if cursor.rowcount == 0:
+            cursor=self.conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':add_value}},session=session)
+            if len(cursor) == 0:
+                session.abort_transaction()
+                session.end_session()
                 return error.error_non_exist_user_id(user_id)
-
-            self.conn.commit()
-        except sqlite.Error as e:
+        except pymongo.errors as e:
+            session.abort_transaction()
+            session.end_session()
             return 528, "{}".format(str(e))
-        except BaseException as e:
+        except Exception as e:
+            session.abort_transaction()
+            session.end_session()
             return 530, "{}".format(str(e))
-
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
+
+# import seller
+# import user
+
+# if __name__ == "__main__":
+#     buyer=Buyer()
+#     s=seller.Seller()
+#     u=user.User()
+#     # res=u.register('bigone','hey')
+#     # res=s.create_store('bigone','store1')
+#     # print(res)
+#     # res=s.add_book('bigone','store1','book1','',2)
+#     # print(res)
+#     # res=s.add_book('bigone','store1','book2','',6)
+#     # print(res)
+#     # res=u.register('123','hey')
+#     # print(res)
+#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
+#     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
+#     res1=buyer.add_funds('bigone','hey',99999)
+#     print(res1)
+#     res=buyer.conn['new_order'].find()
+#     for i in res:
+#         print(i)
