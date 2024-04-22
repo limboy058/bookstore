@@ -25,6 +25,6 @@
     大家可以自己从 github 拉取，项目地址（git：https://github.com/vldbss-2021/vldb-2021-labs）(已 clone 并转储到本项目的 Project_2 下)。
 
 
-    项目要求与参考资料 放置在 Project_2 下的 README 中。
+    项目要求(评测要求和时间要求)与参考资料 放置在 Project_2 下的 README 中。
 
 
