@@ -230,9 +230,7 @@ class Buyer(db_conn.DBConn):
         session.start_transaction()
         try:
             cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
-            result = {
-                "status": cursor.get('status', None)
-            }
+            result = cursor['order_id']
 
         except pymongo.errors as e:
             session.abort_transaction()
