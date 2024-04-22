@@ -1,6 +1,8 @@
 import pymongo.errors
-from be.model import db_conn
-from be.model import error
+# from be.model import db_conn
+# from be.model import error
+import db_conn
+import error
 import time
 
 
@@ -14,7 +16,7 @@ class Order(db_conn.DBConn):
         session.start_transaction()
         order_available = "canceled"
         order_status = "canceled"
-        valid_status = "valid"
+        valid_status = "unpaid"
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
             if(len(cursor)==0):
@@ -22,10 +24,10 @@ class Order(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_order_id(order_id)
             
-            if(cursor['status']!=valid_status):
+            if(cursor['status']!='unpaid' and cursor['status']!='canceled'):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_prossessing_order_id(order_id)
+                return error.error_order_status(order_id)
             
             cursor = self.conn['new_order'].update_one(
                 {'order_id': order_id},
@@ -42,12 +44,13 @@ class Order(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
-
+    
     def cancel_unpaid_orders(self) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
-        valid_time = 20
-        current_time = time.time()
+        interval_time =1
+        exist_time=20
+        current_time = time.time()/60
         order_cancel_status = "unpaid"
         order_available = "canceled"
         order_status = "canceled"
@@ -55,8 +58,8 @@ class Order(db_conn.DBConn):
             cursor= self.conn['new_order'].update_many(
                 {
                     'order_time': {
-                        '$gte': current_time - valid_time * 2,
-                        '$lt': current_time - valid_time
+                        '$gte': current_time - interval_time*2-exist_time,
+                        '$lt': current_time - exist_time
                     },
                     'status': order_cancel_status
                 },
@@ -79,3 +82,6 @@ class Order(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
+    
+if __name__ == "__main__":
+    print(time.time())
