@@ -15,16 +15,17 @@
 
 ```
 
-<!-- 运行环境 -->
+#### 运行环境
 go >= 13.3
 安装并可使用 make
 
-<!-- 开发工具 -->
+#### 开发工具
 GoLand  (建议使用)
 VSCode + go插件
 
 
-<!-- 编译 -->
+#### 编译与执行
+#### 编译
 cd tinykv
 make
 或者 make kv 
@@ -37,7 +38,7 @@ make
 
 
 
-<!-- 启动 -->
+#### 启动
 mkdir -p data
 
 ./tinyscheduler-server
@@ -45,6 +46,7 @@ mkdir -p data
 ./tinykv-server -path=data
 
 ./tinysql-server --store=tikv --path="127.0.0.1:2379"
+
 
 
 ## 项目测评
@@ -61,5 +63,4 @@ mkdir -p data
 ## 参考资料
 项目中有较多的项目说明和相关资料：https://github.com/vldbss-2021/vldb-2021-labs.
 视频学习资料：https://learn.pingcap.cn/learner/course/750001.
-
 
