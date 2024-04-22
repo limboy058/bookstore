@@ -120,7 +120,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_user_id(seller_id)
             #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
-            conn['new_order'].update_one({'order_id':order_id},{'status':'paid and not delivered'},session=session)
+            conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_and_not_delivered'}},session=session)
             if cursor is None:
                 session.abort_transaction()
                 session.end_session()
@@ -166,29 +166,6 @@ class Buyer(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
-# import seller
-# import user
-
-# if __name__ == "__main__":
-#     buyer=Buyer()
-#     s=seller.Seller()
-#     u=user.User()
-#     # res=u.register('bigone','hey')
-#     # res=s.create_store('bigone','store1')
-#     # print(res)
-#     # res=s.add_book('bigone','store1','book1','',2)
-#     # print(res)
-#     # res=s.add_book('bigone','store1','book2','',6)
-#     # print(res)
-#     # res=u.register('123','hey')
-#     # print(res)
-#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
-#     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
-#     res1=buyer.add_funds('bigone','hey',99999)
-#     print(res1)
-#     res=buyer.conn['new_order'].find()
-#     for i in res:
-#         print(i)
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
@@ -228,7 +205,6 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
-
     #历史订单，表项要返回什么捏
     def search_order(self, user_id):
         session=self.client.start_session()
@@ -238,7 +214,6 @@ class Buyer(db_conn.DBConn):
             result = {
                 "status": cursor.get('status', None)
             }
-
         except pymongo.errors as e:
             session.abort_transaction()
             session.end_session()
@@ -250,3 +225,15 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok", result
+# import seller
+# import user
+
+# if __name__ == "__main__":
+#     buyer=Buyer()
+#     s=seller.Seller()
+#     u=user.User()
+#     res1=buyer.add_funds('bigone','hey',99999)
+#     print(res1)
+#     res=buyer.conn['new_order'].find()
+#     for i in res:
+#         print(i)
