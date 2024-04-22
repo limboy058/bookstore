@@ -49,13 +49,13 @@ class TestCancelOrder:
         code, _ = self.buyer.cancel(self.order_id)
         assert code != 200
 
-    #检查status，没实现
-    # def test_non_prossessing_order_id(self):
-    #     ok, buy_book_id_list = self.gen_book.gen(
-    #         non_exist_book_id=False, low_stock_level=False
-    #     )
-    #     code, ok, self.order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
-    #     assert ok
-    #     self.order_id = self.user_id + "_x"
-    #     code, _ = self.buyer.cancel(self.order_id)
-    #     assert code != 200
+
+    def test_non_prossessing_order_id(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        code, ok, self.order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert ok
+        code, _ = self.buyer.cancel(self.order_id)
+        code, _ = self.buyer.cancel(self.order_id)
+        assert code != 200
