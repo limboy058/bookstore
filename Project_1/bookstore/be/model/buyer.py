@@ -51,7 +51,7 @@ class Buyer(db_conn.DBConn):
                     return error.error_stock_level_low(book_id) + (order_id,)
                 
                 cursor=self.conn['new_order_detail'].insert_one({'order_id':uid,'book_id':book_id,'count':count,'price':price},session=session)
-            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id},session=session)
+            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid'},session=session)
             session.commit_transaction()
             order_id = uid
         except pymongo.errors as e:
@@ -119,16 +119,17 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_user_id(seller_id)
-            cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
+            #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
+            conn['new_order'].update_one({'order_id':order_id},{'status':'paid and not delivered'},session=session)
             if cursor is None:
                 session.abort_transaction()
                 session.end_session()
                 return error.error_invalid_order_id(order_id)
-            cursor=conn['new_order_detail'].delete_one({'order_id':order_id},session=session)
-            if cursor is None:
-                session.abort_transaction()
-                session.end_session()
-                return error.error_invalid_order_id(order_id)
+            # cursor=conn['new_order_detail'].delete_one({'order_id':order_id},session=session)
+            # if cursor is None:
+            #     session.abort_transaction()
+            #     session.end_session()
+            #     return error.error_invalid_order_id(order_id)
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
@@ -191,7 +192,7 @@ class Buyer(db_conn.DBConn):
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
-        valid_status = "valid"
+        valid_status = 'unpaid'
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
             if(len(cursor)==0):
@@ -202,7 +203,7 @@ class Buyer(db_conn.DBConn):
             if(cursor['status']!=valid_status):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_prossessing_order_id(order_id)
+                return error.error_order_status(order_id)
 
             if(cursor['user_id']!=user_id):
                 session.abort_transaction()
@@ -210,7 +211,11 @@ class Buyer(db_conn.DBConn):
                 return error.error_order_user_id(order_id)
 
             o = Order()
-            o.cancel_order(order_id)
+            res1,res2=o.cancel_order(order_id)
+            if(res1!=200):
+                session.abort_transaction()
+                session.end_session()
+                return res1,res2
 
         except pymongo.errors as e:
             session.abort_transaction()
