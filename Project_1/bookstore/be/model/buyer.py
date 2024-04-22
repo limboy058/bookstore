@@ -120,7 +120,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_user_id(seller_id)
             #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
-            conn['new_order'].update_one({'order_id':order_id},{'status':'paid and not delivered'},session=session)
+            conn['new_order'].update_one({'order_id':order_id},{'status':'paid_but_not_delivered'},session=session)
             if cursor is None:
                 session.abort_transaction()
                 session.end_session()
@@ -203,7 +203,7 @@ class Buyer(db_conn.DBConn):
             if(cursor['status']!=valid_status):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_order_status(order_id)
+                return error.error_invalid_order_id(order_id)
 
             if(cursor['user_id']!=user_id):
                 session.abort_transaction()
@@ -248,3 +248,34 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok", result
+    
+
+    def receive_books(self,user_id,order_id) -> (int, str):
+        session=self.client.start_session()
+        session.start_transaction()
+        try:
+            if not self.user_id_exist(user_id):
+                return error.error_non_exist_user_id(user_id)
+            if not self.order_id_exist(order_id): 
+                return error.error_invalid_order_id(order_id)
+            
+            cursor = self.conn['new_order'].find_one({'user_id':user_id,'order_id':order_id}, session=session)
+            if(cursor['status'] != "delivered_but_not_received"):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_invalid_order_id(order_id)
+
+            cursor = self.conn['new_order'].update_one(
+                {'order_id': order_id},
+                {'$set': {'status': "received"}},
+                session=session
+            )
+
+        except BaseException as e:
+            session.abort_transaction()
+            session.end_session()
+            return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
+        return 200, "ok"
+
