@@ -189,53 +189,59 @@ class Buyer(db_conn.DBConn):
 #     for i in res:
 #         print(i)
     def cancel(self, user_id, order_id) -> (int, str):
-        invalid_order_available = "canceled"
-        invalid_order_status = "canceled"
+        session=self.client.start_session()
+        session.start_transaction()
+        valid_status = "valid"
         try:
-            cursor = self.conn.execute("SELECT status, order_available, user_id FROM new_order WHERE order_id = ?;",
-                                       (order_id),
-            )
-            row = cursor.fetchone()
+            cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
+            if(len(cursor)==0):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_non_exist_order_id(order_id)
+            
+            if(cursor['status']!=valid_status):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_prossessing_order_id(order_id)
 
-            if row[0] == invalid_order_status:
-                return error.error_order_status()
-
-            if row[1] == invalid_order_available:
-                return error.error_order_available()
-
-            if row[2] == user_id:
-                return error.error_order_user_id()
+            if(cursor['user_id']!=user_id):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_order_user_id(order_id)
 
             o = Order()
             o.cancel_order(order_id)
 
-        except sqlite.Error as e:
+        except pymongo.errors as e:
+            session.abort_transaction()
+            session.end_session()
             return 528, "{}".format(str(e))
-        except BaseException as e:
+        except Exception as e:
+            session.abort_transaction()
+            session.end_session()
             return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
 
     #历史订单，表项要返回什么捏
-    def search_order(self, user_id) -> (int, str):
+    def search_order(self, user_id):
+        session=self.client.start_session()
+        session.start_transaction()
         try:
-            cursor = self.conn.execute("SELECT * FROM new_order WHERE user_id = ?;",
-                                       (user_id),
-            )
-            rows = cursor.fetchone()
+            cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
+            result = {
+                "status": cursor.get('status', None)
+            }
 
-            result = []
-            for row in rows:
-                book = {
-                    # "bid": row[0],
-                    # "title": row[1],
-                    # "author": row[2]
-                }
-                result.append(book)
-
-            self.conn.commit()
-
-        except sqlite.Error as e:
+        except pymongo.errors as e:
+            session.abort_transaction()
+            session.end_session()
             return 528, "{}".format(str(e))
-        except BaseException as e:
+        except Exception as e:
+            session.abort_transaction()
+            session.end_session()
             return 530, "{}".format(str(e))
-        return 200, "ok"
+        session.commit_transaction()
+        session.end_session()
+        return 200, "ok", result
