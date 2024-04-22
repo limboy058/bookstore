@@ -14,9 +14,8 @@ class Order(db_conn.DBConn):
             self, order_id: str) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
-        order_available = "canceled"
         order_status = "canceled"
-        valid_status = "unpaid"
+        unprosssing_status =["unpaid", "paid_but_not_delivered"]
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
             if(len(cursor)==0):
@@ -24,14 +23,14 @@ class Order(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_order_id(order_id)
             
-            if(cursor['status']!='unpaid' and cursor['status']!='canceled'):
+            if(cursor['status'] not in unprosssing_status):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_order_status(order_id)
+                return error.error_invalid_order_id(order_id)
             
             cursor = self.conn['new_order'].update_one(
                 {'order_id': order_id},
-                {'$set': {'available': order_available, 'status': order_status}}
+                {'$set': {'status': order_status}}
             )
         except pymongo.errors as e:
             session.abort_transaction()
@@ -52,7 +51,6 @@ class Order(db_conn.DBConn):
         exist_time=20
         current_time = time.time()/60
         order_cancel_status = "unpaid"
-        order_available = "canceled"
         order_status = "canceled"
         try:
             cursor= self.conn['new_order'].update_many(
@@ -65,7 +63,6 @@ class Order(db_conn.DBConn):
                 },
                 {
                     '$set': {
-                        'available': order_available,
                         'status': order_status
                     }
                 }

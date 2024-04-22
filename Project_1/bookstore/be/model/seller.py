@@ -59,6 +59,36 @@ class Seller(db_conn.DBConn):
         except BaseException as e:
             return 530, "{}".format(str(e))
         return 200, "ok"
+    
+    def send_books(self,store_id,order_id) -> (int, str):
+        session=self.client.start_session()
+        session.start_transaction()
+        try:
+            if not self.store_id_exist(store_id):
+                return error.error_non_exist_store_id(store_id)
+            if not self.order_id_exist(order_id): 
+                return error.error_invalid_order_id(order_id)
+            
+            cursor = self.conn['new_order'].find_one({'store_id':store_id,'order_id':order_id}, session=session)
+
+            if(cursor['status'] != "paid_but_not_delivered"):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_invalid_order_id(order_id)
+
+            cursor = self.conn['new_order'].update_one(
+                {'order_id': order_id},
+                {'$set': {'status': "delivered_but_not_received"}},
+                session=session
+            )
+
+        except BaseException as e:
+            session.abort_transaction()
+            session.end_session()
+            return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
+        return 200, "ok"
 
 # if __name__ == "__main__":
 #     tmp=Seller()
