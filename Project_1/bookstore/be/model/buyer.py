@@ -120,7 +120,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_user_id(seller_id)
             #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
-            conn['new_order'].update_one({'order_id':order_id},{'status':'paid_but_not_delivered'},session=session)
+            conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_but_not_delivered'}},session=session)
             if cursor is None:
                 session.abort_transaction()
                 session.end_session()
