@@ -26,6 +26,12 @@ class DBConn:
             return False
         else:
             return True
+    def order_id_exist(self, order_id):
+        res=self.conn['new_order'].find_one({'order_id':order_id})
+        if res is None:
+            return False
+        else:
+            return True
 
 
 # if __name__ == "__main__":

@@ -54,7 +54,7 @@ class Buyer(db_conn.DBConn):
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid'},session=session)
             session.commit_transaction()
             order_id = uid
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e)), ""
         except BaseException as e:
@@ -120,7 +120,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_user_id(seller_id)
             #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
-            conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_and_not_delivered'}},session=session)
+            conn['new_order'].update_one({'order_id':order_id},{'status':'paid_but_not_delivered'},session=session)
             if cursor is None:
                 session.abort_transaction()
                 session.end_session()
@@ -154,7 +154,7 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_user_id(user_id)
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -180,7 +180,7 @@ class Buyer(db_conn.DBConn):
             if(cursor['status']!=valid_status):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_order_status(order_id)
+                return error.error_invalid_order_id(order_id)
 
             if(cursor['user_id']!=user_id):
                 session.abort_transaction()
@@ -194,7 +194,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return res1,res2
 
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -211,10 +211,9 @@ class Buyer(db_conn.DBConn):
         session.start_transaction()
         try:
             cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
-            result = {
-                "status": cursor.get('status', None)
-            }
-        except pymongo.errors as e:
+            result = cursor['order_id']
+
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -225,15 +224,34 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok", result
-# import seller
-# import user
+    
 
-# if __name__ == "__main__":
-#     buyer=Buyer()
-#     s=seller.Seller()
-#     u=user.User()
-#     res1=buyer.add_funds('bigone','hey',99999)
-#     print(res1)
-#     res=buyer.conn['new_order'].find()
-#     for i in res:
-#         print(i)
+    def receive_books(self,user_id,order_id) -> (int, str):
+        session=self.client.start_session()
+        session.start_transaction()
+        try:
+            if not self.user_id_exist(user_id):
+                return error.error_non_exist_user_id(user_id)
+            if not self.order_id_exist(order_id): 
+                return error.error_invalid_order_id(order_id)
+            
+            cursor = self.conn['new_order'].find_one({'user_id':user_id,'order_id':order_id}, session=session)
+            if(cursor['status'] != "delivered_but_not_received"):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_invalid_order_id(order_id)
+
+            cursor = self.conn['new_order'].update_one(
+                {'order_id': order_id},
+                {'$set': {'status': "received"}},
+                session=session
+            )
+
+        except BaseException as e:
+            session.abort_transaction()
+            session.end_session()
+            return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
+        return 200, "ok"
+
