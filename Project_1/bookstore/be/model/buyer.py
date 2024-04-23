@@ -54,7 +54,7 @@ class Buyer(db_conn.DBConn):
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid'},session=session)
             session.commit_transaction()
             order_id = uid
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e)), ""
         except BaseException as e:
@@ -154,7 +154,7 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_user_id(user_id)
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -166,29 +166,6 @@ class Buyer(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
-# import seller
-# import user
-
-# if __name__ == "__main__":
-#     buyer=Buyer()
-#     s=seller.Seller()
-#     u=user.User()
-#     # res=u.register('bigone','hey')
-#     # res=s.create_store('bigone','store1')
-#     # print(res)
-#     # res=s.add_book('bigone','store1','book1','',2)
-#     # print(res)
-#     # res=s.add_book('bigone','store1','book2','',6)
-#     # print(res)
-#     # res=u.register('123','hey')
-#     # print(res)
-#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
-#     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
-#     res1=buyer.add_funds('bigone','hey',99999)
-#     print(res1)
-#     res=buyer.conn['new_order'].find()
-#     for i in res:
-#         print(i)
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
@@ -217,7 +194,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return res1,res2
 
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -228,7 +205,6 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
-
     #历史订单，表项要返回什么捏
     def search_order(self, user_id):
         session=self.client.start_session()
@@ -237,7 +213,7 @@ class Buyer(db_conn.DBConn):
             cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
             result = cursor['order_id']
 
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
