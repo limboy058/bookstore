@@ -63,11 +63,11 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
     
-    def search(self) -> [int, list]:
+    def search_order(self) -> [int, list]:
         json = {
             "user_id": self.user_id,
         }
-        url = urljoin(self.url_prefix, "cancel")
+        url = urljoin(self.url_prefix, "search_order")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         response_json = r.json()

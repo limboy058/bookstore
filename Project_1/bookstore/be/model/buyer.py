@@ -182,14 +182,13 @@ class Buyer(db_conn.DBConn):
 #     # print(res)
 #     # res=u.register('123','hey')
 #     # print(res)
-#     res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
+#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
 #     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
-#     #res1=buyer.cancel('bigone',)
+#     res1=buyer.add_funds('bigone','hey',99999)
 #     print(res1)
 #     res=buyer.conn['new_order'].find()
-#     # for i in res:
-#     #     print(i)
-
+#     for i in res:
+#         print(i)
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
@@ -229,7 +228,6 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
-
     #历史订单，表项要返回什么捏
     def search_order(self, user_id):
         session=self.client.start_session()
