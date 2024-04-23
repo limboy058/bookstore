@@ -2,7 +2,7 @@ import pymongo
 import uuid
 import json
 import logging
-
+import time
 import pymongo.errors
 from be.model import db_conn
 from be.model import error
@@ -36,8 +36,11 @@ class Buyer(db_conn.DBConn):
                     return error.error_non_exist_book_id(book_id) + (order_id,)
                 stock_level = int(results['stock_level'])
                 book_info = results['book_info']
-                book_info_json = json.loads(book_info)
-                price = book_info_json.get("price")
+
+                # 仅作为测试,merge时删除
+                # book_info_json = json.loads(book_info)
+                # price = book_info_json.get("price")
+                price =1
                 if stock_level < count:
                     session.abort_transaction()
                     session.end_session()
@@ -51,7 +54,7 @@ class Buyer(db_conn.DBConn):
                     return error.error_stock_level_low(book_id) + (order_id,)
                 
                 cursor=self.conn['new_order_detail'].insert_one({'order_id':uid,'book_id':book_id,'count':count,'price':price},session=session)
-            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid'},session=session)
+            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time())},session=session)
             session.commit_transaction()
             order_id = uid
         except pymongo.errors.PyMongoError as e:
@@ -208,7 +211,7 @@ class Buyer(db_conn.DBConn):
             if(cursor['user_id']!=user_id):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_order_user_id(order_id)
+                return error.error_order_user_id(order_id, user_id)
 
             o = Order()
             res1,res2=o.cancel_order(order_id)
