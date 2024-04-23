@@ -9,7 +9,7 @@ from be.model import db_conn
 # import user# 仅用于测试
 # import db_conn
 
-class Seller(db_cWonn.DBConn):
+class Seller(db_conn.DBConn):
     def __init__(self):
         db_conn.DBConn.__init__(self)
 
