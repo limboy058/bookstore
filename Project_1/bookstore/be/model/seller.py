@@ -25,9 +25,10 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_user_id(user_id)
             if not self.store_id_exist(store_id):
                 return error.error_non_exist_store_id(store_id)
+            if self.conn['user_store'].find_one({'store_id':store_id})['user_id']!=user_id:
+                return error.error_authorization_fail()
             if self.book_id_exist(store_id, book_id):
                 return error.error_exist_book_id(book_id)
-
             ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':book_json_str,'stock_level':stock_level})
             if not ret.acknowledged:  return 528, "{}".format(str(ret))  
         except BaseException as e:
