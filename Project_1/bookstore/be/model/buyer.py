@@ -231,6 +231,7 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
+    
     #历史订单，表项要返回什么捏
     def search_order(self, user_id):
         session=self.client.start_session()
@@ -252,7 +253,7 @@ class Buyer(db_conn.DBConn):
         return 200, "ok", result
     
 
-    def receive_books(self,user_id,order_id) -> (int, str):
+    def receive_books(self,user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
@@ -266,6 +267,11 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_invalid_order_id(order_id)
+            
+            if(cursor['user_id']!=user_id):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_order_user_id(order_id, user_id)
 
             cursor = self.conn['new_order'].update_one(
                 {'order_id': order_id},

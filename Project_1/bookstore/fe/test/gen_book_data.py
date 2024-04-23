@@ -1,5 +1,6 @@
 import random
-
+# import sys
+# sys.path.append("D:/code/数据库系统/AllStuRead-master/Project_1/bookstore")
 from fe import conf
 from fe.access import book
 from fe.access.new_seller import register_new_seller
@@ -18,6 +19,9 @@ class GenBook:
     def __init_book_list__(self):
         self.buy_book_info_list = []
         self.buy_book_id_list = []
+
+    def return_seller(self):
+        return self.seller
 
     def gen(
         self, non_exist_book_id: bool, low_stock_level, max_book_count: int = 100
