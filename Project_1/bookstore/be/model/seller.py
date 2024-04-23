@@ -5,7 +5,11 @@ from be.model import user# 仅用于测试
 from be.model import db_conn
 # 未做事务处理
 
-class Seller(db_conn.DBConn):
+# import error
+# import user# 仅用于测试
+# import db_conn
+
+class Seller(db_cWonn.DBConn):
     def __init__(self):
         db_conn.DBConn.__init__(self)
 
@@ -22,6 +26,8 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_user_id(user_id)
             if not self.store_id_exist(store_id):
                 return error.error_non_exist_store_id(store_id)
+            if self.conn['user_store'].find_one({'store_id':store_id})['user_id']!=user_id:
+                return error.error_authorization_fail()
             if self.book_id_exist(store_id, book_id):
                 return error.error_exist_book_id(book_id)
 
@@ -61,7 +67,7 @@ class Seller(db_conn.DBConn):
             return 530, "{}".format(str(e))
         return 200, "ok"
     
-    def send_books(self,store_id,order_id) -> (int, str):
+    def send_books(self, store_id: str, order_id: str) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:

@@ -40,3 +40,18 @@ def add_funds():
     b = Buyer()
     code, message = b.add_funds(user_id, password, add_value)
     return jsonify({"message": message}), code
+
+@bp_buyer.route("/cancel", methods=["POST"])
+def cancel():
+    buyer_id = request.json.get("buyer_id")
+    order_id = request.json.get("order_id")
+    b = Buyer()
+    code, message = b.cancel(buyer_id, order_id)
+    return jsonify({"message": message}), code
+
+@bp_buyer.route("/search_order", methods=["POST"])
+def search_order():
+    user_id = request.json.get("user_id")
+    b = Buyer()
+    code, message, order_id_list = b.search_order(user_id)
+    return jsonify({"message": message, "order_id_list": order_id_list}), code

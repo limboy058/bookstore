@@ -2,14 +2,14 @@ import pymongo
 import uuid
 import json
 import logging
-
+import time
 import pymongo.errors
 from be.model import db_conn
 from be.model import error
+from be.model.order import Order
 # import db_conn
 # import error
-from be.model.order import Order
-
+# from order import Order
 
 class Buyer(db_conn.DBConn):
     def __init__(self):
@@ -50,7 +50,7 @@ class Buyer(db_conn.DBConn):
                     return error.error_stock_level_low(book_id) + (order_id,)
                 
                 cursor=self.conn['new_order_detail'].insert_one({'order_id':uid,'book_id':book_id,'count':count,'price':price},session=session)
-            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid'},session=session)
+            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time())},session=session)
             session.commit_transaction()
             order_id = uid
         except pymongo.errors.PyMongoError as e:
@@ -140,7 +140,7 @@ class Buyer(db_conn.DBConn):
         session.start_transaction()
         try:
             cursor=self.conn['user'].find_one({'user_id':user_id},session=session)
-            if(len(cursor)==0):
+            if cursor is None:
                 session.abort_transaction()
                 session.end_session()
                 return error.error_authorization_fail()
@@ -149,7 +149,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_authorization_fail()
             cursor=self.conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':add_value}},session=session)
-            if len(cursor) == 0:
+            if cursor is None:
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_user_id(user_id)
@@ -165,13 +165,36 @@ class Buyer(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
+# import seller
+# import user
+
+# if __name__ == "__main__":
+#     buyer=Buyer()
+#     s=seller.Seller()
+#     u=user.User()
+#     # res=u.register('bigone','hey')
+#     # res=s.create_store('bigone','store1')
+#     # print(res)
+#     # res=s.add_book('bigone','store1','book1','',2)
+#     # print(res)
+#     # res=s.add_book('bigone','store1','book2','',6)
+#     # print(res)
+#     # res=u.register('123','hey')
+#     # print(res)
+#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
+#     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
+#     res1=buyer.add_funds('bigone','hey',99999)
+#     print(res1)
+#     res=buyer.conn['new_order'].find()
+#     for i in res:
+#         print(i)
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         valid_status = 'unpaid'
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
-            if(len(cursor)==0):
+            if(cursor is None):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_order_id(order_id)
@@ -184,7 +207,7 @@ class Buyer(db_conn.DBConn):
             if(cursor['user_id']!=user_id):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_order_user_id(order_id)
+                return error.error_order_user_id(order_id, user_id)
 
             o = Order()
             res1,res2=o.cancel_order(order_id)
@@ -204,6 +227,7 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
+    
     #历史订单，表项要返回什么捏
     def search_order(self, user_id):
         session=self.client.start_session()
@@ -225,7 +249,7 @@ class Buyer(db_conn.DBConn):
         return 200, "ok", result
     
 
-    def receive_books(self,user_id,order_id) -> (int, str):
+    def receive_books(self,user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
@@ -239,6 +263,11 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_invalid_order_id(order_id)
+            
+            if(cursor['user_id']!=user_id):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_order_user_id(order_id, user_id)
 
             cursor = self.conn['new_order'].update_one(
                 {'order_id': order_id},

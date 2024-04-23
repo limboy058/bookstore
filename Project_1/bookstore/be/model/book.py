@@ -3,7 +3,7 @@ import uuid
 import json
 import logging
 import sys
-sys.path.append("D:/dbproject/Project_1/bookstore")
+#sys.path.append("D:/dbproject/Project_1/bookstore")
 from fe.access.book import Book
 import pymongo.errors
 from be.model import db_conn

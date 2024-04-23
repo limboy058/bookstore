@@ -18,7 +18,7 @@ class Order(db_conn.DBConn):
         unprosssing_status =["unpaid", "paid_but_not_delivered"]
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
-            if(len(cursor)==0):
+            if(cursor is None):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_order_id(order_id)
@@ -32,7 +32,7 @@ class Order(db_conn.DBConn):
                 {'order_id': order_id},
                 {'$set': {'status': order_status}}
             )
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -68,7 +68,7 @@ class Order(db_conn.DBConn):
                 }
             )
 
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -80,5 +80,3 @@ class Order(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
     
-if __name__ == "__main__":
-    print(time.time())
