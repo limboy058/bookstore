@@ -53,9 +53,9 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
 
-    def cancel(self, buyer_id: str, order_id: str) -> int:
+    def cancel(self, order_id: str) -> int:
         json = {
-            "buyer_id": buyer_id,
+            "user_id": self.user_id,
             "order_id": order_id,
         }
         url = urljoin(self.url_prefix, "cancel")
@@ -73,4 +73,13 @@ class Buyer:
         response_json = r.json()
         return r.status_code, response_json.get("order_id_list")
 
+    def receive_books(self, order_id: str) -> [int, list]:
+        json = {
+            "user_id": self.user_id,
+            "order_id":order_id,
+        }
+        url = urljoin(self.url_prefix, "receive_books")
+        headers = {"token": self.token}
+        r = requests.post(url, headers=headers, json=json)
+        return r.status_code
     

@@ -208,7 +208,7 @@ class Buyer(db_conn.DBConn):
             if(cursor['user_id']!=user_id):
                 session.abort_transaction()
                 session.end_session()
-                return error.error_order_user_id(order_id)
+                return error.error_order_user_id(order_id, user_id)
 
             o = Order()
             res1,res2=o.cancel_order(order_id)
@@ -250,7 +250,7 @@ class Buyer(db_conn.DBConn):
         return 200, "ok", result
     
 
-    def receive_books(self,user_id,order_id) -> (int, str):
+    def receive_books(self,user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
@@ -264,6 +264,11 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_invalid_order_id(order_id)
+            
+            if(cursor['user_id']!=user_id):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_order_user_id(order_id, user_id)
 
             cursor = self.conn['new_order'].update_one(
                 {'order_id': order_id},

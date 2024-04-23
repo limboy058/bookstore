@@ -64,7 +64,7 @@ class Seller(db_conn.DBConn):
             return 530, "{}".format(str(e))
         return 200, "ok"
     
-    def send_books(self,store_id,order_id) -> (int, str):
+    def send_books(self, store_id: str, order_id: str) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
