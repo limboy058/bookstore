@@ -6,10 +6,10 @@ import logging
 import pymongo.errors
 from be.model import db_conn
 from be.model import error
+from be.model.order import Order
 # import db_conn
 # import error
-from be.model.order import Order
-
+# from order import Order
 
 class Buyer(db_conn.DBConn):
     def __init__(self):
@@ -54,7 +54,7 @@ class Buyer(db_conn.DBConn):
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid'},session=session)
             session.commit_transaction()
             order_id = uid
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e)), ""
         except BaseException as e:
@@ -120,7 +120,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_user_id(seller_id)
             #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
-            conn['new_order'].update_one({'order_id':order_id},{'status':'paid_but_not_delivered'},session=session)
+            conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_but_not_delivered'}},session=session)
             if cursor is None:
                 session.abort_transaction()
                 session.end_session()
@@ -141,7 +141,7 @@ class Buyer(db_conn.DBConn):
         session.start_transaction()
         try:
             cursor=self.conn['user'].find_one({'user_id':user_id},session=session)
-            if(len(cursor)==0):
+            if cursor is None:
                 session.abort_transaction()
                 session.end_session()
                 return error.error_authorization_fail()
@@ -150,11 +150,11 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_authorization_fail()
             cursor=self.conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':add_value}},session=session)
-            if len(cursor) == 0:
+            if cursor is None:
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_user_id(user_id)
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -182,20 +182,21 @@ class Buyer(db_conn.DBConn):
 #     # print(res)
 #     # res=u.register('123','hey')
 #     # print(res)
-#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
+#     res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
 #     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
-#     res1=buyer.add_funds('bigone','hey',99999)
+#     #res1=buyer.cancel('bigone',)
 #     print(res1)
 #     res=buyer.conn['new_order'].find()
-#     for i in res:
-#         print(i)
+#     # for i in res:
+#     #     print(i)
+
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         valid_status = 'unpaid'
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
-            if(len(cursor)==0):
+            if(cursor is None):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_non_exist_order_id(order_id)
@@ -217,7 +218,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return res1,res2
 
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))
@@ -237,7 +238,7 @@ class Buyer(db_conn.DBConn):
             cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
             result = cursor['order_id']
 
-        except pymongo.errors as e:
+        except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
             session.end_session()
             return 528, "{}".format(str(e))

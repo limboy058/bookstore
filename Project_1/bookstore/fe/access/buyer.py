@@ -4,6 +4,8 @@ from urllib.parse import urljoin
 from fe.access.auth import Auth
 
 
+
+
 class Buyer:
     def __init__(self, url_prefix, user_id, password):
         self.url_prefix = urljoin(url_prefix, "buyer/")
@@ -27,6 +29,8 @@ class Buyer:
         response_json = r.json()
         return r.status_code, response_json.get("order_id")
 
+
+
     def payment(self, order_id: str):
         json = {
             "user_id": self.user_id,
@@ -49,9 +53,9 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
 
-    def cancel(self, order_id: str) -> int:
+    def cancel(self, buyer_id: str, order_id: str) -> int:
         json = {
-            "user_id": self.user_id,
+            "buyer_id": buyer_id,
             "order_id": order_id,
         }
         url = urljoin(self.url_prefix, "cancel")
@@ -68,5 +72,5 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         response_json = r.json()
         return r.status_code, response_json.get("order_id")
-    
+
     
