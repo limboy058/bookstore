@@ -234,7 +234,9 @@ class Buyer(db_conn.DBConn):
         session.start_transaction()
         try:
             cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
-            result = cursor['order_id']
+            result=list()
+            for i in cursor:
+                result.append(i['order_id'])
 
         except pymongo.errors.PyMongoError as e:
             session.abort_transaction()
