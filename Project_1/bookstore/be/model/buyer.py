@@ -36,11 +36,7 @@ class Buyer(db_conn.DBConn):
                     return error.error_non_exist_book_id(book_id) + (order_id,)
                 stock_level = int(results['stock_level'])
                 book_info = results['book_info']
-
-                # 仅作为测试,merge时删除
-                # book_info_json = json.loads(book_info)
-                # price = book_info_json.get("price")
-                price =1
+                price = book_info["price"]
                 if stock_level < count:
                     session.abort_transaction()
                     session.end_session()

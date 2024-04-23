@@ -2,7 +2,7 @@ from flask import Blueprint
 from flask import request
 from flask import jsonify
 from be.model import user
-
+from be.model.book import searchBook
 bp_auth = Blueprint("auth", __name__, url_prefix="/auth")
 
 
@@ -55,3 +55,33 @@ def change_password():
         user_id=user_id, old_password=old_password, new_password=new_password
     )
     return jsonify({"message": message}), code
+
+@bp_auth.route("/search_book",methods=["POST"])
+def search_book():
+    searchbook=searchBook()
+    page_no=request.json.get("page_no","")
+    page_size=request.json.get("page_size","")
+    foozytitle=request.json.get("foozytitle",None)
+    reqtags=request.json.get("reqtags",None)
+    id=request.json.get("id",None)
+    isbn=request.json.get("isbn",None)
+    author=request.json.get("author",None)
+    lowest_price=request.json.get("lowest",None)
+    highest_price=request.json.get("highest_price",None)
+    lowest_pub_year=request.json.get("lowest_pub_year",None)
+    highest_pub_year=request.json.get("highest_pub_year",None)
+    store_id=request.json.get("store_id",None)
+    code,message,res=searchbook.find_book(page_no=page_no,
+                         page_size=page_size,
+                         foozytitle=foozytitle,
+                         reqtags=reqtags,
+                         id=id,
+                         isbn=isbn,
+                         author=author,
+                         lowest_price=lowest_price,
+                         highest_price=highest_price,
+                         lowest_pub_year=lowest_pub_year,
+                         highest_pub_year=highest_pub_year,
+                         store_id=store_id)
+    #return jsonify({"message": message,"book_info":jsonify(res)}), code
+    return jsonify({"message": message,"book_info":res}), code

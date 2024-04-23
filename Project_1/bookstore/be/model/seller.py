@@ -1,4 +1,5 @@
 import pymongo
+import json
 from be.model import error
 from be.model import user# 仅用于测试
 from be.model import db_conn
@@ -8,7 +9,7 @@ from be.model import db_conn
 # import user# 仅用于测试
 # import db_conn
 
-class Seller(db_conn.DBConn):
+class Seller(db_cWonn.DBConn):
     def __init__(self):
         db_conn.DBConn.__init__(self)
 
@@ -17,7 +18,7 @@ class Seller(db_conn.DBConn):
         user_id: str,
         store_id: str,
         book_id: str,
-        book_json_str: str,
+        book_json: str,
         stock_level: int,
     ):
         try:
@@ -29,7 +30,8 @@ class Seller(db_conn.DBConn):
                 return error.error_authorization_fail()
             if self.book_id_exist(store_id, book_id):
                 return error.error_exist_book_id(book_id)
-            ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':book_json_str,'stock_level':stock_level})
+
+            ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':json.loads(book_json),'stock_level':stock_level})
             if not ret.acknowledged:  return 528, "{}".format(str(ret))  
         except BaseException as e:
             return 530, "{}".format(str(e))

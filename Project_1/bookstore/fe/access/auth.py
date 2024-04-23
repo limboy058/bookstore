@@ -40,3 +40,22 @@ class Auth:
         url = urljoin(self.url_prefix, "unregister")
         r = requests.post(url, json=json)
         return r.status_code
+
+    def searchbook(self,page_no, page_size,
+                      foozytitle:str=None,
+                      reqtags:str=None,
+                      id:str=None,
+                      isbn:str=None,
+                      author:str=None,
+                      lowest_price:int=None,
+                      highest_price:int=None,
+                      lowest_pub_year:str=None,
+                      highest_pub_year:str=None,
+                      store_id:str=None
+                      ):
+        json = {"page_no": page_no, "page_size": page_size,"foozytitle":foozytitle,"reqtags":reqtags
+        ,"id":id,"isbn":isbn,"author":author,"lowest_price":lowest_price,"highest_price":highest_price,
+        "lowest_pub_year":lowest_pub_year,"highest_pub_year":highest_pub_year,"store_id":store_id}
+        url = urljoin(self.url_prefix, "search_book")
+        r = requests.post(url, json=json)
+        return r.status_code,r.json()["book_info"]
