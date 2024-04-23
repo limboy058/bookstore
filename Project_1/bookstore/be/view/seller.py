@@ -21,11 +21,47 @@ def seller_add_book():
     user_id: str = request.json.get("user_id")
     store_id: str = request.json.get("store_id")
     book_info: str = request.json.get("book_info")
+    # book_id: str = request.json.get("book_id")
+    
+    # title: str = request.json.get("title")
+    # author: str = request.json.get("author")
+    # publisher: str = request.json.get("publisher")
+    # original_title: str = request.json.get("original_title")
+    # translator: str = request.json.get("translator")
+    # pub_year: str = request.json.get("pub_year")
+    # pages: int = request.json.get("pages")
+    # price: int = request.json.get("price")
+    # currency_unit: str = request.json.get("currency_unit")
+    # binding: str = request.json.get("binding")
+    # isbn: str = request.json.get("isbn")
+    # author_intro: str = request.json.get("author_intro")
+    # book_intro: str = request.json.get("book_intro")
+    # content: str = request.json.get("content")
+    # tags:list[str]=request.json.get("tags")
+    # picture:list[bytes]=request.json.get("picture")
     stock_level: str = request.json.get("stock_level", 0)
 
     s = seller.Seller()
     code, message = s.add_book(
-        user_id, store_id, book_info.get("id"), json.dumps(book_info), stock_level
+        user_id, store_id, book_info.get("id"), json.dumps(book_info),
+        # book_id,
+        # title,
+        # author,
+        # publisher,
+        # original_title,
+        # translator,
+        # pub_year,
+        # pages,
+        # price,
+        # currency_unit,
+        # binding,
+        # isbn,
+        # author_intro,
+        # book_info,
+        # content,
+        # tags,
+        # picture,
+        stock_level
     )
 
     return jsonify({"message": message}), code

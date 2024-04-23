@@ -3,7 +3,6 @@ from urllib.parse import urljoin
 from fe.access import book
 from fe.access.auth import Auth
 
-
 class Seller:
     def __init__(self, url_prefix, seller_id: str, password: str):
         self.url_prefix = urljoin(url_prefix, "seller/")
@@ -29,8 +28,26 @@ class Seller:
         json = {
             "user_id": self.seller_id,
             "store_id": store_id,
-            "book_info": book_info.__dict__,
-            "stock_level": stock_level,
+            "book_info":book_info.__dict__,
+            # "book_id":book_info.id,
+            # "tags":book_info.tags,
+            # "title":book_info.title,
+            # "author":book_info.author,
+            # "publisher":book_info.publisher,
+            # "original_title":book_info.original_title,
+            # "translator":book_info.translator,
+            # "pub_year":book_info.pub_year,
+            # "pages":book_info.pages,
+            # "price":book_info.price,
+            # "currency_unit":book_info.currency_unit,
+            # "binding":book_info.binding,
+            # "isbn":book_info.isbn,
+            # "author_intro":book_info.author_intro,
+            # "book_intro":book_info.book_intro,
+            # "content":book_info.content,
+            # "tags":book_info.tags,
+            # "picture":book_info.pictures,
+             "stock_level": stock_level,
         }
         # print(simplejson.dumps(json))
         url = urljoin(self.url_prefix, "add_book")
@@ -52,3 +69,4 @@ class Seller:
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
+    
