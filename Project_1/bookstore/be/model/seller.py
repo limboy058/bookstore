@@ -4,6 +4,10 @@ from be.model import user# 仅用于测试
 from be.model import db_conn
 # 未做事务处理
 
+# import error
+# import user# 仅用于测试
+# import db_conn
+
 class Seller(db_conn.DBConn):
     def __init__(self):
         db_conn.DBConn.__init__(self)
