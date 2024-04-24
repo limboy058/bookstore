@@ -66,22 +66,31 @@ def search_book():
     id=request.json.get("id",None)
     isbn=request.json.get("isbn",None)
     author=request.json.get("author",None)
-    lowest_price=request.json.get("lowest",None)
+    lowest_price=request.json.get("lowest_price",None)
     highest_price=request.json.get("highest_price",None)
     lowest_pub_year=request.json.get("lowest_pub_year",None)
     highest_pub_year=request.json.get("highest_pub_year",None)
     store_id=request.json.get("store_id",None)
+    publisher=request.json.get("publisher",None)
+    translator=request.json.get("translator",None)
+    binding=request.json.get("binding",None)
+    order_by_method=request.json.get("order_by_method",None)
+    having_stock=request.json.get("having_stock",None)
     code,message,res=searchbook.find_book(page_no=page_no,
-                         page_size=page_size,
-                         foozytitle=foozytitle,
-                         reqtags=reqtags,
-                         id=id,
-                         isbn=isbn,
-                         author=author,
-                         lowest_price=lowest_price,
-                         highest_price=highest_price,
-                         lowest_pub_year=lowest_pub_year,
-                         highest_pub_year=highest_pub_year,
-                         store_id=store_id)
-    #return jsonify({"message": message,"book_info":jsonify(res)}), code
+                        page_size=page_size,
+                        foozytitle=foozytitle,
+                        reqtags=reqtags,
+                        id=id,
+                        isbn=isbn,
+                        author=author,
+                        lowest_price=lowest_price,
+                        highest_price=highest_price,
+                        lowest_pub_year=lowest_pub_year,
+                        highest_pub_year=highest_pub_year,
+                        store_id=store_id,
+                        publisher=publisher,
+                        translator=translator,
+                        binding=binding,
+                        order_by_method=order_by_method,# [stock_level, sales, pub_time, price] + [1,-1]  1 means increasingly and -1 means decreasingly
+                        having_stock=having_stock)
     return jsonify({"message": message,"book_info":res}), code

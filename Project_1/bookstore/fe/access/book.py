@@ -40,6 +40,12 @@ class BookDB:
         else:
             self.book_db = self.db_s
 
+
+    def clean_db(self):
+        conn = sqlite.connect(self.book_db)
+        conn.execute("delete * from book where id is null or title is null or author is null or publisher is null"
+                              " or pub_year is null or price is null or binding is null or isbn is null"
+                              " or tags is null or picture is null")
     def get_book_count(self):
         conn = sqlite.connect(self.book_db)
         cursor = conn.execute("SELECT count(id) FROM book")
@@ -171,8 +177,6 @@ class BookDB:
                     book.pictures.append(encode_str)
             books.append(book)
         return books
-
-import pymongo
 # if __name__ == "__main__":
 #    bookdb=BookDB(True)
 #    for i in bookdb.get_book_info_with_option(0,5,foozytitle="王子",lowest_price=1000,reqtags=["小王子"]):
