@@ -1,6 +1,8 @@
-import sqlite3 as sqlite
+import pymongo.errors
 from be.model import db_conn
 from be.model import error
+# import db_conn
+# import error
 import time
 
 
@@ -10,49 +12,71 @@ class Order(db_conn.DBConn):
 
     def cancel_order(
             self, order_id: str) -> (int, str):
-        order_available = "canceled"
+        session=self.client.start_session()
+        session.start_transaction()
         order_status = "canceled"
+        unprosssing_status =["unpaid", "paid_but_not_delivered"]
         try:
-            cursor = self.conn.execute(
-                "SELECT order_available from new_order where order_id = ?", (
-                    order_id,)
+            cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
+            if(cursor is None):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_non_exist_order_id(order_id)
+            
+            if(cursor['status'] not in unprosssing_status):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_invalid_order_id(order_id)
+            
+            cursor = self.conn['new_order'].update_one(
+                {'order_id': order_id},
+                {'$set': {'status': order_status}}
             )
-            row = cursor.fetchone()
-            if row is None:
-                return error.error_non_exist_order_id()
-
-            if row[0] != "valid":
-                return error.error_prossessing_order_id()
-
-            cursor = self.conn.execute(
-                "UPDATE new_order SET available = ?, status = ? WHERE order_id = ?",
-                (order_available, order_status, order_id),
-            )
-
-            self.conn.commit()
-        except sqlite.Error as e:
+        except pymongo.errors.PyMongoError as e:
+            session.abort_transaction()
+            session.end_session()
             return 528, "{}".format(str(e))
-        except BaseException as e:
+        except Exception as e:
+            session.abort_transaction()
+            session.end_session()
             return 530, "{}".format(str(e))
-
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
-
+    
     def cancel_unpaid_orders(self) -> (int, str):
-        valid_time = 20
-        current_time = time.time()
+        session=self.client.start_session()
+        session.start_transaction()
+        interval_time =1
+        exist_time=20
+        current_time = time.time()/60
         order_cancel_status = "unpaid"
-        order_available = "canceled"
         order_status = "canceled"
         try:
-            cursor = self.conn.execute(
-                "update new_order set available = ?, status = ? and where order_time >= ? and order_time < ? and status = ?", (
-                order_available, order_status, current_time - valid_time*2, current_time - valid_time , order_cancel_status,)
+            cursor= self.conn['new_order'].update_many(
+                {
+                    'order_time': {
+                        '$gte': current_time - interval_time*2-exist_time,
+                        '$lt': current_time - exist_time
+                    },
+                    'status': order_cancel_status
+                },
+                {
+                    '$set': {
+                        'status': order_status
+                    }
+                }
             )
 
-            self.conn.commit()
-        except sqlite.Error as e:
+        except pymongo.errors.PyMongoError as e:
+            session.abort_transaction()
+            session.end_session()
             return 528, "{}".format(str(e))
-        except BaseException as e:
+        except Exception as e:
+            session.abort_transaction()
+            session.end_session()
             return 530, "{}".format(str(e))
-
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
+    

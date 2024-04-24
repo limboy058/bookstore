@@ -12,7 +12,7 @@ error_code = {
     520: "non exist order id {}",
     521: "non prossessing order id {}",
     522: "",
-    523: "",
+    523: "unmatched user id {}, order_id {}",
     524: "",
     525: "",
     526: "",
@@ -54,7 +54,7 @@ def error_invalid_order_id(order_id):
 
 
 def error_not_sufficient_funds(order_id):
-    return 519, error_code[518].format(order_id)
+    return 519, error_code[519].format(order_id)
 
 
 def error_authorization_fail():
@@ -69,6 +69,9 @@ def error_non_exist_order_id(order_id):
     return 520, error_code[520].format(order_id)
 
 
-
 def error_non_prossessing_order_id(order_id):
     return 521, error_code[521].format(order_id)
+
+
+def error_order_user_id(order_id, user_id):
+    return 523, error_code[523].format(order_id, user_id)
