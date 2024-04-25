@@ -6,9 +6,6 @@ import time
 import pymongo.errors
 from be.model import db_conn
 from be.model import error
-# import db_conn
-# import error
-# from order import Order
 
 class Buyer(db_conn.DBConn):
     def __init__(self):
@@ -140,6 +137,7 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
+    
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
@@ -155,11 +153,6 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_invalid_order_id(order_id)
-
-            if(cursor['user_id']!=user_id):
-                session.abort_transaction()
-                session.end_session()
-                return error.error_order_user_id(order_id, user_id)
 
             current_status=cursor['status']
             store_id=cursor['store_id']

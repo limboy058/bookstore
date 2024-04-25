@@ -12,6 +12,7 @@ class TestCancelOrder:
         self.store_id = "test_cancel_store_id_{}".format(str(uuid.uuid1()))
         self.buyer_id = "test_cancel_buyer_id_{}".format(str(uuid.uuid1()))
         self.password = self.seller_id
+        self.dbconn=db_conn.DBConn()
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
         
@@ -36,8 +37,7 @@ class TestCancelOrder:
             non_exist_book_id=False, low_stock_level=False
         )
         assert ok
-        self.dbconn=db_conn.DBConn()
-        cursor=self.dbconn.conn['user'].find({'user_id':self.seller_id})
+        cursor=self.dbconn.conn['user'].find_one({'user_id':self.seller_id})
         origin_seller_balance=cursor['balance']
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         origin_buyer_balance=10000000000
@@ -46,10 +46,10 @@ class TestCancelOrder:
         assert code == 200
         code = self.buyer.cancel(order_id)
         assert code == 200
-        cursor=self.dbconn.conn['user'].find({'buyer_id':self.buyer_id})
+        cursor=self.dbconn.conn['user'].find_one({'user_id':self.buyer_id})
         check_refund_buyer=(origin_buyer_balance==cursor['balance'])
         assert check_refund_buyer
-        cursor=self.dbconn.conn['user'].find({'user_id':self.seller_id})
+        cursor=self.dbconn.conn['user'].find_one({'user_id':self.seller_id})
         check_refund_seller=(origin_seller_balance==cursor['balance'])
         assert check_refund_seller
         
@@ -59,18 +59,22 @@ class TestCancelOrder:
             non_exist_book_id=False, low_stock_level=False
         )
         pre_book_stock=[]
-        for item in buy_book_id_list:
-            pre_book_stock.append((item[0], item[1]))
+        cursor=self.dbconn.conn['store'].find({'store_id':self.store_id})
+        for info in buy_book_id_list:
+            for item in cursor:
+                if item['book_id']==info[0]:
+                    pre_book_stock.append((info[0], item['stock_level']))
+                    break
+            
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
         code = self.buyer.cancel(order_id)
-        self.dbconn=db_conn.DBConn()
         cursor=self.dbconn.conn['store'].find({'store_id':self.store_id})
         for book_info in pre_book_stock:
             for item in cursor:
                 if item['book_id']==book_info[0]:
-                    check_stock=(book_info[1]==item['stack_level'])
+                    check_stock=(book_info[1]==item['stock_level'])
                     assert check_stock
                     break
         assert code == 200
