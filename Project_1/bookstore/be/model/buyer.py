@@ -189,7 +189,6 @@ class Buyer(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
     
-    #历史订单，表项要返回什么捏
     def search_order(self, user_id):
         session=self.client.start_session()
         session.start_transaction()
