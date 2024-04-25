@@ -51,11 +51,18 @@ class Auth:
                       highest_price:int=None,
                       lowest_pub_year:str=None,
                       highest_pub_year:str=None,
-                      store_id:str=None
+                      store_id:str=None,
+                      publisher:str=None,
+                      translator:str=None,
+                      binding:str=None,
+                      order_by_method:list=None,
+                      having_stock:bool=None
                       ):
         json = {"page_no": page_no, "page_size": page_size,"foozytitle":foozytitle,"reqtags":reqtags
         ,"id":id,"isbn":isbn,"author":author,"lowest_price":lowest_price,"highest_price":highest_price,
-        "lowest_pub_year":lowest_pub_year,"highest_pub_year":highest_pub_year,"store_id":store_id}
+        "lowest_pub_year":lowest_pub_year,"highest_pub_year":highest_pub_year,"store_id":store_id,
+        "publisher":publisher,"translator":translator,"binding":binding,"order_by_method":order_by_method,
+        "having_stock":having_stock}
         url = urljoin(self.url_prefix, "search_book")
         r = requests.post(url, json=json)
-        return r.status_code,r.json()["book_info"]
+        return r.status_code,r.json().get("book_info")
