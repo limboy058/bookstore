@@ -6,7 +6,6 @@ import time
 import pymongo.errors
 from be.model import db_conn
 from be.model import error
-from be.model.order import Order
 # import db_conn
 # import error
 # from order import Order
@@ -43,12 +42,6 @@ class Buyer(db_conn.DBConn):
                     return error.error_stock_level_low(book_id) + (order_id,)
                 cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':count}},
                                                         {"$inc":{"stock_level":-count}},session=session)
-                results=cursor
-                if results==None:
-                    session.abort_transaction()
-                    session.end_session()
-                    return error.error_stock_level_low(book_id) + (order_id,)
-                
                 cursor=self.conn['new_order_detail'].insert_one({'order_id':uid,'book_id':book_id,'count':count,'price':price},session=session)
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time())},session=session)
             session.commit_transaction()
@@ -108,27 +101,10 @@ class Buyer(db_conn.DBConn):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_not_sufficient_funds(order_id)
-            cursor=conn['user'].find_one_and_update({'user_id':user_id,'balance':{'$gte':total_price}},{'$inc':{'balance':-total_price}},session=session)
-            if cursor is None:
-                session.abort_transaction()
-                session.end_session()
-                return error.error_not_sufficient_funds(order_id)
+            cursor=conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':-total_price}},session=session)
             cursor=conn['user'].find_one_and_update({'user_id':seller_id},{'$inc':{'balance':total_price}},session=session)
-            if cursor is None:
-                session.abort_transaction()
-                session.end_session()
-                return error.error_non_exist_user_id(seller_id)
             #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
             conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_but_not_delivered'}},session=session)
-            if cursor is None:
-                session.abort_transaction()
-                session.end_session()
-                return error.error_invalid_order_id(order_id)
-            # cursor=conn['new_order_detail'].delete_one({'order_id':order_id},session=session)
-            # if cursor is None:
-            #     session.abort_transaction()
-            #     session.end_session()
-            #     return error.error_invalid_order_id(order_id)
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
@@ -164,34 +140,10 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
-
-# import seller
-# import user
-
-# if __name__ == "__main__":
-#     buyer=Buyer()
-#     s=seller.Seller()
-#     u=user.User()
-#     # res=u.register('bigone','hey')
-#     # res=s.create_store('bigone','store1')
-#     # print(res)
-#     # res=s.add_book('bigone','store1','book1','',2)
-#     # print(res)
-#     # res=s.add_book('bigone','store1','book2','',6)
-#     # print(res)
-#     # res=u.register('123','hey')
-#     # print(res)
-#     #res1=buyer.new_order('123','store1',[('book1',1),('book2',2)])
-#     #res1=buyer.payment('123','hey','123_store1_a735a43c-ffcf-11ee-924a-d4548b9011a8')
-#     res1=buyer.add_funds('bigone','hey',99999)
-#     print(res1)
-#     res=buyer.conn['new_order'].find()
-#     for i in res:
-#         print(i)
     def cancel(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
-        valid_status = 'unpaid'
+        unprosssing_status =["unpaid", "paid_but_not_delivered"]
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
             if(cursor is None):
@@ -199,7 +151,7 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_non_exist_order_id(order_id)
             
-            if(cursor['status']!=valid_status):
+            if(cursor['status'] not in unprosssing_status):
                 session.abort_transaction()
                 session.end_session()
                 return error.error_invalid_order_id(order_id)
@@ -209,12 +161,28 @@ class Buyer(db_conn.DBConn):
                 session.end_session()
                 return error.error_order_user_id(order_id, user_id)
 
-            o = Order()
-            res1,res2=o.cancel_order(order_id)
-            if(res1!=200):
-                session.abort_transaction()
-                session.end_session()
-                return res1,res2
+            current_status=cursor['status']
+            store_id=cursor['store_id']
+            order_status = "canceled"
+            tot_money=0
+            cursor=self.conn['new_order_detail'].find({'order_id':order_id},session=session)
+            for i in cursor:
+                tot_money+=i['price']*i['count']
+                self.conn['store'].update_one({'book_id':i['book_id'],'store_id':store_id},{'$inc':{"stock_level":i['count']}},session=session)
+            if(current_status=="paid_but_not_delivered"):
+                cursor=self.conn['user_store'].find_one({'store_id':store_id},session=session)
+                cursor=self.conn['user'].find_one_and_update(
+                    {'user_id':user_id},{'$inc':{'balance':tot_money}},session=session)
+                cursor=self.conn['user_store'].find_one({'store_id':store_id},session=session)
+                seller_id=cursor['user_id']
+                cursor=self.conn['user'].find_one_and_update(
+                    {'user_id':seller_id},{'$inc':{'balance':-tot_money}},session=session)
+
+            cursor = self.conn['new_order'].update_one(
+                {'order_id': order_id},
+                {'$set': {'status': order_status}},
+                session=session
+            )
 
         except pymongo.errors.PyMongoError as e:
             session.abort_transaction()

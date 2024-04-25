@@ -75,8 +75,12 @@ class User(db_conn.DBConn):
             return error.error_authorization_fail()
         return 200, "ok"
 
-    def check_password(self, user_id: str, password: str) -> (int, str):
-        ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'password':1})
+    def check_password(self, user_id: str, password: str,session=None) -> (int, str):
+        ret=1
+        if(session!=None):
+            ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'password':1},session=session)
+        else:
+            ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'password':1})
         if ret is None:
             return error.error_authorization_fail()
 
