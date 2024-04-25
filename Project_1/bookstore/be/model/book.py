@@ -1,10 +1,6 @@
 import pymongo
-import uuid
 import json
 import logging
-import sys
-#sys.path.append("D:/dbproject/Project_1/bookstore")
-from fe.access.book import Book
 import pymongo.errors
 from be.model import db_conn
 from be.model import error
@@ -35,14 +31,9 @@ class searchBook(db_conn.DBConn):
         conditions={}
         try:
             if(foozytitle!=None):
-                conditions['$or']=list()
-                conditions['$or'].append({'book_info.title':{'$regex':foozytitle}})
-                conditions['$or'].append({'book_info.original_title':{'$regex':foozytitle}})
+                conditions['$text']={'$search':foozytitle}
             if(reqtags!=None):
-                lst=list()
-                for tag in reqtags:
-                    lst.append({'book_info.tags':{'$regex':tag}})
-                conditions['$and']=lst
+                conditions['book_info.tags']={'$all':list(reqtags)}
             if(id!=None):
                 conditions['book_info.id']=str(id)
             if(isbn!=None):
@@ -63,9 +54,9 @@ class searchBook(db_conn.DBConn):
             if(highest_pub_year!=None):
                 highest_pub_year=str(int(highest_pub_year)+1)
                 if(lowest_pub_year!=None):
-                    conditions['book_info.pub_year']['$lte']=highest_pub_year
+                    conditions['book_info.pub_year']['$lt']=highest_pub_year
                 else:
-                    conditions['book_info.pub_year']={'$lte':highest_pub_year}
+                    conditions['book_info.pub_year']={'$lt':highest_pub_year}
             if(publisher!=None):
                 conditions['book_info.publisher']=str(publisher)
             if(translator!=None):
@@ -74,25 +65,17 @@ class searchBook(db_conn.DBConn):
                 conditions['book_info.binding']=str(binding)
             if(having_stock!=None and having_stock==True):
                 conditions['stock_level']={'$gt':0}
-
-
-
             sort=[]
             if(order_by_method!=None):
                 if(order_by_method[0]not in self.order_by_conditions or (order_by_method[1] !=1 and order_by_method[1] !=-1)):
                     return 522,error.error_illegal_order_condition(str(order_by_method[0]+' '+order_by_method[1])),""
-                sort.append((order_by_method[0],order_by_method[1]))
                 if(order_by_method[0]=='price' or order_by_method[0]=='pub_year'):
                     order_by_method[0]='book_info.'+order_by_method[0]
+                sort.append((order_by_method[0],order_by_method[1]))
             cursor = self.conn['store'].find(conditions,limit=page_size,skip=page_size*page_no,sort=sort)
-            #cursor = self.conn['store'].find(conditions,limit=page_size,skip=page_size*page_no)#.limit(page_size).skip(page_size*page_no)
             for row in cursor:
-                    # row.pop('_id')
-                    # row['stock_level']=0
-                    # self.conn['store'].insert_one(row)
                     row['book_info']['store_id']=row['store_id']
                     row['book_info']['stock_level']=row['stock_level']
-                    #print(row['_id'])
                     books.append(row)
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
@@ -103,28 +86,27 @@ class searchBook(db_conn.DBConn):
         lst=list()
         for i in books:
             lst.append(json.dumps(i['book_info']))
-        # if(len(lst)==0):
-        #     lst=
         return 200,"ok",lst
+    
+
 # if __name__ == "__main__":
 #     book=searchBook()
-    # _1,_2,res=book.find_book(0,5,foozytitle='龙',
-    # store_id='test_receive_order_store_id_a8bc4f08-0214-11ef-9059-d4548b9011a8',
-    # reqtags=['江南','奇幻'],
-    # id='6434543',
-    # author='江南',
-    # publisher= '长江出版社',
-    # lowest_pub_year='2011',
-    # highest_pub_year='2011',
-    # lowest_price=2980,
-    # highest_price=2980,
-    # binding='平装',
-    # isbn='9787549204304',
-    # #having_stock=True,
-    # order_by_method=['price',1]
-    # )
-    # _1,_2,res=book.find_book(0,5,lowest_price=5000)
-    # print(len(res),_1,_2)
-    # for i in res:
-    #     res1=json.loads(i)
-    #     print(res1['price'])
+#     _1,_2,res=book.find_book(0,50,foozytitle='生死',
+#     # store_id='test_receive_order_store_id_a8bc4f08-0214-11ef-9059-d4548b9011a8',
+#     # reqtags=['江南','奇幻'],
+#     # id='6434543',
+#     # author='江南',
+#     # publisher= '长江出版社',
+#     # lowest_pub_year='2011',
+#     # highest_pub_year='2011',
+#     # lowest_price=2980,
+#     # highest_price=2980,
+#     # binding='平装',
+#     # isbn='9787549204304',
+#     # #having_stock=True,
+#     # order_by_method=['price',1]
+#     )
+#     print(len(res),_1,_2)
+#     for i in res:
+#         res1=json.loads(i)
+#         print(res1['tags'])

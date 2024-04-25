@@ -13,11 +13,40 @@ class Store:
         self.client= pymongo.MongoClient()
         self.conn=self.client['609']
     def clear_tables(self):
-        self.conn["user"].delete_many({})
-        self.conn["user_store"].delete_many({})
-        self.conn["store"].delete_many({})
-        self.conn["new_order"].delete_many({})
-        self.conn["new_order_detail"].delete_many({})
+        self.conn["user"].drop()
+        self.conn["user_store"].drop()
+        self.conn["store"].drop()
+        self.conn["new_order"].drop()
+        self.conn["new_order_detail"].drop()
+        self.conn["user"]
+        self.conn["user_store"]
+        self.conn["store"]
+        self.conn["new_order"]
+        self.conn["new_order_detail"]
+    def build_tables(self):
+        self.conn["store"].create_index({"store_id":1})
+        self.conn["store"].create_index({"book_info.translator":1})
+        self.conn["store"].create_index({"book_info.publisher":1})
+        self.conn["store"].create_index({"book_info.stock_level":1})
+        self.conn["store"].create_index({"book_info.price":1})
+        self.conn["store"].create_index({"book_info.pub_year":1})
+        self.conn["store"].create_index({"book_info.id":1})
+        self.conn["store"].create_index({"book_info.isbn":1})
+        self.conn["store"].create_index({"book_info.author":1})
+        self.conn["store"].create_index({"book_info.binding":1})
+        self.conn['store'].create_index({'book_info.title':'text'})
+        #self.conn['store'].create_index({})
+        self.conn["user"].create_index({"user_id":1})
+
+        self.conn["new_order"].create_index({"order_id":1})
+        self.conn["new_order"].create_index({"store_id":1})
+        self.conn["new_order"].create_index({"user_id":1})
+        self.conn["new_order"].create_index({"order_time":1})
+
+        self.conn["new_order_detial"].create_index({"order_id":1})
+
+        self.conn["user_store"].create_index({"user_id":1})
+        self.conn["user_store"].create_index({"store_id":1})
     def get_db_client(self):
          return self.client
 
@@ -52,6 +81,11 @@ def clear_db():
         init_database()
     database_instance.clear_tables()
 
+def build_db():
+    global database_instance
+    if(database_instance==None):
+        init_database()
+    database_instance.build_tables()
 # if __name__ == "__main__":
 
 #     init_database()

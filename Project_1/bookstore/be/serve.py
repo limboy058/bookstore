@@ -6,8 +6,8 @@ from flask import request
 from be.view import auth
 from be.view import seller
 from be.view import buyer
-from be.model.store import init_database, init_completed_event ,clear_db
-
+from be.model.store import init_database, init_completed_event ,clear_db,build_db
+from fe.access.book import BookDB
 bp_shutdown = Blueprint("shutdown", __name__)
 
 
@@ -30,6 +30,11 @@ def be_run():
     log_file = os.path.join(parent_path, "app.log")
     init_database()
     clear_db()
+    build_db()
+    bookdb=BookDB(False)
+    bookdb.clean_db()
+    bookdb=BookDB(True)
+    bookdb.clean_db()
     logging.basicConfig(filename=log_file, level=logging.ERROR)
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
