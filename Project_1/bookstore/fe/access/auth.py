@@ -65,4 +65,4 @@ class Auth:
         "having_stock":having_stock}
         url = urljoin(self.url_prefix, "search_book")
         r = requests.post(url, json=json)
-        return r.status_code,r.json().get("book_info")
+        return r.status_code,r.json().get("book_info"),r.json().get("message")
