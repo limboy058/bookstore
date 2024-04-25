@@ -97,26 +97,24 @@ class Seller(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
-# if __name__ == "__main__":
-#     tmp=Seller()
-#     us=user.User()
-#     print(us.register('uid1','333'))
-#     for item in tmp.conn['user'].find():
-#         print(item)
-    
-#     print(tmp.create_store('uid2','sid1'))
-#     print(tmp.create_store('uid1','sid1'))
-#     for item in tmp.conn['user_store'].find():
-#         print(item)
+    def search_order(self, store_id):
+        session=self.client.start_session()
+        session.start_transaction()
+        try:
+            cursor=self.conn['new_order'].find({'store_id':store_id},session=session)
+            result=list()
+            for i in cursor:
+                result.append(i['order_id'])
 
-#     print(tmp.add_book('uid1','sid2','bid1','hellow orld',10))
-#     print(tmp.add_book('uid2','sid1','bid3','hellow orld',10))
-
-#     print(tmp.add_book('uid1','sid1','bid1','hellow orld',10))
-#     for item in tmp.conn['store'].find():
-#         print(item)
-
-#     print(tmp.add_stock_level('uid1','sid1','bid1',10))
-#     for item in tmp.conn['store'].find():
-#         print(item)
+        except pymongo.errors.PyMongoError as e:
+            session.abort_transaction()
+            session.end_session()
+            return 528, "{}".format(str(e))
+        except Exception as e:
+            session.abort_transaction()
+            session.end_session()
+            return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
+        return 200, "ok", result
     

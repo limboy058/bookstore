@@ -29,24 +29,6 @@ class Seller:
             "user_id": self.seller_id,
             "store_id": store_id,
             "book_info":book_info.__dict__,
-            # "book_id":book_info.id,
-            # "tags":book_info.tags,
-            # "title":book_info.title,
-            # "author":book_info.author,
-            # "publisher":book_info.publisher,
-            # "original_title":book_info.original_title,
-            # "translator":book_info.translator,
-            # "pub_year":book_info.pub_year,
-            # "pages":book_info.pages,
-            # "price":book_info.price,
-            # "currency_unit":book_info.currency_unit,
-            # "binding":book_info.binding,
-            # "isbn":book_info.isbn,
-            # "author_intro":book_info.author_intro,
-            # "book_intro":book_info.book_intro,
-            # "content":book_info.content,
-            # "tags":book_info.tags,
-            # "picture":book_info.pictures,
              "stock_level": stock_level,
         }
         # print(simplejson.dumps(json))
@@ -81,3 +63,13 @@ class Seller:
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
+
+    def search_order(self,  store_id: str) -> [int, list]:
+        json = {
+            "store_id": store_id,
+        }
+        url = urljoin(self.url_prefix, "search_order")
+        headers = {"token": self.token}
+        r = requests.post(url, headers=headers, json=json)
+        response_json = r.json()
+        return r.status_code, response_json.get("order_id_list")

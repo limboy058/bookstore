@@ -15,9 +15,10 @@ class TestSearchOrder:
         self.password = self.seller_id
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
+        self.seller=self.gen_book.return_seller()
         yield
 
-    def test_ok(self):
+    def test_user_search_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(
             non_exist_book_id=False, low_stock_level=False
         )
@@ -27,7 +28,7 @@ class TestSearchOrder:
         code, order_list= self.buyer.search_order()
         assert code == 200
 
-    def test_one_order_ok(self):
+    def test_user_one_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(
             non_exist_book_id=False, low_stock_level=False
         )
@@ -39,7 +40,7 @@ class TestSearchOrder:
         code, received_list= self.buyer.search_order()
         assert order_list == received_list
 
-    def test_many_orders_ok(self):
+    def test_user_many_orders_ok(self):
         order_list=list()
         for i in range(0,random.randint(1, 10)):
             ok, buy_book_id_list = self.gen_book.gen(
@@ -50,4 +51,39 @@ class TestSearchOrder:
             assert code == 200
             order_list.append(order_id)
         code, received_list= self.buyer.search_order()
+        assert order_list == received_list
+
+    def test_seller_search_order_ok(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 200
+        code, order_list= self.seller.search_order(self.store_id)
+        assert code == 200
+
+    def test_seller_one_order_ok(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 200
+        order_list=list()
+        order_list.append(order_id)
+        code, received_list= self.seller.search_order(self.store_id)
+        assert order_list == received_list
+
+    def test_seller_many_orders_ok(self):
+        order_list=list()
+        for i in range(0,random.randint(1, 10)):
+            ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+            )
+            assert ok
+            code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+            assert code == 200
+            order_list.append(order_id)
+        code, received_list= self.seller.search_order(self.store_id)
         assert order_list == received_list
