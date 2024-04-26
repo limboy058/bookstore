@@ -43,7 +43,7 @@ class Store:
         self.conn["new_order"].create_index({"user_id":1})
         self.conn["new_order"].create_index({"order_time":1})
 
-        self.conn["new_order_detial"].create_index({"order_id":1})
+        self.conn["new_order_detail"].create_index({"order_id":1})
 
         self.conn["user_store"].create_index({"user_id":1})
         self.conn["user_store"].create_index({"store_id":1})

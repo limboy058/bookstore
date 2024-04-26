@@ -22,11 +22,27 @@ class Scanner(db_conn.DBConn):
                 # ret=self.conn['new_order'].find()
                 # for item in ret:
                 #     print('此订单时间为',datetime.datetime.fromtimestamp(item['order_time']),'状态为',item['status'])
+                cur_time=int(time.time())
+                cursor=self.conn['new_order'].find(
+                    {
+                        'order_time': {
+                            '$gte': cur_time - self.live_time - self.scan_interval,
+                            '$lt': cur_time - self.live_time + self.scan_interval
+                        },
+                        'status': 'unpaid'
+                    },
+                    {'order_id':1,'store_id':1},
+                    session=session
+                )
+                for i in cursor:
+                    new_cursor=self.conn['new_order_detail'].find({'order_id':i['order_id']},{'book_id':1,'count':1},session=session)
+                    for j in new_cursor:
+                        self.conn['store'].update_many({'store_id':i['store_id'],'book_id':j['book_id']},{'$inc':{'stock_level':j['count'],'sales':-j['count']}},session=session)
                 ret = self.conn['new_order'].update_many(
                     {
                         'order_time': {
-                            '$gte': int(time.time()) - self.live_time - self.scan_interval,
-                            '$lt': int(time.time()) - self.live_time + self.scan_interval
+                            '$gte': cur_time - self.live_time - self.scan_interval,
+                            '$lt': cur_time - self.live_time + self.scan_interval
                         },
                         'status': 'unpaid'
                     },

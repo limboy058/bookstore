@@ -76,6 +76,7 @@ class searchBook(db_conn.DBConn):
             for row in cursor:
                     row['book_info']['store_id']=row['store_id']
                     row['book_info']['stock_level']=row['stock_level']
+                    row['book_info']['sales']=row['sales']
                     books.append(row)
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))

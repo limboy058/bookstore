@@ -34,7 +34,7 @@ class Buyer(db_conn.DBConn):
                 if stock_level < count:
                     return error.error_stock_level_low(book_id) + (order_id,)
                 cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':count}},
-                                                        {"$inc":{"stock_level":-count}},session=session)
+                                                        {"$inc":{"stock_level":-count,"sales":count}},session=session)
                 cursor=self.conn['new_order_detail'].insert_one({'order_id':uid,'book_id':book_id,'count':count,'price':price},session=session)
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time())},session=session)
             session.commit_transaction()
@@ -127,7 +127,7 @@ class Buyer(db_conn.DBConn):
             cursor=self.conn['new_order_detail'].find({'order_id':order_id},session=session)
             for i in cursor:
                 tot_money+=i['price']*i['count']
-                self.conn['store'].update_one({'book_id':i['book_id'],'store_id':store_id},{'$inc':{"stock_level":i['count']}},session=session)
+                self.conn['store'].update_one({'book_id':i['book_id'],'store_id':store_id},{'$inc':{"stock_level":i['count'],"sales":-i['count']}},session=session)
             if(current_status=="paid_but_not_delivered"):
                 cursor=self.conn['user_store'].find_one({'store_id':store_id},session=session)
                 cursor=self.conn['user'].find_one_and_update(

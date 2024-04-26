@@ -30,7 +30,7 @@ class Seller(db_conn.DBConn):
             if self.book_id_exist(store_id, book_id,session=session):
                 return error.error_exist_book_id(book_id)
 
-            ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':json.loads(book_json),'stock_level':stock_level},session=session)
+            ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':json.loads(book_json),'stock_level':stock_level,'sales':0},session=session)
             if not ret.acknowledged:
                 return 528, "{}".format(str(ret))  
         except BaseException as e:

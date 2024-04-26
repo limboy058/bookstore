@@ -42,12 +42,14 @@ class TestSearchOrder:
 
     def test_user_many_orders_ok(self):
         order_list=list()
-        for i in range(0,random.randint(1, 10)):
-            ok, buy_book_id_list = self.gen_book.gen(
-            non_exist_book_id=False, low_stock_level=False
-            )
-            assert ok
-            code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        ok, buy_book_id_list = self.gen_book.gen(
+        non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        step = int(len(buy_book_id_list)/5)
+        lst = [buy_book_id_list[i:i+step] for i in range(0, len(buy_book_id_list), step)]
+        for i in range(0,5):
+            code, order_id = self.buyer.new_order(self.store_id, lst[i])
             assert code == 200
             order_list.append(order_id)
         code, received_list= self.buyer.search_order()
@@ -77,12 +79,14 @@ class TestSearchOrder:
 
     def test_seller_many_orders_ok(self):
         order_list=list()
-        for i in range(0,random.randint(1, 10)):
-            ok, buy_book_id_list = self.gen_book.gen(
-            non_exist_book_id=False, low_stock_level=False
-            )
-            assert ok
-            code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        ok, buy_book_id_list = self.gen_book.gen(
+        non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        step = int(len(buy_book_id_list)/5)
+        lst = [buy_book_id_list[i:i+step] for i in range(0, len(buy_book_id_list), step)]
+        for i in range(0,5):
+            code, order_id = self.buyer.new_order(self.store_id, lst[i])
             assert code == 200
             order_list.append(order_id)
         code, received_list= self.seller.search_order(self.store_id)
