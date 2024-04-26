@@ -14,7 +14,7 @@ error_code = {
     522: "order condition not exists {}",
     523: "unmatched user id {}, order_id {}",
     524: "",
-    525: "",
+    525: "not enough fund id{}",
     526: "",
     527: "",
     528: "",
@@ -77,3 +77,6 @@ def error_illegal_order_condition(order_condition):
 
 def error_order_user_id(order_id, user_id):
     return 523, error_code[523].format(order_id, user_id)
+
+def error_non_enough_fund(user_id):
+    return 525, error_code[525].format(user_id)
