@@ -1,13 +1,14 @@
 import pymongo
 import json
+import sys
+
+sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import error
 from be.model import user# 仅用于测试
 from be.model import db_conn
-# 未做事务处理
+from be.model import error
 
-# import error
-# import user# 仅用于测试
-# import db_conn
+
 
 class Seller(db_conn.DBConn):
     def __init__(self):
@@ -40,6 +41,8 @@ class Seller(db_conn.DBConn):
     def add_stock_level(
         self, user_id: str, store_id: str, book_id: str, add_stock_level: int
     ):
+        session=self.client.start_session()
+        session.start_transaction()
         try:
             if not self.user_id_exist(user_id):
                 return error.error_non_exist_user_id(user_id)
@@ -47,11 +50,15 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_store_id(store_id)
             if not self.book_id_exist(store_id, book_id):
                 return error.error_non_exist_book_id(book_id)
-            
-            ret = self.conn['store'].update_one({'store_id':store_id,'book_id':book_id},{'$inc': {'stock_level': add_stock_level}})
-            if not ret.acknowledged:  return 528, "{}".format(str(ret)) 
+            ret = self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':-add_stock_level}},{'$inc': {'stock_level': add_stock_level}},session=session)
+            if ret is None:
+                session.abort_transaction()
+                session.end_session()
+                return error.error_out_of_stock(book_id)
         except BaseException as e:
             return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
 
     def create_store(self, user_id: str, store_id: str) -> (int, str):
@@ -77,7 +84,7 @@ class Seller(db_conn.DBConn):
                 return error.error_invalid_order_id(order_id)
             
             cursor = self.conn['new_order'].find_one({'store_id':store_id,'order_id':order_id}, session=session)
-
+            
             if(cursor['status'] != "paid_but_not_delivered"):
                 session.abort_transaction()
                 session.end_session()
@@ -118,3 +125,10 @@ class Seller(db_conn.DBConn):
         session.end_session()
         return 200, "ok", result
     
+
+
+# import uuid
+# if __name__ == "__main__":
+#     s=Seller()
+#     code = s.add_stock_level("2", "2", "2", 2000)#-(cursor['stock_level']+1)
+#     print(code)

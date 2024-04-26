@@ -13,7 +13,7 @@ error_code = {
     521: "non prossessing order id {}",
     522: "order condition not exists {}",
     523: "unmatched user id {}, order_id {}",
-    524: "",
+    524: "book {} out of stock",
     525: "",
     526: "",
     527: "",
@@ -72,8 +72,14 @@ def error_non_exist_order_id(order_id):
 def error_non_prossessing_order_id(order_id):
     return 521, error_code[521].format(order_id)
 
+
 def error_illegal_order_condition(order_condition):
     return 522, error_code[522].format(order_condition)
 
+
 def error_order_user_id(order_id, user_id):
     return 523, error_code[523].format(order_id, user_id)
+
+
+def error_out_of_stock(book_id):
+    return 524, error_code[524].format(book_id)

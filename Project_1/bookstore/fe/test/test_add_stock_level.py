@@ -1,5 +1,5 @@
 import pytest
-
+from be.model import db_conn
 from fe import conf
 from fe.access.new_seller import register_new_seller
 from fe.access import book
@@ -13,7 +13,7 @@ class TestAddStockLevel:
         self.store_id = "test_add_book_stock_level1_store_{}".format(str(uuid.uuid1()))
         self.password = self.user_id
         self.seller = register_new_seller(self.user_id, self.password)
-
+        self.dbconn=db_conn.DBConn()
         code = self.seller.create_store(self.store_id)
         assert code == 200
         book_db = book.BookDB(conf.Use_Large_DB)
@@ -52,3 +52,11 @@ class TestAddStockLevel:
             book_id = b.id
             code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, 10)
             assert code == 200
+
+    def test_error_book_stock(self):
+        for b in self.books:
+            book_id = b.id
+            cursor=self.dbconn.conn['store'].find_one({'store_id':self.store_id,'book_id':book_id})
+            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, -1000)#-(cursor['stock_level']+1)
+            assert code != 200
+            
