@@ -161,7 +161,7 @@ class User(db_conn.DBConn):
               
             cursor = self.conn['new_order'].find({'user_id': user_id},session=session)
             for item in cursor:
-                if item['status'] !='recieved' and item['status'] != 'canceled':
+                if item['status'] !='received' and item['status'] != 'canceled':
                     return error.error_unfished_buyer_orders()
                 
             store_list=list()
@@ -171,7 +171,7 @@ class User(db_conn.DBConn):
             if len(store_list)!=0:
                 cursor = self.conn['new_order'].find({'store_id': {'$in':store_list}},session=session)
                 for item in cursor:
-                    if item['status'] !='recieved' and item['status'] != 'canceled':
+                    if item['status'] !='received' and item['status'] != 'canceled':
                         return error.error_unfished_seller_orders()
                     
                 ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}},session=session)

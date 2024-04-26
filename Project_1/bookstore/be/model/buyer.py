@@ -77,7 +77,7 @@ class Buyer(db_conn.DBConn):
             if balance < total_price:
                 return error.error_not_sufficient_funds(order_id)
             cursor=conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':-total_price}},session=session)
-            cursor=conn['user'].find_one_and_update({'user_id':seller_id},{'$inc':{'balance':total_price}},session=session)
+            
             conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_but_not_delivered'}},session=session)
         except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
         except BaseException as e:return self.base_exception_handle(e)
@@ -133,10 +133,7 @@ class Buyer(db_conn.DBConn):
                 cursor=self.conn['user'].find_one_and_update(
                     {'user_id':user_id},{'$inc':{'balance':tot_money}},session=session)
                 cursor=self.conn['user_store'].find_one({'store_id':store_id},session=session)
-                seller_id=cursor['user_id']
-                cursor=self.conn['user'].find_one_and_update(
-                    {'user_id':seller_id},{'$inc':{'balance':-tot_money}},session=session)
-
+            
             cursor = self.conn['new_order'].update_one(
                 {'order_id': order_id},
                 {'$set': {'status': order_status}},
@@ -170,6 +167,7 @@ class Buyer(db_conn.DBConn):
                 return error.error_invalid_order_id(order_id)
             
             cursor = self.conn['new_order'].find_one({'order_id':order_id}, session=session)
+            store_id=cursor['store_id']
             if(cursor['status'] != "delivered_but_not_received"):
                 return error.error_invalid_order_id(order_id)
 
@@ -178,6 +176,19 @@ class Buyer(db_conn.DBConn):
                 {'$set': {'status': "received"}},
                 session=session
             )
+
+            cursor=self.conn['user_store'].find_one({'store_id':store_id},session=session)
+            if cursor is None:
+                return error.error_non_exist_store_id(store_id)
+            seller_id = cursor['user_id']
+
+            cursor=self.conn['new_order_detail'].find({'order_id':order_id},session=session)
+            total_price = 0
+            for row in cursor:
+                count = row['count']
+                price = row['price']
+                total_price = total_price + price * count
+            cursor=self.conn['user'].find_one_and_update({'user_id':seller_id},{'$inc':{'balance':total_price}},session=session)
         except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
         except BaseException as e:return self.base_exception_handle(e)
         session.commit_transaction()
