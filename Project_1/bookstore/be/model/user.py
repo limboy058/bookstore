@@ -58,29 +58,28 @@ class User(db_conn.DBConn):
             return False
 
     def register(self, user_id: str, password: str):
+        session=self.client.start_session()
+        session.start_transaction()
         try:
-            ret = self.conn['user'].find_one({'user_id': user_id})
+            ret = self.conn['user'].find_one({'user_id':user_id},session=session)
             if ret is not None:
                 return error.error_exist_user_id(user_id)
             terminal = "terminal_{}".format(str(time.time()))
             token = jwt_encode(user_id, terminal)
-            ret = self.conn['user'].insert_one({
-                'user_id': user_id,
-                'password': password,
-                'balance': 0,
-                'token': token,
-                'terminal': terminal
-            })
-            if not ret.acknowledged: return 528, "{}".format(str(ret))
+            ret=self.conn['user'].insert_one({'user_id':user_id,'password':password,'balance':0,'token':token,'terminal':terminal},session=session)
+            if not ret.acknowledged:  return 528, "{}".format(str(ret))
         except BaseException as e:
             return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
 
-    def check_token(self, user_id: str, token: str) -> (int, str):
-        ret = self.conn['user'].find_one({'user_id': user_id}, {
-            '_id': 0,
-            'token': 1
-        })
+    def check_token(self, user_id: str, token: str,session=None) -> (int, str):
+        ret=1
+        if(session!=None):
+            ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'token':1},session=session)
+        else:
+            ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'token':1})
         if ret is None:
             return error.error_authorization_fail()
         db_token = ret['token']
@@ -112,77 +111,72 @@ class User(db_conn.DBConn):
 
         return 200, "ok"
 
-    def login(self, user_id: str, password: str,
-              terminal: str) -> (int, str, str):
+
+    def login(self, user_id: str, password: str, terminal: str) -> (int, str, str):
+        session=self.client.start_session()
+        session.start_transaction()
         token = ""
         try:
-            code, message = self.check_password(user_id, password)
+            code, message = self.check_password(user_id, password,session=session)
             if code != 200:
                 return code, message, ""
 
             token = jwt_encode(user_id, terminal)
-            ret = self.conn['user'].update_one(
-                {'user_id': user_id},
-                {'$set': {
-                    'token': token,
-                    'terminal': terminal
-                }})
-            if not ret.acknowledged: return 528, "{}".format(str(ret))
+            ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':token,'terminal':terminal}},session=session)
+            if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail() + ("", )
         except BaseException as e:
             return 530, "{}".format(str(e)), ""
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok", token
 
     def logout(self, user_id: str, token: str) -> bool:
+        session=self.client.start_session()
+        session.start_transaction()
         try:
-            code, message = self.check_token(user_id, token)
+            code, message = self.check_token(user_id, token,session=session)
             if code != 200:
                 return code, message
-
             terminal = "terminal_{}".format(str(time.time()))
             dummy_token = jwt_encode(user_id, terminal)
-
-            ret = self.conn['user'].update_one(
-                {'user_id': user_id},
-                {'$set': {
-                    'token': token,
-                    'terminal': terminal
-                }})
-            if not ret.acknowledged: return 528, "{}".format(str(ret))
+            ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':dummy_token,'terminal':terminal}},session=session)
+            if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail()
         except BaseException as e:
             return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
 
     def unregister(self, user_id: str, password: str) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
-            code, message = self.check_password(user_id, password)
+            code, message = self.check_password(user_id, password,session=session)
             if code != 200:
                 return code, message
-
-
-            cursor = self.conn['new_order'].find({'user_id': user_id})
+              
+            cursor = self.conn['new_order'].find({'user_id': user_id},session=session)
             for item in cursor:
                 if item['status'] !='recieved' and item['status'] != 'canceled':
                     return error.error_unfished_buyer_orders()
                 
             store_list=list()
-            cursor = self.conn['user_store'].find({'user_id': user_id})
+            cursor = self.conn['user_store'].find({'user_id': user_id},session=session)
             for item in cursor:
                 store_list.append(item['store_id'])
             if len(store_list)!=0:
-                cursor = self.conn['new_order'].find({'store_id': {'$in':store_list}})
+                cursor = self.conn['new_order'].find({'store_id': {'$in':store_list}},session=session)
                 for item in cursor:
                     if item['status'] !='recieved' and item['status'] != 'canceled':
                         return error.error_unfished_seller_orders()
                     
-                ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}})
+                ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}},session=session)
 
-            ret = self.conn['user'].delete_one({'user_id': user_id})
+            ret = self.conn['user'].delete_one({'user_id': user_id},session=session)
 
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
@@ -192,27 +186,25 @@ class User(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
-    def change_password(self, user_id: str, old_password: str,
-                        new_password: str) -> bool:
+    def change_password(
+        self, user_id: str, old_password: str, new_password: str
+    ) -> bool:
+        session=self.client.start_session()
+        session.start_transaction()
         try:
-            code, message = self.check_password(user_id, old_password)
+            code, message = self.check_password(user_id, old_password,session=session)
             if code != 200:
                 return code, message
-
             terminal = "terminal_{}".format(str(time.time()))
             token = jwt_encode(user_id, terminal)
-            ret = self.conn['user'].update_one({'user_id': user_id}, {
-                '$set': {
-                    'password': new_password,
-                    'token': token,
-                    'terminal': terminal
-                }
-            })
-            if not ret.acknowledged: return 528, "{}".format(str(ret))
+            ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'password':new_password,'token':token,'terminal':terminal}},session=session)
+            if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail()
         except BaseException as e:
             return 530, "{}".format(str(e))
+        session.commit_transaction()
+        session.end_session()
         return 200, "ok"
 
 

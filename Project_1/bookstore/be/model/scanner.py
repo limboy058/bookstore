@@ -3,8 +3,8 @@
  
 import time,datetime
 import pymongo.errors
-import sys
-sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
+# import sys
+# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
 from be.model import db_conn
 
 class Scanner(db_conn.DBConn):
@@ -40,13 +40,9 @@ class Scanner(db_conn.DBConn):
                 yield 200,ret.modified_count
                 #return
             except pymongo.errors.PyMongoError as e:
-                session.abort_transaction()
-                session.end_session()
                 yield 528, "{}".format(str(e))
                 return
             except Exception as e:
-                session.abort_transaction()
-                session.end_session()
                 yield 530, "{}".format(str(e))
                 return
             session.commit_transaction()
