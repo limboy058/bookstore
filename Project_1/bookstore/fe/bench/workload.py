@@ -1,4 +1,6 @@
 import logging
+import os
+
 import uuid
 import random
 import threading
@@ -32,6 +34,10 @@ class Payment:
 
 class Workload:
     def __init__(self):
+        this_path = os.path.dirname(__file__)
+        log_file = os.path.join(this_path, "workload.log")
+        logging.basicConfig(filename=log_file, filemode="w", format="%(asctime)s %(name)s:%(levelname)s:%(message)s", datefmt="%d-%M-%Y %H:%M:%S", level=logging.INFO)
+        logging.debug('this is a info log for workload')
         self.uuid = str(uuid.uuid1())
         self.book_ids = {}
         self.buyer_ids = []

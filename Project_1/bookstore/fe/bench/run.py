@@ -1,3 +1,6 @@
+# 如果需要产生workload.log,需要单独开启两个终端,一个终端运行serve.py,另一个运行run.py.此时会产生workload.log(其中含有效率测试结果)和serve.log
+# import sys
+# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
 from fe.bench.workload import Workload
 from fe.bench.session import Session
 
@@ -18,5 +21,5 @@ def run_bench():
         ss.join()
 
 
-# if __name__ == "__main__":
-#    run_bench()
+if __name__ == "__main__":
+   run_bench()
