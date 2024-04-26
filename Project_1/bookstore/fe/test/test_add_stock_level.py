@@ -57,6 +57,6 @@ class TestAddStockLevel:
         for b in self.books:
             book_id = b.id
             cursor=self.dbconn.conn['store'].find_one({'store_id':self.store_id,'book_id':book_id})
-            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, -1000)#-(cursor['stock_level']+1)
+            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, -(cursor['stock_level']+1))#-(cursor['stock_level']+1)
             assert code != 200
             
