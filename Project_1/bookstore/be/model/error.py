@@ -10,16 +10,21 @@ error_code = {
     518: "invalid order id {}",
     519: "not sufficient funds, order id {}",
     520: "non exist order id {}",
-    521: "non prossessing order id {}",
+    521: "non processing order id {}",
     522: "order condition not exists {}",
     523: "unmatched user id {}, order_id {}",
-    524: "",
-    525: "",
+    524: "unfished buyer orders",
+    525: "unfished seller orders",
     526: "",
     527: "",
     528: "",
 }
 
+def error_unfished_buyer_orders():
+    return 524, error_code[524]
+
+def error_unfished_seller_orders():
+    return 525, error_code[525]
 
 def error_non_exist_user_id(user_id):
     return 511, error_code[511].format(user_id)
