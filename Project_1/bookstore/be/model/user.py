@@ -1,9 +1,13 @@
 import jwt
+
+# import sys
+# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
+
 import time
 import logging
 from be.model import error
 from be.model import db_conn
-import pymongo
+import pymongo.errors
 
 # encode a json string like:
 #   {
@@ -83,12 +87,22 @@ class User(db_conn.DBConn):
             return error.error_authorization_fail()
         return 200, "ok"
 
-    def check_password(self, user_id: str, password: str,session=None) -> (int, str):
-        ret=1
-        if(session!=None):
-            ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'password':1},session=session)
+    def check_password(self,
+                       user_id: str,
+                       password: str,
+                       session=None) -> (int, str):
+        ret = 1
+        if (session != None):
+            ret = self.conn['user'].find_one({'user_id': user_id}, {
+                '_id': 0,
+                'password': 1
+            },
+                                             session=session)
         else:
-            ret=self.conn['user'].find_one({'user_id':user_id},{'_id':0,'password':1})
+            ret = self.conn['user'].find_one({'user_id': user_id}, {
+                '_id': 0,
+                'password': 1
+            })
         if ret is None:
             return error.error_authorization_fail()
 
@@ -96,6 +110,7 @@ class User(db_conn.DBConn):
             return error.error_authorization_fail()
 
         return 200, "ok"
+
 
     def login(self, user_id: str, password: str, terminal: str) -> (int, str, str):
         session=self.client.start_session()
@@ -110,7 +125,7 @@ class User(db_conn.DBConn):
             ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':token,'terminal':terminal}},session=session)
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
-                return error.error_authorization_fail() + ("",)
+                return error.error_authorization_fail() + ("", )
         except BaseException as e:
             return 530, "{}".format(str(e)), ""
         session.commit_transaction()
@@ -143,10 +158,28 @@ class User(db_conn.DBConn):
             code, message = self.check_password(user_id, password,session=session)
             if code != 200:
                 return code, message
-            ret=self.conn['user'].delete_one({'user_id':user_id},session=session)
-            if not ret.acknowledged:  return 528, "{}".format(str(ret))
-            if ret.deleted_count == 0:
-                return error.error_authorization_fail()
+              
+            cursor = self.conn['new_order'].find({'user_id': user_id},session=session)
+            for item in cursor:
+                if item['status'] !='recieved' and item['status'] != 'canceled':
+                    return error.error_unfished_buyer_orders()
+                
+            store_list=list()
+            cursor = self.conn['user_store'].find({'user_id': user_id},session=session)
+            for item in cursor:
+                store_list.append(item['store_id'])
+            if len(store_list)!=0:
+                cursor = self.conn['new_order'].find({'store_id': {'$in':store_list}},session=session)
+                for item in cursor:
+                    if item['status'] !='recieved' and item['status'] != 'canceled':
+                        return error.error_unfished_seller_orders()
+                    
+                ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}},session=session)
+
+            ret = self.conn['user'].delete_one({'user_id': user_id},session=session)
+
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
@@ -174,16 +207,32 @@ class User(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
+
+# import be.model
+
 # if __name__ == "__main__":
 #     tmp=User()
-
-#     print(tmp.register('uid1','333'))
-#     print(tmp.register('uid1','333'))
-#     for item in tmp.conn['user'].find():
-#         print(item)
-
-#     print(tmp.change_password('uid1','333','334'))
-#     for item in tmp.conn['user'].find():
-#         print(item)
+#     st=be.model.store.Store()
+#     st.clear_tables()
 
     
+
+#     print(tmp.register('uid1','333'))
+#     print(tmp.register('uid2','333'))
+#     for item in tmp.conn['user'].find():
+#         print(item)
+
+#     buyer=be.model.buyer.Buyer()
+#     seller=be.model.seller.Seller()
+#     print(seller.create_store('uid1','sid1'))
+#     print(seller.conn['store'].insert_one({'store_id':'sid1','book_id':'bid1','stock_level':10}))
+
+#     ret=buyer.new_order('uid2','sid1',[('bid1',1)])
+#     print(ret)
+
+    
+#     print(tmp.unregister('uid1','333'))
+#     print(tmp.unregister('uid2','333'))
+#     print(buyer.cancel('uid1',ret[2]))
+#     print(tmp.unregister('uid1','333'))
+#     print(tmp.unregister('uid2','333'))
