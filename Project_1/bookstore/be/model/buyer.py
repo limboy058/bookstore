@@ -114,6 +114,11 @@ class Buyer(db_conn.DBConn):
             
             if(cursor['status'] not in unprosssing_status):
                 return error.error_invalid_order_id(order_id)
+            
+            if(cursor['user_id'] !=user_id):
+                session.abort_transaction()
+                session.end_session()
+                return error.error_order_user_id(order_id, user_id)
 
             current_status=cursor['status']
             store_id=cursor['store_id']
@@ -145,18 +150,15 @@ class Buyer(db_conn.DBConn):
         return 200, "ok"
     
     def search_order(self, user_id):
-        session=self.client.start_session()
-        session.start_transaction()
         try:
-            cursor=self.conn['new_order'].find({'user_id':user_id},session=session)
+            cursor=self.conn['new_order'].find({'user_id':user_id})
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
-
-        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
-        except BaseException as e:return self.base_exception_handle(e)
-        session.commit_transaction()
-        session.end_session()
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
+        except Exception as e:
+            return 530, "{}".format(str(e))
         return 200, "ok", result
     
 

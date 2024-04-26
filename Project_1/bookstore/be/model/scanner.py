@@ -3,8 +3,8 @@
  
 import time,datetime
 import pymongo.errors
-import sys
-sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
+# import sys
+# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
 from be.model import db_conn
 
 class Scanner(db_conn.DBConn):
