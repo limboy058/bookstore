@@ -60,10 +60,10 @@ class TestRegister:
         assert code == 200
 
         code = self.auth.unregister(self.user_id+'b', self.user_id+'b')
-        assert code == 524
+        assert code == 526
 
         code = self.auth.unregister(self.user_id+'s', self.user_id+'s')
-        assert code == 525
+        assert code == 527
 
         code = buyer.cancel(order_id)
         assert code == 200
