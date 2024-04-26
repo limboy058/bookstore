@@ -223,6 +223,24 @@ class TestSearchBook:
                     assert(res['stock_level']>=las_stock_level)
                     las_stock_level=res['stock_level']
 
+            code,lst,_ = self.auth.searchbook(page_no=0,page_size=self.test_books_num,order_by_method=['price',-1])
+            assert code==200
+            assert(len(lst)==self.test_books_num)
+            las_price=-1
+            for i in lst:
+                    res=json.loads(i)
+                    assert(res['price']<=las_price or las_price==-1)
+                    las_price=res['price']
+
+            code,lst,_ = self.auth.searchbook(page_no=0,page_size=self.test_books_num,order_by_method=['sales',-1])
+            assert code==200
+            assert(len(lst)==self.test_books_num)
+            las_sales=-1
+            for i in lst:
+                    res=json.loads(i)
+                    assert(res['sales']<=las_sales or las_sales==-1)
+                    las_price=res['sales']
+
 # if __name__ == "__main__":
 #     tmp=TestSearchBook()
 #     tmp.pre_run_initialization()

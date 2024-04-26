@@ -35,8 +35,10 @@ def be_run():
     bookdb.clean_db()
     bookdb=BookDB(True)
     bookdb.clean_db()
-    logging.basicConfig(filename=log_file, level=logging.ERROR)
+    #logging.basicConfig(filename=log_file, level=logging.ERROR)
+    logging.basicConfig(filename=log_file, level=logging.DEBUG)
     handler = logging.StreamHandler()
+    #handler=logging.FileHandler()
     formatter = logging.Formatter(
         "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"
     )
