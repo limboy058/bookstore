@@ -16,26 +16,22 @@ class Buyer(db_conn.DBConn):
     ) -> (int, str, str):
         order_id = ""
         try:
-            if not self.user_id_exist(user_id):
-                return error.error_non_exist_user_id(user_id) + (order_id,)
-            if not self.store_id_exist(store_id):
-                return error.error_non_exist_store_id(store_id) + (order_id,)
-            uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
             session=self.client.start_session()
             session.start_transaction()
+            if not self.user_id_exist(user_id,session=session):
+                return error.error_non_exist_user_id(user_id) + (order_id,)
+            if not self.store_id_exist(store_id,session=session):
+                return error.error_non_exist_store_id(store_id) + (order_id,)
+            uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
             for book_id, count in id_and_count:
                 cursor=self.conn['store'].find_one({'store_id':store_id,'book_id':book_id},session=session)
                 results=cursor
                 if results==None:
-                    session.abort_transaction()
-                    session.end_session()
                     return error.error_non_exist_book_id(book_id) + (order_id,)
                 stock_level = int(results['stock_level'])
                 book_info = results['book_info']
                 price = book_info["price"]
                 if stock_level < count:
-                    session.abort_transaction()
-                    session.end_session()
                     return error.error_stock_level_low(book_id) + (order_id,)
                 cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':count}},
                                                         {"$inc":{"stock_level":-count}},session=session)
@@ -43,12 +39,8 @@ class Buyer(db_conn.DBConn):
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time())},session=session)
             session.commit_transaction()
             order_id = uid
-        except pymongo.errors.PyMongoError as e:
-            logging.info("528, {}".format(str(e)))
-            return 528, "{}".format(str(e)), ""
-        except BaseException as e:
-            logging.info("530, {}".format(str(e)))
-            return 530, "{}".format(str(e)), ""
+        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e),""
+        except BaseException as e:return self.base_exception_handle(e),""
         return 200, "ok", order_id
 
     def payment(self, user_id: str, password: str, order_id: str) -> (int, str):
@@ -58,35 +50,23 @@ class Buyer(db_conn.DBConn):
         try:
             cursor=conn['new_order'].find_one({'order_id':order_id},session=session)
             if cursor is None:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_invalid_order_id(order_id)
             order_id = cursor['order_id']
             buyer_id = cursor['user_id']
             store_id = cursor['store_id']
             if buyer_id != user_id:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_authorization_fail()
             cursor=conn['user'].find_one({'user_id':user_id},session=session)
             if cursor is None:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_non_exist_user_id(buyer_id)
             balance = cursor['balance']
             if password != cursor['password']:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_authorization_fail()
             cursor=conn['user_store'].find_one({'store_id':store_id},session=session)
             if cursor is None:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_non_exist_store_id(store_id)
             seller_id = cursor['user_id']
-            if not self.user_id_exist(seller_id):
-                session.abort_transaction()
-                session.end_session()
+            if not self.user_id_exist(seller_id,session=session):
                 return error.error_non_exist_user_id(seller_id)
             cursor=conn['new_order_detail'].find({'order_id':order_id},session=session)
             total_price = 0
@@ -95,15 +75,12 @@ class Buyer(db_conn.DBConn):
                 price = row['price']
                 total_price = total_price + price * count
             if balance < total_price:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_not_sufficient_funds(order_id)
             cursor=conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':-total_price}},session=session)
             cursor=conn['user'].find_one_and_update({'user_id':seller_id},{'$inc':{'balance':total_price}},session=session)
-            #cursor=conn['new_order'].delete_one({'order_id':order_id},session=session)
             conn['new_order'].update_one({'order_id':order_id},{'$set':{'status':'paid_but_not_delivered'}},session=session)
-        except BaseException as e:
-            return 530, "{}".format(str(e))
+        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
+        except BaseException as e:return self.base_exception_handle(e)
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
@@ -114,26 +91,14 @@ class Buyer(db_conn.DBConn):
         try:
             cursor=self.conn['user'].find_one({'user_id':user_id},session=session)
             if cursor is None:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_authorization_fail()
             if(cursor['password']!=password):
-                session.abort_transaction()
-                session.end_session()
                 return error.error_authorization_fail()
-            cursor=self.conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':add_value}},session=session)
+            cursor=self.conn['user'].find_one_and_update({'user_id':user_id,'balance':{'$gte':-add_value}},{'$inc':{'balance':add_value}},session=session)
             if cursor is None:
-                session.abort_transaction()
-                session.end_session()
-                return error.error_non_exist_user_id(user_id)
-        except pymongo.errors.PyMongoError as e:
-            session.abort_transaction()
-            session.end_session()
-            return 528, "{}".format(str(e))
-        except Exception as e:
-            session.abort_transaction()
-            session.end_session()
-            return 530, "{}".format(str(e))
+                return error.error_non_enough_fund(user_id)
+        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
+        except BaseException as e:return self.base_exception_handle(e)
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
@@ -145,13 +110,9 @@ class Buyer(db_conn.DBConn):
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id},session=session)
             if(cursor is None):
-                session.abort_transaction()
-                session.end_session()
                 return error.error_non_exist_order_id(order_id)
             
             if(cursor['status'] not in unprosssing_status):
-                session.abort_transaction()
-                session.end_session()
                 return error.error_invalid_order_id(order_id)
             
             if(cursor['user_id'] !=user_id):
@@ -182,14 +143,8 @@ class Buyer(db_conn.DBConn):
                 session=session
             )
 
-        except pymongo.errors.PyMongoError as e:
-            session.abort_transaction()
-            session.end_session()
-            return 528, "{}".format(str(e))
-        except Exception as e:
-            session.abort_transaction()
-            session.end_session()
-            return 530, "{}".format(str(e))
+        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
+        except BaseException as e:return self.base_exception_handle(e)
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
@@ -200,7 +155,6 @@ class Buyer(db_conn.DBConn):
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
-
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
         except Exception as e:
@@ -217,8 +171,6 @@ class Buyer(db_conn.DBConn):
             
             cursor = self.conn['new_order'].find_one({'order_id':order_id}, session=session)
             if(cursor['status'] != "delivered_but_not_received"):
-                session.abort_transaction()
-                session.end_session()
                 return error.error_invalid_order_id(order_id)
 
             cursor = self.conn['new_order'].update_one(
@@ -226,12 +178,14 @@ class Buyer(db_conn.DBConn):
                 {'$set': {'status': "received"}},
                 session=session
             )
-
-        except BaseException as e:
-            session.abort_transaction()
-            session.end_session()
-            return 530, "{}".format(str(e))
+        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
+        except BaseException as e:return self.base_exception_handle(e)
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
 
+    def base_exception_handle(e):
+        return 530, "{}".format(str(e))
+    
+    def pymongo_exception_handle(e):
+        return 528, "{}".format(str(e))
