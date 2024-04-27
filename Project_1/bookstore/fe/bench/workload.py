@@ -8,30 +8,63 @@ from fe.access import book
 from fe.access.new_seller import register_new_seller
 from fe.access.new_buyer import register_new_buyer
 from fe.access.buyer import Buyer
+from fe.access.seller import Seller
 from fe import conf
 
 
 class NewOrder:
-    def __init__(self, buyer: Buyer, store_id, book_id_and_count):
+    def __init__(self, buyer: Buyer, store_id, book_id_and_count,seller:Seller):
         self.buyer = buyer
         self.store_id = store_id
         self.book_id_and_count = book_id_and_count
+        self.seller=seller
 
     def run(self) -> (bool, str):
         code, order_id = self.buyer.new_order(self.store_id, self.book_id_and_count)
-        return code == 200, order_id
+        return code, order_id
 
 
 class Payment:
+    def __init__(self, buyer: Buyer, order_id,seller:Seller,store_id):
+        self.buyer = buyer
+        self.order_id = order_id
+        self.seller=seller
+        self.store_id=store_id
+
+    def run(self) -> bool:
+        code = self.buyer.payment(self.order_id)
+        return code
+
+class CancelOrder:
+    def __init__(self, buyer: Buyer, order_id,seller:Seller,store_id):
+        self.buyer = buyer
+        self.order_id = order_id
+        self.seller=seller
+        self.store_id=store_id
+
+    def run(self) -> bool:
+        code = self.buyer.cancel(self.order_id)
+        return code
+    
+class SendOrder:
+    def __init__(self, seller:Seller, order_id,buyer:Buyer,store_id):
+        self.seller=seller
+        self.buyer = buyer
+        self.order_id = order_id
+        self.store_id=store_id
+    def run(self) -> bool:
+        code = self.seller.send_books(self.store_id,self.order_id)
+        return code
+
+
+class ReceiveOrder:
     def __init__(self, buyer: Buyer, order_id):
         self.buyer = buyer
         self.order_id = order_id
 
     def run(self) -> bool:
-        code = self.buyer.payment(self.order_id)
-        return code == 200
-
-
+        code = self.buyer.receive_books(self.order_id)
+        return code
 class Workload:
     def __init__(self):
         this_path = os.path.dirname(__file__)
@@ -59,16 +92,35 @@ class Workload:
 
         self.n_new_order = 0
         self.n_payment = 0
+        self.n_cancel_order=0
+        self.n_send_order=0
+        self.n_receive_order=0
         self.n_new_order_ok = 0
         self.n_payment_ok = 0
+        self.n_cancel_order_ok=0
+        self.n_send_order_ok=0
+        self.n_receive_order_ok=0
+
         self.time_new_order = 0
         self.time_payment = 0
+        self.time_cancel_order=0
+        self.time_send_order=0
+        self.time_receive_order=0
         self.lock = threading.Lock()
         # 存储上一次的值，用于两次做差
         self.n_new_order_past = 0
         self.n_payment_past = 0
+        self.n_cancel_order_past=0
+        self.n_send_order_past=0
+        self.n_receive_order_past=0
+
         self.n_new_order_ok_past = 0
         self.n_payment_ok_past = 0
+        self.n_cancel_order_ok_past=0
+        self.n_send_order_ok_past=0
+        self.n_receive_order_ok_past=0
+        self.store_id_to_seller=dict()
+
 
     def to_seller_id_and_password(self, no: int) -> (str, str):
         return "seller_{}_{}".format(no, self.uuid), "password_seller_{}_{}".format(
@@ -90,6 +142,7 @@ class Workload:
             seller = register_new_seller(user_id, password)
             for j in range(1, self.store_num_per_user + 1):
                 store_id = self.to_store_id(i, j)
+                self.store_id_to_seller[store_id]=seller
                 code = seller.create_store(store_id)
                 assert code == 200
                 self.store_ids.append(store_id)
@@ -131,17 +184,27 @@ class Workload:
                 count = random.randint(1, 10)
                 book_id_and_count.append((book_id, count))
         b = Buyer(url_prefix=conf.URL, user_id=buyer_id, password=buyer_password)
-        new_ord = NewOrder(b, store_id, book_id_and_count)
+        s=self.store_id_to_seller[store_id]
+        new_ord = NewOrder(b, store_id, book_id_and_count,s)
         return new_ord
 
     def update_stat(
         self,
         n_new_order,
         n_payment,
+        n_cancel_order,
+        n_send_order,
+        n_receive_order,
         n_new_order_ok,
         n_payment_ok,
+        n_cancel_order_ok,
+        n_send_order_ok,
+        n_receive_order_ok,
         time_new_order,
         time_payment,
+        time_cancel_order,
+        time_send_order,
+        time_receive_order
     ):
         # 获取当前并发数
         thread_num = len(threading.enumerate())
@@ -149,15 +212,30 @@ class Workload:
         self.lock.acquire()
         self.n_new_order = self.n_new_order + n_new_order
         self.n_payment = self.n_payment + n_payment
+        self.n_cancel_order+=n_cancel_order
+        self.n_send_order+=n_send_order
+        self.n_receive_order+=n_receive_order
         self.n_new_order_ok = self.n_new_order_ok + n_new_order_ok
         self.n_payment_ok = self.n_payment_ok + n_payment_ok
+        self.n_cancel_order_ok+=n_cancel_order_ok
+        self.n_send_order_ok+=n_send_order_ok
+        self.n_receive_order_ok+=n_receive_order_ok
+
         self.time_new_order = self.time_new_order + time_new_order
         self.time_payment = self.time_payment + time_payment
+        self.time_cancel_order+=time_cancel_order
+        self.time_receive_order+=time_receive_order
+        self.time_send_order+=time_send_order
         # 计算这段时间内新创建订单的总数目
         n_new_order_diff = self.n_new_order - self.n_new_order_past
         # 计算这段时间内新付款订单的总数目
         n_payment_diff = self.n_payment - self.n_payment_past
 
+        n_cancel_order_diff=self.n_cancel_order - self.n_cancel_order_past
+
+        n_send_order_diff=self.n_send_order - self.n_send_order_past
+
+        n_receive_order_diff=self.n_receive_order - self.n_receive_order_past
         if (
             self.n_payment != 0
             and self.n_new_order != 0
@@ -173,12 +251,20 @@ class Workload:
             # TOTAL:总付款提交订单数量
             # LATENCY:提交付款订单时间/处理付款订单笔数(只考虑该线程延迟，未考虑并发)
             logging.info(
-                "TPS_C={}, NO=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , P=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}".format(
+                "TPS_C={}, NO=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , "
+                "P=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
+                "C=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
+                "S=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
+                "R=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
+                .format(
                     int(
                         self.n_new_order_ok
                         / (
                             self.time_payment / n_payment_diff
                             + self.time_new_order / n_new_order_diff
+                            +self.time_cancel_order/n_cancel_order_diff
+                            +self.time_send_order/n_send_order_diff
+                            +self.time_receive_order/n_receive_order_diff
                         )
                     ),  # 吞吐量:完成订单数/((付款所用时间+订单所用时间)/并发数)
                     self.n_new_order_ok,
@@ -190,11 +276,36 @@ class Workload:
                     n_payment_diff,
                     self.n_payment,
                     self.time_payment / self.n_payment,  # 付款延迟:(付款所用时间/并发数)/付款订单数
+
+                    self.n_cancel_order_ok,
+                    n_cancel_order_diff,
+                    self.n_cancel_order,
+                    self.time_cancel_order / self.n_cancel_order,  # 取消订单延迟:(取消所用时间/并发数)/取消订单数
+
+                    self.n_send_order_ok,
+                    n_send_order_diff,
+                    self.n_send_order,
+                    self.time_send_order / self.n_send_order,  # 订单送货延迟:(状态改变所用时间/并发数)/寄送订单数
+                
+                    self.n_receive_order_ok,
+                    n_receive_order_diff,
+                    self.n_receive_order,
+                    self.time_receive_order / self.n_receive_order,  # 订单收货延迟:(状态改变所用时间/并发数)/订单收货数
                 )
             )
         self.lock.release()
         # 旧值更新为新值，便于下一轮计算
         self.n_new_order_past = self.n_new_order
         self.n_payment_past = self.n_payment
+        self.n_cancel_order_past = self.n_cancel_order
+        self.n_send_order_past = self.n_send_order
+        self.n_receive_order_past = self.n_receive_order
         self.n_new_order_ok_past = self.n_new_order_ok
         self.n_payment_ok_past = self.n_payment_ok
+        self.n_cancel_order_ok_past = self.n_cancel_order_ok
+        self.n_send_order_ok_past = self.n_send_order_ok
+        self.n_receive_order_ok_past = self.n_receive_order_ok
+
+    def logging_print(self,e):
+        logging.info(str(e))
+
