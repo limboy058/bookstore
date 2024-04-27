@@ -56,7 +56,6 @@ class Session(threading.Thread):
                 self.payment_request.append(payment)
             else:
                 self.workload.logging_print(ok)
-                assert(0)
             if self.new_order_i % 100 ==0 or self.new_order_i == len(
                 self.new_order_request
             ):
@@ -75,9 +74,12 @@ class Session(threading.Thread):
                         else:
                             send_order=SendOrder(payment.seller,payment.order_id,payment.buyer,payment.store_id)
                             self.send_request.append(send_order)
+                    elif ok==519:
+                        self.payment_ok = self.payment_ok + 1
+                        cancel_order=CancelOrder(payment.buyer,payment.order_id,payment.seller,payment.store_id)
+                        self.cancel_request.append(cancel_order)
                     else:
                         self.workload.logging_print(ok)
-                        assert(0)
                 self.payment_request = []
                 for cancelOrder in self.cancel_request:
                     before = time.time()
@@ -89,8 +91,6 @@ class Session(threading.Thread):
                         self.cancel_order_ok = self.cancel_order_ok + 1
                     else:
                         self.workload.logging_print(ok)
-                        self.workload.logging_print(order_id)
-                        assert(0)
                 self.cancel_request = []
                 for sendOrder in self.send_request:
                     before = time.time()
@@ -104,7 +104,6 @@ class Session(threading.Thread):
                         self.receive_request.append(receiveOrder)
                     else:
                         self.workload.logging_print(ok)
-                        assert(0)
                 self.send_request = []
                 for receiveOrder in self.receive_request:
                     before = time.time()
