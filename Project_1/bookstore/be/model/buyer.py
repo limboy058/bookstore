@@ -116,8 +116,6 @@ class Buyer(db_conn.DBConn):
                 return error.error_invalid_order_id(order_id)
             
             if(cursor['user_id'] !=user_id):
-                session.abort_transaction()
-                session.end_session()
                 return error.error_order_user_id(order_id, user_id)
 
             current_status=cursor['status']
