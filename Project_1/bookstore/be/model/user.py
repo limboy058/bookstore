@@ -126,6 +126,8 @@ class User(db_conn.DBConn):
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail() + ("", )
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e)), ""
         session.commit_transaction()
@@ -145,6 +147,8 @@ class User(db_conn.DBConn):
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail()
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
@@ -201,6 +205,8 @@ class User(db_conn.DBConn):
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail()
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()

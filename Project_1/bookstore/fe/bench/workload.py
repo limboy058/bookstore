@@ -10,7 +10,7 @@ from fe.access.new_buyer import register_new_buyer
 from fe.access.buyer import Buyer
 from fe.access.seller import Seller
 from fe import conf
-
+from be.model.store import clear_db
 
 class NewOrder:
     def __init__(self, buyer: Buyer, store_id, book_id_and_count,seller:Seller):
@@ -120,7 +120,7 @@ class Workload:
         self.n_send_order_ok_past=0
         self.n_receive_order_ok_past=0
         self.store_id_to_seller=dict()
-
+        self.tot_fund=0
 
     def to_seller_id_and_password(self, no: int) -> (str, str):
         return "seller_{}_{}".format(no, self.uuid), "password_seller_{}_{}".format(
@@ -136,6 +136,7 @@ class Workload:
         return "store_s_{}_{}_{}".format(seller_no, i, self.uuid)
 
     def gen_database(self):
+        clear_db()
         logging.info("load data")
         for i in range(1, self.seller_num + 1):
             user_id, password = self.to_seller_id_and_password(i)
@@ -163,9 +164,35 @@ class Workload:
             user_id, password = self.to_buyer_id_and_password(k)
             buyer = register_new_buyer(user_id, password)
             buyer.add_funds(self.user_funds)
+            self.tot_fund+=self.user_funds
             self.buyer_ids.append(user_id)
         logging.info("buyer data loaded.")
 
+    def gen_database_hot_one_test(self):
+        clear_db()
+        logging.info("load data")
+        user_id, password = self.to_seller_id_and_password(1)
+        seller = register_new_seller(user_id, password)
+        self.famous_seller=seller
+        store_id="the_most_famous_store"
+        self.hot_store_id=store_id
+        seller.create_store(store_id)
+        bk_info=self.book_db.get_book_info(0,2)[0]
+        self.hot_book_id=bk_info.id
+        seller.add_book(store_id,1000,bk_info)
+        self.tot_fund=0
+        for k in range(1, self.buyer_num + 1):
+            user_id, password = self.to_buyer_id_and_password(k)
+            buyer = register_new_buyer(user_id, password)
+            buyer.add_funds(self.user_funds)
+            self.tot_fund+=self.user_funds
+            self.buyer_ids.append(user_id)
+    def get_hot_order(self):
+        n = random.randint(1, self.buyer_num)
+        buyer_id, buyer_password = self.to_buyer_id_and_password(n)
+        b = Buyer(url_prefix=conf.URL, user_id=buyer_id, password=buyer_password)
+        new_ord=NewOrder(b,self.hot_store_id,(self.hot_book_id,100),self.famous_seller)
+        return new_ord
     def get_new_order(self) -> NewOrder:
         n = random.randint(1, self.buyer_num)
         buyer_id, buyer_password = self.to_buyer_id_and_password(n)

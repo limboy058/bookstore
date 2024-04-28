@@ -132,4 +132,14 @@ class Session(threading.Thread):
                     self.time_sendOrder,
                     self.time_receiveOrder
                 )
-                
+
+
+    
+    def all_buy_one(self):
+        for new_order in self.new_order_request:
+            ok, order_id = new_order.run()
+            if ok==200:
+                payment = Payment(new_order.buyer, order_id,new_order.seller,new_order.store_id)
+                self.payment_request.append(payment)
+        for payment in self.payment_request:
+                    ok = payment.run()
