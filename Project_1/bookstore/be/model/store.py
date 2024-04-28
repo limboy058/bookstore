@@ -21,6 +21,11 @@ class Store:
         self.conn["store"]
         self.conn["new_order"]
         self.conn["dead_user"]
+    def clean_tables(self):
+        self.conn["user"].delete_many({})
+        self.conn["store"].delete_many({})
+        self.conn["new_order"].delete_many({})
+        self.conn["dead_user"].delete_many({})
 
     def build_tables(self):
         self.conn["store"].create_index({"store_id":1})
@@ -88,6 +93,12 @@ def build_db():
     if(database_instance==None):
         init_database()
     database_instance.build_tables()
+
+def clean_db():
+    global database_instance
+    if(database_instance==None):
+        init_database()
+    database_instance.clean_tables()
 # if __name__ == "__main__":
 
 #     init_database()
