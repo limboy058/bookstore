@@ -94,3 +94,10 @@ def search_book():
                         order_by_method=order_by_method,# [stock_level, sales, pub_time, price] + [1,-1]  1 means increasingly and -1 means decreasingly
                         having_stock=having_stock)
     return jsonify({"message": message,"book_info":res}), code
+
+@bp_auth.route("/search_order_detail", methods=["POST"])
+def search_order_detail():
+    order_id = request.json.get("order_id")
+    u = user.User()
+    code, message, order_detail_list = u.search_order_detail(order_id)
+    return jsonify({"message": message, "order_detail_list": order_detail_list}), code
