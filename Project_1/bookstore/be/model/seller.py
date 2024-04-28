@@ -79,21 +79,19 @@ class Seller(db_conn.DBConn):
         return 200, "ok"
     
     def send_books(self, store_id: str, order_id: str) -> (int, str):
-        session=self.client.start_session()
-        session.start_transaction()
         try:
-            if not self.store_id_exist(store_id,session=session):
+            if not self.store_id_exist(store_id):
                 return error.error_non_exist_store_id(store_id)
             
-            cursor = self.conn['new_order'].find_one_and_update({'store_id':store_id,'order_id':order_id}, {'$set': {'status': "delivered_but_not_received"}},session=session)
+            cursor = self.conn['new_order'].find_one_and_update(
+                {'store_id':store_id,'order_id':order_id},
+                {'$set': {'status': "delivered_but_not_received"}})
             if(cursor is None):
                 return error.error_invalid_order_id(order_id)
             if(cursor['status'] != "paid_but_not_delivered"):
                 return error.error_invalid_order_id(order_id)
         except BaseException as e:
             return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
         return 200, "ok"
 
     def search_order(self, store_id):

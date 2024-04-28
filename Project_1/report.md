@@ -215,9 +215,11 @@ self.conn["store"].create_index({"store_id":1})
 
 #### 后端逻辑：
 
-若订单处于未支付状态，买家可以直接取消订单，书籍会加回店铺的库存中；若卖家已支付订单但尚未发货，则会将支付的扣款返还买家的账户，书籍同样会加回店铺的库存中。只有买家本人可以主动取消订单。
+若订单处于未支付状态，买家可以直接取消订单，书籍会加回店铺的库存中；若买家已支付订单但尚未发货，则会将支付的扣款返还买家的账户，书籍同样会加回店铺的库存中。只有买家本人可以主动取消订单。
 
 状态码code：默认200，结束状态message：默认"ok"
+
+![image-20240428234933881](report.assets/image-20240428234933881.png)
 
 
 
@@ -229,7 +231,7 @@ self.conn["store"].create_index({"store_id":1})
 cursor=self.conn['new_order'].find_one_and_update({'order_id':order_id},{'$set': {'status': "canceled"}},session=session)
 ```
 
-该sql作用为：通过对应order_id找到唯一订单，将该订单状态`status`更新为`canceled`，使用`session`防止订单状态异常。
+该sql作用为：通过对应`order_id`找到唯一订单，将该订单状态`status`更新为`canceled`，使用`session`防止订单状态异常。
 
 
 
@@ -260,6 +262,60 @@ if(current_status=="paid_but_not_delivered"):
 对多种场景都有测试。包括：成功取消未支付订单、成功取消已支付未发货订单、检查买家账户金额是否正常退还、检查店铺相应书籍库存是否正常恢复。
 
 错误检查测试包含：取消错误订单号订单、取消已取消订单、取消正在运输的订单、非购买用户无权取消订单。
+
+
+
+#### 亮点：事务处理
+
+事务处理保证了多个数据库操作要么全部执行，要么全部不执行，在数据库发生错误或者并发环境下项目的可靠性。
+
+
+
+### 3 卖家send_books
+
+由卖家主动发起
+
+
+
+#### 后端接口：
+
+代码路径：be/view/seller.py
+
+![image-20240428235206147](report.assets/image-20240428235206147.png)
+
+前端调用时必须填写的参数包括店铺id：`store_id`和订单号：`order_id`。
+
+
+
+#### 后端逻辑：
+
+若已支付订单但尚未发货，则会订单状态更新为`delivered_but_not_received`。
+
+状态码code：默认200，结束状态message：默认"ok"
+
+![image-20240428235630139](report.assets/image-20240428235630139.png)
+
+#### 数据库操作：
+
+代码路径：be/model/seller.py
+
+```python
+cursor = self.conn['new_order'].find_one_and_update(
+    {'store_id':store_id,'order_id':order_id},
+    {'$set': {'status': "delivered_but_not_received"}})
+```
+
+该sql作用为：通过对应`order_id`找到唯一订单，将该订单状态`status`从`paid_but_not_delivered`更新为`delivered_but_not_received`.
+
+
+
+#### 代码测试：
+
+代码路径：fe/test/test_send_order.py
+
+测试功能正确运行：成功发货（`test_ok`）。
+
+对多种错误场景都有测试，错误检查测试包含：对未支付订单执行发货、对错误订单号订单执行发货、对错误`store_id`订单执行发货。
 
 
 
