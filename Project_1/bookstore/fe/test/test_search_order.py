@@ -43,6 +43,14 @@ class TestSearchOrder:
         assert tol_price == price
         assert status=='unpaid'
 
+    def test_search_invalid_orders_detail(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        code,_ = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code !=200
+
     def test_user_search_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(
             non_exist_book_id=False, low_stock_level=False
