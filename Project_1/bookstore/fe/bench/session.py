@@ -9,7 +9,7 @@ import threading
 
 
 class Session(threading.Thread):
-    def __init__(self, wl: Workload):
+    def __init__(self, wl: Workload,hottest=False):
         threading.Thread.__init__(self)
         self.workload = wl
         self.new_order_request = []
@@ -33,7 +33,10 @@ class Session(threading.Thread):
         self.time_sendOrder=0
         self.time_receiveOrder=0
         self.thread = None
-        self.gen_procedure()
+        self.hottest=hottest
+        if(hottest):
+            self.gen_hot_test_procedure()
+        else:self.gen_procedure()
 
     def gen_procedure(self):
         for i in range(0, self.workload.procedure_per_session):
@@ -41,7 +44,10 @@ class Session(threading.Thread):
             self.new_order_request.append(new_order)
 
     def run(self):
-        self.run_gut()
+        if(self.hottest):
+            self.all_buy_one()
+        else:
+            self.run_gut()
 
     def run_gut(self):
         for new_order in self.new_order_request:
@@ -132,4 +138,19 @@ class Session(threading.Thread):
                     self.time_sendOrder,
                     self.time_receiveOrder
                 )
-                
+
+
+    
+    def gen_hot_test_procedure(self):
+        for i in range(0, self.workload.procedure_per_session):
+            new_order = self.workload.get_hot_order()
+            self.new_order_request.append(new_order)
+
+    def all_buy_one(self):
+        for new_order in self.new_order_request:
+            ok, order_id = new_order.run()
+            if ok==200:
+                payment = Payment(new_order.buyer, order_id,new_order.seller,new_order.store_id)
+                self.payment_request.append(payment)
+        for payment in self.payment_request:
+                    ok = payment.run()

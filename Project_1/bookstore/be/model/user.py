@@ -117,7 +117,8 @@ class User(db_conn.DBConn):
             token = jwt_encode(user_id, terminal)
             ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':token,'terminal':terminal}},session=session)
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
-
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e)), ""
         session.commit_transaction()
@@ -137,6 +138,8 @@ class User(db_conn.DBConn):
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
             if ret.modified_count == 0:
                 return error.error_authorization_fail()
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
@@ -188,7 +191,10 @@ class User(db_conn.DBConn):
             token = jwt_encode(user_id, terminal)
             ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'password':new_password,'token':token,'terminal':terminal}},session=session)
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
-
+            if ret.modified_count == 0:
+                return error.error_authorization_fail()
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
