@@ -1,3 +1,7 @@
+---
+
+---
+
 # 华东师范大学数据科学与工程学院实验报告
 
 | 课程名称：数据管理系统       | 年级：2022级 | 实践日期：2024.4 |
@@ -85,7 +89,7 @@ XXX 10225101XXX
 
 ## Ⅲ  功能&亮点
 
-### 书本查询功能
+### 1 书本查询功能
 
 功能参考当当网、中图网的高级搜索页面以及豆瓣的图书搜索页面：
 
@@ -119,7 +123,7 @@ having_stock表明要筛选出现在有货的书本。
 
 store_id表明要查询的书属于的商店，如果为空则查询所有商店。
 
-#### 后端逻辑
+#### 后端逻辑：
 
 后端实现为返回所有要求的交集。例如：
 
@@ -129,11 +133,11 @@ store_id表明要查询的书属于的商店，如果为空则查询所有商店
 
 返回值以json格式的列表呈现。列表中的每个元素是一个json格式的书本信息。书本信息本身是字典。
 
-#### 数据库操作
+#### 数据库操作：
 
 代码路径：be/model/book.py
 
-```
+```python
 cursor = self.conn['store'].find(conditions,limit=page_size,skip=page_size*page_no,sort=sort)
 ```
 
@@ -143,7 +147,7 @@ sort为排序规则。
 
 另一种等价实现：
 
-```
+```python
 cursor = self.conn['store'].find(conditions).limit(xxx).skip(xxx).sort(xxx)
 ```
 
@@ -190,6 +194,78 @@ self.conn["store"].create_index({"store_id":1})
 2.
 
 对其他会使用到的需求建立普通索引。由于大部分情况下单个条件就足以有选择性，能够筛选出少量满足效果的数据，因此不考虑建立复合索引。
+
+
+
+### 2 买家取消订单
+
+由买家主动发起
+
+
+
+#### 后端接口：
+
+代码路径：be/view/buyer.py
+
+![image-20240428224428404](report.assets/image-20240428224428404.png)
+
+前端调用时必须填写的参数包括用户id：`user_id`和订单号：`order_id`。
+
+
+
+#### 后端逻辑：
+
+若订单处于未支付状态，买家可以直接取消订单，书籍会加回店铺的库存中；若卖家已支付订单但尚未发货，则会将支付的扣款返还买家的账户，书籍同样会加回店铺的库存中。只有买家本人可以主动取消订单。
+
+状态码code：默认200，结束状态message：默认"ok"
+
+
+
+#### 数据库操作：
+
+代码路径：be/model/buyer.py
+
+```python
+cursor=self.conn['new_order'].find_one_and_update({'order_id':order_id},{'$set': {'status': "canceled"}},session=session)
+```
+
+该sql作用为：通过对应order_id找到唯一订单，将该订单状态`status`更新为`canceled`，使用`session`防止订单状态异常。
+
+
+
+```python
+detail=list(cursor['detail'])
+self.conn['store'].update_one({'book_id':i[0],'store_id':store_id},{'$inc':{"stock_level":i[1],"sales":-i[1]}},session=session)
+```
+
+该sql作用为：将生成订单时扣除的相应书籍库存信息恢复。此处`i`为`cursor['detail']`中每个迭代对象，在`new_order`中，`detail`储存一个二维`list`包含该订单购买书籍的book_id和对应数量。
+
+
+
+```python
+total_price=cursor['total_price']
+if(current_status=="paid_but_not_delivered"):
+	cursor=self.conn['user'].find_one_and_update(
+		'user_id':user_id},{'$inc':{'balance':total_price}},session=session)
+```
+
+该sql作用为：若订单已支付，将生成订单时扣除的金额返还买家的账户。在`user`中，`balance`储存买家的账户资金；在`new_order`中，`total_price`储存该订单支付的总金额。
+
+
+
+#### 代码测试：
+
+代码路径：fe/test/test_cancel_order.py
+
+对多种场景都有测试。包括：成功取消未支付订单、成功取消已支付未发货订单、检查买家账户金额是否正常退还、检查店铺相应书籍库存是否正常恢复。
+
+错误检查测试包含：取消错误订单号订单、取消已取消订单、取消正在运输的订单、非购买用户无权取消订单。
+
+
+
+#### 亮点：事务处理
+
+事务处理保证了多个数据库操作要么全部执行，要么全部不执行，在数据库发生错误或者并发环境下项目的可靠性。
 
 
 
