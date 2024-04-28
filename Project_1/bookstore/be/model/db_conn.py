@@ -29,9 +29,9 @@ class DBConn:
     def store_id_exist(self, store_id,session=None):
         res=None
         if(session!=None):
-            res=self.conn['user_store'].find_one({'store_id':store_id},session=session)
+            res=self.conn['user'].find_one({'store_id':store_id},session=session)
         else:
-            res=self.conn['user_store'].find_one({'store_id':store_id})
+            res=self.conn['user'].find_one({'store_id':store_id})
         if res is None:
             return False
         else:
