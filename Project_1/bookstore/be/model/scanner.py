@@ -1,4 +1,4 @@
-#注意:还未在表new_order上order_time处建立索引
+
 #live_time订单有效时间默认1200,scan_interval为扫描间隔默认10  单位均为秒
  
 import time,datetime
@@ -31,13 +31,14 @@ class Scanner(db_conn.DBConn):
                         },
                         'status': 'unpaid'
                     },
-                    {'order_id':1,'store_id':1},
+                    {'order_id':1,'store_id':1,'detail':1},
                     session=session
                 )
                 for i in cursor:
-                    new_cursor=self.conn['new_order_detail'].find({'order_id':i['order_id']},{'book_id':1,'count':1},session=session)
-                    for j in new_cursor:
-                        self.conn['store'].update_many({'store_id':i['store_id'],'book_id':j['book_id']},{'$inc':{'stock_level':j['count'],'sales':-j['count']}},session=session)
+                    detail=list(i['detail'])
+                    store_id=i['store_id']
+                    for j in detail:
+                        self.conn['store'].update_many({'store_id':store_id,'book_id':j[0]},{'$inc':{'stock_level':j[1],'sales':-j[1]}},session=session)
                 ret = self.conn['new_order'].update_many(
                     {
                         'order_time': {

@@ -1,8 +1,8 @@
 import pymongo
 import json
-import sys
+# import sys
 
-sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
+# sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import error
 from be.model import db_conn
 
@@ -25,7 +25,7 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_user_id(user_id)
             if not self.store_id_exist(store_id,session=session):
                 return error.error_non_exist_store_id(store_id)
-            if self.conn['user_store'].find_one({'store_id':store_id},session=session)['user_id']!=user_id:
+            if self.conn['user'].find_one({'store_id':store_id},session=session)['user_id']!=user_id:
                 return error.error_authorization_fail()
             if self.book_id_exist(store_id, book_id,session=session):
                 return error.error_exist_book_id(book_id)
@@ -70,7 +70,7 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_user_id(user_id)
             if self.store_id_exist(store_id,session=session):
                 return error.error_exist_store_id(store_id)
-            ret = self.conn['user_store'].insert_one({'store_id':store_id,'user_id':user_id},session=session)
+            ret = self.conn['user'].update_one({'user_id':user_id},{'$push':{'store_id':store_id}},session=session)
             if not ret.acknowledged:  return 528, "{}".format(str(ret))
         except BaseException as e:
             return 530, "{}".format(str(e))
