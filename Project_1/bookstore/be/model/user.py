@@ -64,6 +64,9 @@ class User(db_conn.DBConn):
             ret = self.conn['user'].find_one({'user_id':user_id},session=session)
             if ret is not None:
                 return error.error_exist_user_id(user_id)
+            ret = self.conn['dead_user'].find_one({'user_id':user_id},session=session)
+            if ret is not None:
+                return error.error_exist_user_id(user_id)
             terminal = "terminal_{}".format(str(time.time()))
             token = jwt_encode(user_id, terminal)
             ret=self.conn['user'].insert_one({'user_id':user_id,'password':password,'balance':0,'token':token,'terminal':terminal},session=session)
@@ -163,7 +166,7 @@ class User(db_conn.DBConn):
                     ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}},session=session) #修改书库存
 
             ret = self.conn['user'].delete_one({'user_id': user_id},session=session)
-
+            self.conn['dead_user'].insert_one({'user_id': user_id},session=session)
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
         except BaseException as e:

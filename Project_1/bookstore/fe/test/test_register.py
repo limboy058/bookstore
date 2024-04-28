@@ -47,6 +47,12 @@ class TestRegister:
         code = self.auth.register(self.user_id, self.password)
         assert code != 200
 
+        code = self.auth.unregister(self.user_id, self.password)
+        assert code == 200
+
+        code = self.auth.register(self.user_id, self.password)
+        assert code != 200
+
     def test_unregister_with_buyer_or_seller_order(self):
 
         buyer = register_new_buyer(self.user_id+'b', self.user_id+'b')
