@@ -66,3 +66,12 @@ class Auth:
         url = urljoin(self.url_prefix, "search_book")
         r = requests.post(url, json=json)
         return r.status_code,r.json().get("book_info"),r.json().get("message")
+    
+    def search_order_detail(self,order_id) -> [int, list]:
+        json = {
+            "order_id": order_id,
+        }
+        url = urljoin(self.url_prefix, "search_order_detail")
+        r = requests.post(url, json=json)
+        response_json = r.json()
+        return r.status_code, response_json.get("order_detail_list")

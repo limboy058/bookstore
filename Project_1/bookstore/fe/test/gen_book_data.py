@@ -1,6 +1,5 @@
 import random
-# import sys
-# sys.path.append("D:/code/数据库系统/AllStuRead-master/Project_1/bookstore")
+
 from fe import conf
 from fe.access import book
 from fe.access.new_seller import register_new_seller
@@ -24,7 +23,7 @@ class GenBook:
         return self.seller
 
     def gen(
-        self, non_exist_book_id: bool, low_stock_level, max_book_count: int = 100
+        self, non_exist_book_id: bool, low_stock_level, max_book_count: int = 100, high_stock_level: bool = False
     ) -> (bool, []):
         self.__init_book_list__()
         ok = True
@@ -40,6 +39,8 @@ class GenBook:
         for bk in books:
             if low_stock_level:
                 stock_level = random.randint(0, 100)
+            elif high_stock_level:
+                stock_level = random.randint(50, 100)
             else:
                 stock_level = random.randint(2, 100)
             code = self.seller.add_book(self.store_id, stock_level, bk)
@@ -50,7 +51,10 @@ class GenBook:
         for bk in book_id_exist:
             stock_level = book_id_stock_level[bk.id]
             if stock_level > 1:
-                buy_num = random.randint(1, stock_level)
+                if high_stock_level:
+                    buy_num = random.randint(1, int(stock_level/5))
+                else:
+                    buy_num = random.randint(1, stock_level)
             else:
                 buy_num = 0
             # add a new pair

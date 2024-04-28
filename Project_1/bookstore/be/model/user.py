@@ -1,7 +1,7 @@
 import jwt
 
-# import sys
-# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
+import sys
+#sys.path.append("D:/code/数据库系统/AllStuRead-master/Project_1/bookstore")
 
 import time
 import logging
@@ -201,11 +201,26 @@ class User(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
+    def search_order_detail(self, order_id):
+        try:
+            cursor=self.conn['new_order'].find_one({'order_id':order_id})
+            if cursor is None:
+                return error.error_non_exist_order_id(order_id)
+            order_detail_list=(cursor['detail'],cursor['total_price'],cursor['status'])
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok", order_detail_list
 
 # import be.model
-
 # if __name__ == "__main__":
-#     tmp=User()
-    
-#     print(tmp.unregister('uid1','psd1'))
+#     u=User()
+#     cursor=u.conn['store'].find_one({'book_id':"1044827",'store_id':"test_search_order_store_id_5c241c9b-0528-11ef-86c6-dce994284070"})
+#     #print(cursor)
+#     cur=cursor['book_info']
+#     print(cur)
+#     cur_price=cur['price']
+#     print(cur_price)
+#     assert cursor!=None
     
