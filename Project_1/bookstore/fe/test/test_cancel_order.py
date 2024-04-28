@@ -15,6 +15,7 @@ class TestCancelOrder:
         self.dbconn=db_conn.DBConn()
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
+        self.seller=self.gen_book.return_seller()
         yield
 
     def test_unpaid_order_ok(self):
@@ -107,4 +108,16 @@ class TestCancelOrder:
         self.buyer.user_id = self.buyer.user_id + "_x"
         code = self.buyer.cancel(order_id)
         self.buyer.user_id = origin_user_id
+        assert code != 200
+
+    def test_delivering_order_id(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.payment(order_id)
+        code = self.seller.send_books(self.store_id, order_id)
+        code = self.buyer.cancel(order_id)
         assert code != 200

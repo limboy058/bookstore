@@ -16,9 +16,17 @@ class Store:
         self.conn["user"].drop()
         self.conn["store"].drop()
         self.conn["new_order"].drop()
+        self.conn["dead_user"].drop()
         self.conn["user"]
         self.conn["store"]
         self.conn["new_order"]
+        self.conn["dead_user"]
+    def clean_tables(self):
+        self.conn["user"].delete_many({})
+        self.conn["store"].delete_many({})
+        self.conn["new_order"].delete_many({})
+        self.conn["dead_user"].delete_many({})
+
     def build_tables(self):
         self.conn["store"].create_index({"store_id":1})
         self.conn["store"].create_index({"book_info.translator":1})
@@ -32,9 +40,11 @@ class Store:
         self.conn["store"].create_index({"book_info.binding":1})
         self.conn['store'].create_index({'book_info.title':'text'})
         #self.conn['store'].create_index({})
-        
+
         self.conn["user"].create_index({"user_id":1})
         self.conn["user"].create_index({"store_id":1})
+
+        self.conn["dead_user"].create_index({"user_id":1})
 
         self.conn["new_order"].create_index({"order_id":1})
         self.conn["new_order"].create_index({"store_id":1})
@@ -83,6 +93,12 @@ def build_db():
     if(database_instance==None):
         init_database()
     database_instance.build_tables()
+
+def clean_db():
+    global database_instance
+    if(database_instance==None):
+        init_database()
+    database_instance.clean_tables()
 # if __name__ == "__main__":
 
 #     init_database()

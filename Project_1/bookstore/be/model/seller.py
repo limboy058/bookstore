@@ -84,20 +84,12 @@ class Seller(db_conn.DBConn):
         try:
             if not self.store_id_exist(store_id,session=session):
                 return error.error_non_exist_store_id(store_id)
-            if not self.order_id_exist(order_id,session=session): 
+            
+            cursor = self.conn['new_order'].find_one_and_update({'store_id':store_id,'order_id':order_id}, {'$set': {'status': "delivered_but_not_received"}},session=session)
+            if(cursor is None):
                 return error.error_invalid_order_id(order_id)
-            
-            cursor = self.conn['new_order'].find_one({'store_id':store_id,'order_id':order_id}, session=session)
-            
             if(cursor['status'] != "paid_but_not_delivered"):
                 return error.error_invalid_order_id(order_id)
-
-            cursor = self.conn['new_order'].update_one(
-                {'order_id': order_id},
-                {'$set': {'status': "delivered_but_not_received"}},
-                session=session
-            )
-
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
