@@ -153,10 +153,8 @@ class Buyer(db_conn.DBConn):
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
-        except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
-        except Exception as e:
-            return 530, "{}".format(str(e))
+        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
+        except BaseException as e:return self.base_exception_handle(e)
         return 200, "ok", result
 
 
