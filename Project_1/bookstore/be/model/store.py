@@ -14,15 +14,11 @@ class Store:
         self.conn=self.client['609']
     def clear_tables(self):
         self.conn["user"].drop()
-        self.conn["user_store"].drop()
         self.conn["store"].drop()
         self.conn["new_order"].drop()
-        self.conn["new_order_detail"].drop()
         self.conn["user"]
-        self.conn["user_store"]
         self.conn["store"]
         self.conn["new_order"]
-        self.conn["new_order_detail"]
     def build_tables(self):
         self.conn["store"].create_index({"store_id":1})
         self.conn["store"].create_index({"book_info.translator":1})
@@ -36,17 +32,18 @@ class Store:
         self.conn["store"].create_index({"book_info.binding":1})
         self.conn['store'].create_index({'book_info.title':'text'})
         #self.conn['store'].create_index({})
+        
         self.conn["user"].create_index({"user_id":1})
+        self.conn["user"].create_index({"store_id":1})
 
         self.conn["new_order"].create_index({"order_id":1})
         self.conn["new_order"].create_index({"store_id":1})
         self.conn["new_order"].create_index({"user_id":1})
         self.conn["new_order"].create_index({"order_time":1})
+        self.conn["new_order"].create_index({"seller_id":1})
 
-        self.conn["new_order_detail"].create_index({"order_id":1})
 
-        self.conn["user_store"].create_index({"user_id":1})
-        self.conn["user_store"].create_index({"store_id":1})
+        
     def get_db_client(self):
          return self.client
 

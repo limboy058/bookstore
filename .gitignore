@@ -70,3 +70,8 @@ Project_1/bookstore/fe/test/__pycache__/test_search_order.cpython-311-pytest-8.1
 Project_1/bookstore/fe/test/__pycache__/test_send_order.cpython-311-pytest-8.1.1.pyc
 Project_1/bookstore/app.log
 .gitignore
+Project_1/bookstore/fe/bench/workload copy.log
+Project_1/bookstore/fe/bench/workload.log
+Project_1/bookstore/fe/test/__pycache__/test_aregister.cpython-311-pytest-8.1.1.pyc
+Project_1/bookstore/fe/test/__pycache__/test_ascanner.cpython-311-pytest-8.1.1.pyc
+Project_1/bookstore/fe/test/__pycache__/test_scanner.cpython-311-pytest-8.1.1.pyc
