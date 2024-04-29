@@ -101,19 +101,17 @@ class Seller(db_conn.DBConn):
         return 200, "ok"
 
     def search_order(self, seller_id, store_id):
-        session=self.client.start_session()
-        session.start_transaction()
         try:
-            ret=self.conn['user'].find({'user_id':seller_id},session=session)
+            ret=self.conn['user'].find({'user_id':seller_id})
             if(ret is None):
                 return error.error_non_exist_user_id(seller_id)+("",)
-            ret=self.conn['user'].find({'store_id':store_id},session=session)
+            ret=self.conn['user'].find({'store_id':store_id})
             if(ret is None):
                 return error.error_non_exist_store_id(store_id)+("",)
-            ret=self.conn['user'].find_one({'store_id':store_id,'user_id':seller_id},session=session)
+            ret=self.conn['user'].find_one({'store_id':store_id,'user_id':seller_id})
             if(ret is None):
                 return error.unmatched_seller_store(seller_id,store_id)+("",)
-            cursor=self.conn['new_order'].find({'store_id':store_id},session=session)
+            cursor=self.conn['new_order'].find({'store_id':store_id})
             
             result=list()
             for i in cursor:
@@ -123,6 +121,7 @@ class Seller(db_conn.DBConn):
             return 528, "{}".format(str(e)),""
         except BaseException as e:
             return 530, "{}".format(str(e)),""
+
         session.commit_transaction()
         session.end_session()
         return 200, "ok", result
