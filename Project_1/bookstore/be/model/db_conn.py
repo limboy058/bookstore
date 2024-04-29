@@ -34,10 +34,3 @@ class DBConn:
             return False
         else:
             return True
-
-
-# if __name__ == "__main__":
-#     dbcon=DBConn()
-#     dbcon.conn['user'].insert_one({'name':'test','user_id':1234})
-#     dbcon.conn['user'].insert_one({'name':'test'})
-#     print(dbcon.user_id_exist(1234))

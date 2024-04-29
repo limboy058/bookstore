@@ -28,7 +28,6 @@ class Store:
         self.conn["dead_user"].delete_many({})
 
     def build_tables(self):
-        self.conn["store"].create_index({"store_id":1})
         self.conn["store"].create_index({"book_info.translator":1})
         self.conn["store"].create_index({"book_info.publisher":1})
         self.conn["store"].create_index({"book_info.stock_level":1})
@@ -39,6 +38,7 @@ class Store:
         self.conn["store"].create_index({"book_info.author":1})
         self.conn["store"].create_index({"book_info.binding":1})
         self.conn['store'].create_index({'book_info.title':'text'})
+        self.conn['store'].create_index(([("store_id",1),("book_info.id",1)]),unique=True)
         #self.conn['store'].create_index({})
 
         self.conn["user"].create_index([("user_id",1)],unique=True)
@@ -99,21 +99,3 @@ def clean_db():
     if(database_instance==None):
         init_database()
     database_instance.clean_tables()
-# if __name__ == "__main__":
-
-#     init_database()
-#     clear_db()
-#     conn=get_db_conn()
-#     client=get_db_client()
-#     session=client.start_session()
-#     session.start_transaction()
-#     conn['user'].insert_one({'name':'test','user_id':1234},session=session)
-#     conn['user'].insert_one({'name':'test'},session=session)
-#     session.commit_transaction()
-#     session.start_transaction()
-#     conn['user'].insert_one({'name':'test','user_id':1234},session=session)
-#     conn['user'].insert_one({'name':'test'},session=session)
-#     session.abort_transaction()
-#     for i in conn['user'].find():
-#         print(i)
-#     session.end_session()

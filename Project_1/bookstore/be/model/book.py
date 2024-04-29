@@ -88,26 +88,3 @@ class searchBook(db_conn.DBConn):
         for i in books:
             lst.append(json.dumps(i['book_info']))
         return 200,"ok",lst
-    
-
-# if __name__ == "__main__":
-#     book=searchBook()
-#     _1,_2,res=book.find_book(0,50,foozytitle='生死',
-#     # store_id='test_receive_order_store_id_a8bc4f08-0214-11ef-9059-d4548b9011a8',
-#     # reqtags=['江南','奇幻'],
-#     # id='6434543',
-#     # author='江南',
-#     # publisher= '长江出版社',
-#     # lowest_pub_year='2011',
-#     # highest_pub_year='2011',
-#     # lowest_price=2980,
-#     # highest_price=2980,
-#     # binding='平装',
-#     # isbn='9787549204304',
-#     # #having_stock=True,
-#     # order_by_method=['price',1]
-#     )
-#     print(len(res),_1,_2)
-#     for i in res:
-#         res1=json.loads(i)
-#         print(res1['tags'])

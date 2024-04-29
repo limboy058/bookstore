@@ -79,9 +79,3 @@ class TestRegister:
 
         code = self.auth.unregister(self.user_id+'s',self.user_id+'s')
         assert code == 200
-
-
-# if __name__ == "__main__":
-#     tmp=TestRegister()
-#     tmp.pre_run_initialization()
-#     tmp.test_unregister_with_buyer_or_seller_order()

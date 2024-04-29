@@ -1,8 +1,5 @@
 import pymongo
 import json
-# import sys
-
-# sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import error
 from be.model import db_conn
 
@@ -51,10 +48,12 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_store_id(store_id)
             if not self.book_id_exist(store_id, book_id,session=session):
                 return error.error_non_exist_book_id(book_id)
-            ret = self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':-add_stock_level}},{'$inc': {'stock_level': add_stock_level}},session=session)
+            ret = self.conn['store'].find_one_and_update(
+                {'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':-add_stock_level}},
+                {'$inc': {'stock_level': add_stock_level}},
+                session=session
+                )
             if ret is None:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_out_of_stock(book_id)
         except BaseException as e:
             return 530, "{}".format(str(e))
@@ -122,13 +121,7 @@ class Seller(db_conn.DBConn):
             return 528, "{}".format(str(e)),""
         except BaseException as e:
             return 530, "{}".format(str(e)),""
-        return 200, "ok", result
-    
 
-    
-# if __name__ == "__main__":
-#     s=Seller()
-#     code,message,result = s.search_order("test_search_order_seller_id_56351562-05f0-11ef-a7e7-dce994284070","test_search_order_store_id_56351563-05f0-11ef-976b-dce994284070")
-#     print(code)
-#     print(message)
-#     print(result)
+        session.commit_transaction()
+        session.end_session()
+        return 200, "ok", result

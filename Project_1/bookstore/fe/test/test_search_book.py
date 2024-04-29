@@ -240,8 +240,3 @@ class TestSearchBook:
                     res=json.loads(i)
                     assert(res['sales']<=las_sales or las_sales==-1)
                     las_price=res['sales']
-
-# if __name__ == "__main__":
-#     tmp=TestSearchBook()
-#     tmp.pre_run_initialization()
-#     tmp.test_search_book_title()

@@ -237,7 +237,7 @@ class Workload:
     ):
         # 获取当前并发数
         thread_num = len(threading.enumerate())
-        # 加索
+        # 加锁
         self.lock.acquire()
         self.n_new_order = self.n_new_order + n_new_order
         self.n_payment = self.n_payment + n_payment
@@ -281,9 +281,9 @@ class Workload:
             # LATENCY:提交付款订单时间/处理付款订单笔数(只考虑该线程延迟，未考虑并发)
             logging.info(
                 "TPS_C={}, NO=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , "
-                "P=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
-                "C=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
-                "S=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
+                "P=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , "
+                "C=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , "
+                "S=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , "
                 "R=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}"
                 .format(
                     int(

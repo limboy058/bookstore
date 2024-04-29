@@ -1,7 +1,5 @@
 import pymongo
 import uuid
-# import sys
-# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
 import json
 import logging
 import time

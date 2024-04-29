@@ -60,8 +60,6 @@ class Session(threading.Thread):
                 self.new_order_ok = self.new_order_ok + 1
                 payment = Payment(new_order.buyer, order_id,new_order.seller,new_order.store_id)
                 self.payment_request.append(payment)
-            else:
-                self.workload.logging_print(ok)
             if self.new_order_i % 100 ==0 or self.new_order_i == len(
                 self.new_order_request
             ):
@@ -84,8 +82,6 @@ class Session(threading.Thread):
                         self.payment_ok = self.payment_ok + 1
                         cancel_order=CancelOrder(payment.buyer,payment.order_id,payment.seller,payment.store_id)
                         self.cancel_request.append(cancel_order)
-                    else:
-                        self.workload.logging_print(ok)
                 self.payment_request = []
                 for cancelOrder in self.cancel_request:
                     before = time.time()
@@ -95,8 +91,6 @@ class Session(threading.Thread):
                     self.cancel_order_i = self.cancel_order_i + 1
                     if ok==200:
                         self.cancel_order_ok = self.cancel_order_ok + 1
-                    else:
-                        self.workload.logging_print(ok)
                 self.cancel_request = []
                 for sendOrder in self.send_request:
                     before = time.time()
@@ -108,8 +102,6 @@ class Session(threading.Thread):
                         self.send_order_ok = self.send_order_ok + 1
                         receiveOrder=ReceiveOrder(sendOrder.buyer,sendOrder.order_id)
                         self.receive_request.append(receiveOrder)
-                    else:
-                        self.workload.logging_print(ok)
                 self.send_request = []
                 for receiveOrder in self.receive_request:
                     before = time.time()
@@ -119,7 +111,6 @@ class Session(threading.Thread):
                     self.receive_order_i = self.receive_order_i + 1
                     if ok==200:
                         self.receive_order_ok = self.receive_order_ok + 1
-                    else:self.workload.logging_print(ok)
                 self.receive_request=[]
                 self.workload.update_stat(
                     self.new_order_i,
