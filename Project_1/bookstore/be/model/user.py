@@ -188,7 +188,7 @@ class User(db_conn.DBConn):
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id})
             if cursor is None:
-                return error.error_non_exist_order_id(order_id)
+                return error.error_non_exist_order_id(order_id),("err","err","err")
             order_detail_list=(cursor['detail'],cursor['total_price'],cursor['status'])
         except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
         except BaseException as e:return 530, "{}".format(str(e))

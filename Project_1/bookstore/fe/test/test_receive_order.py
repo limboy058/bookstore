@@ -31,7 +31,7 @@ class TestreceiveOrder:
         code = self.buyer.receive_books(order_id)
         assert code == 200
 
-    def test_not_paid_receive(self):
+    def test_unmatch_user_id_receive(self):
         ok, buy_book_id_list = self.gen_book.gen(
             non_exist_book_id=False, low_stock_level=False
         )
@@ -39,6 +39,19 @@ class TestreceiveOrder:
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
         code = self.buyer.add_funds(10000000000)
+        code = self.buyer.payment(order_id)
+        code = self.seller.send_books(self.store_id, order_id)
+        self.buyer.user_id = self.seller_id
+        code = self.buyer.receive_books(order_id)
+        assert code != 200
+
+    def test_not_paid_receive(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 200
         code = self.seller.send_books(self.store_id, order_id)
         code = self.buyer.receive_books(order_id)
         assert code != 200
@@ -66,6 +79,20 @@ class TestreceiveOrder:
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         order_id = order_id + "_x"
+        code = self.buyer.receive_books(order_id)
+        assert code != 200
+
+    def test_error_user_id_receive(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 200
+        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.payment(order_id)
+        code = self.seller.send_books(self.store_id, order_id)
+        self.buyer.user_id = self.buyer.user_id + "_x"
         code = self.buyer.receive_books(order_id)
         assert code != 200
 

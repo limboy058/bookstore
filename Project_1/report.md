@@ -67,7 +67,9 @@ XXX 10225101XXX
 
 (分工内容)
 
-#### XXX 10225101XXX
+#### 徐翔宇 10225101535
+
+实现功能：主动取消订单、卖家发货、买家收货、搜索买家订单、搜索卖家订单、搜索订单详细信息，以及各功能测试
 
 (分工内容)
 
@@ -203,13 +205,21 @@ self.conn["store"].create_index({"store_id":1})
 
 
 
+#### 前端接口：
+
+代码路径：fe\access\buyer.py
+
+![image-20240429113148194](report.assets/image-20240429113148194.png)
+
+前端须填写的参数包括用户id：`user_id`和订单号：`order_id`。
+
+
+
 #### 后端接口：
 
 代码路径：be/view/buyer.py
 
 ![image-20240428224428404](report.assets/image-20240428224428404.png)
-
-前端调用时必须填写的参数包括用户id：`user_id`和订单号：`order_id`。
 
 
 
@@ -271,9 +281,19 @@ if(current_status=="paid_but_not_delivered"):
 
 
 
-### 3 卖家send_books
+### 3 卖家发货
 
 由卖家主动发起
+
+
+
+#### 前端接口：
+
+代码路径：fe\access\seller.py
+
+![image-20240429113008326](report.assets/image-20240429113008326.png)
+
+前端须填写的参数包括店铺id：`store_id`和订单号：`order_id`。
 
 
 
@@ -283,17 +303,15 @@ if(current_status=="paid_but_not_delivered"):
 
 ![image-20240428235206147](report.assets/image-20240428235206147.png)
 
-前端调用时必须填写的参数包括店铺id：`store_id`和订单号：`order_id`。
-
 
 
 #### 后端逻辑：
 
-若已支付订单但尚未发货，则会订单状态更新为`delivered_but_not_received`。
+若已支付订单但尚未发货，则会将订单状态更新为`delivered_but_not_received`。
 
 状态码code：默认200，结束状态message：默认"ok"
 
-![image-20240428235630139](report.assets/image-20240428235630139.png)
+![image-20240429103710089](report.assets/image-20240429103710089.png)
 
 #### 数据库操作：
 
@@ -302,7 +320,8 @@ if(current_status=="paid_but_not_delivered"):
 ```python
 cursor = self.conn['new_order'].find_one_and_update(
     {'store_id':store_id,'order_id':order_id},
-    {'$set': {'status': "delivered_but_not_received"}})
+    {'$set': {'status': "delivered_but_not_received"}},
+	session=session)
 ```
 
 该sql作用为：通过对应`order_id`找到唯一订单，将该订单状态`status`从`paid_but_not_delivered`更新为`delivered_but_not_received`.
@@ -316,6 +335,176 @@ cursor = self.conn['new_order'].find_one_and_update(
 测试功能正确运行：成功发货（`test_ok`）。
 
 对多种错误场景都有测试，错误检查测试包含：对未支付订单执行发货、对不存在的订单号执行发货、对不存在的`store_id`执行发货、对不匹配的`store_id`和`order_id`执行发货。
+
+
+
+#### 亮点：事务处理帮助定位错误
+
+数据库更新使用了`find_one_and_update`，只要满足基本条件`{'store_id':store_id,'order_id':order_id}`就会更新订单状态。但是此处仍需检查订单的原状态是否是已支付。
+
+巧思在于：没有将订单状态为`paid_but_not_delivered`放入筛选条件，因为数据库不会返回具体的检索失败的原因。将筛选的时机从在数据库中变为在项目中，这样就可以在搜索失败的情况下定位错误原因，而不是只知道这个订单不能发送，事务处理很好地帮助我们实现了定位检索失败原因的功能，只有各种条件筛选通过才会执行数据库操作，且如果某个筛选条件出错，可以返回对应的错误码。
+
+
+
+
+
+### 4 买家收货
+
+由买家主动发起
+
+
+
+#### 前端接口：
+
+代码路径：fe\access\buyer.py
+
+![image-20240429125529055](report.assets/image-20240429125529055.png)
+
+前端须填写包括用户id：`user_id`和订单号：`order_id`
+
+
+
+#### 后端接口：
+
+代码路径：be/view/buyer.py
+
+![image-20240429121401724](report.assets/image-20240429121401724.png)
+
+
+
+#### 后端逻辑：
+
+若订单已发货，则会将订单状态更新为`received`。
+
+状态码code：默认200，结束状态message：默认"ok"
+
+![image-20240429121438793](report.assets/image-20240429121438793.png)
+
+
+
+#### 数据库操作：
+
+代码路径：be/model/buyer.py
+
+```python
+cursor = self.conn['new_order'].find_one_and_update(
+                {'order_id': order_id},
+                {'$set': {'status': "received"}},
+                session=session)
+```
+
+该sql作用为：通过对应`order_id`找到唯一订单，将该订单状态`status`从`delivered_but_not_received`更新为`received`.
+
+
+
+```python
+cursor=self.conn['user'].find_one_and_update(
+    {'user_id':seller_id},
+    {'$inc':{'balance':total_price}},
+    session=session)
+```
+
+该sql作用为：通过对应`seller_id`找到卖家账户，将该订单赚取的`total_price`加入卖家的账户资金`balance`.
+
+
+
+#### 代码测试：
+
+代码路径：fe/test/test_receive_order.py
+
+测试功能正确运行：成功收货（`test_ok`）。
+
+对多种错误场景都有测试，错误检查测试包含：对未发货订单执行收货、对不存在的订单号`order_id`执行收货、对不存在的`user_id`执行收货、对不匹配的`user_id`和`order_id`执行收货。
+
+
+
+#### 亮点：事务处理帮助定位错误
+
+类似卖家发货，将筛选的时机从在数据库中变为在项目中，因为数据库不会返回具体的检索失败的原因，需要通过代码找到导致检索失败错误源头，并返回错误信息。事务处理很好地帮助我们实现了定位检索失败原因的功能，只有各种条件筛选通过才会执行数据库操作，且如果某个筛选条件出错，可以返回对应的错误码。
+
+同时，事务处理保证了不会出现类似订单状态已更新但卖家没收到资金的情况，即只执行第一句sql，没执行第二句sql就被中断。
+
+
+
+### 5 买家搜索订单
+
+买家搜索所有自己购买的订单
+
+
+
+#### 前端接口：
+
+代码路径：fe\access\buyer.py
+
+
+
+前端须填写包括用户id：`user_id`和订单号：`order_id`
+
+
+
+#### 后端接口：
+
+代码路径：be/view/buyer.py
+
+![image-20240429121401724](report.assets/image-20240429121401724.png)
+
+
+
+#### 后端逻辑：
+
+若订单已发货，则会将订单状态更新为`received`。
+
+状态码code：默认200，结束状态message：默认"ok"
+
+![image-20240429121438793](report.assets/image-20240429121438793.png)
+
+
+
+#### 数据库操作：
+
+代码路径：be/model/buyer.py
+
+```python
+cursor = self.conn['new_order'].find_one_and_update(
+                {'order_id': order_id},
+                {'$set': {'status': "received"}},
+                session=session)
+```
+
+该sql作用为：通过对应`order_id`找到唯一订单，将该订单状态`status`从`delivered_but_not_received`更新为`received`.
+
+
+
+```python
+cursor=self.conn['user'].find_one_and_update(
+    {'user_id':seller_id},
+    {'$inc':{'balance':total_price}},
+    session=session)
+```
+
+该sql作用为：通过对应`seller_id`找到卖家账户，将该订单赚取的`total_price`加入卖家的账户资金`balance`.
+
+
+
+#### 代码测试：
+
+代码路径：fe/test/test_receive_order.py
+
+测试功能正确运行：成功收货（`test_ok`）。
+
+对多种错误场景都有测试，错误检查测试包含：对未发货订单执行收货、对不存在的订单号`order_id`执行收货、对不存在的`user_id`执行收货、对不匹配的`user_id`和`order_id`执行收货。
+
+
+
+#### 亮点：事务处理帮助定位错误
+
+类似卖家发货，将筛选的时机从在数据库中变为在项目中，因为数据库不会返回具体的检索失败的原因，需要通过代码找到导致检索失败错误源头，并返回错误信息。事务处理很好地帮助我们实现了定位检索失败原因的功能，只有各种条件筛选通过才会执行数据库操作，且如果某个筛选条件出错，可以返回对应的错误码。
+
+同时，事务处理保证了不会出现类似订单状态已更新但卖家没收到资金的情况，即只执行第一句sql，没执行第二句sql就被中断。
+
+
+
+
 
 
 

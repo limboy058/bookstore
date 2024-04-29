@@ -136,15 +136,17 @@ class Buyer(db_conn.DBConn):
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
-        except pymongo.errors.PyMongoError as e:return self.pymongo_exception_handle(e)
-        except BaseException as e:return self.base_exception_handle(e)
+        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
+        except BaseException as e:return 530, "{}".format(str(e))
         return 200, "ok", result
 
 
-    def receive_books(self, order_id) -> (int, str):
+    def receive_books(self, user_id, order_id) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
+            if not self.user_id_exist(user_id,session=session):
+                return error.error_non_exist_user_id(user_id)
             cursor = self.conn['new_order'].find_one_and_update(
                 {'order_id': order_id},
                 {'$set': {'status': "received"}},
@@ -154,6 +156,8 @@ class Buyer(db_conn.DBConn):
                 return error.error_invalid_order_id(order_id)
             if(cursor['status'] != "delivered_but_not_received"):
                 return error.error_invalid_order_id(order_id)
+            if(cursor['user_id'] != user_id):
+                return error.unmatched_order_user(order_id, user_id)
             total_price=cursor['total_price']
             seller_id=cursor['seller_id']
             cursor=self.conn['user'].find_one_and_update({'user_id':seller_id},{'$inc':{'balance':total_price}},session=session)

@@ -52,8 +52,9 @@ def cancel():
 @bp_buyer.route("/receive_books", methods=["POST"])
 def receive_books():
     order_id = request.json.get("order_id")
+    user_id = request.json.get("user_id")
     b = Buyer()
-    code, message = b.receive_books(order_id)
+    code, message = b.receive_books(user_id, order_id)
     return jsonify({"message": message}), code
 
 @bp_buyer.route("/search_order", methods=["POST"])

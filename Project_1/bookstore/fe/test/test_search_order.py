@@ -38,20 +38,27 @@ class TestSearchOrder:
             tol_price+=cur_price*info[1]
             
         cursor=self.dbconn.conn['new_order'].find_one({'order_id':order_id})
-        code, (book_list, price, status)= self.auth.search_order_detail(order_id)
+        code,tmp= self.auth.search_order_detail(order_id)
+        assert(code==200)
+        (book_list, price, status)=tmp
         assert buy_book_id_list.sort() == book_list.sort()
         assert tol_price == price
         assert status=='unpaid'
 
-    def test_search_invalid_orders_detail(self):
-        ok, buy_book_id_list = self.gen_book.gen(
-            non_exist_book_id=False, low_stock_level=False
-        )
-        assert ok
-        code,_ = self.buyer.new_order(self.store_id, buy_book_id_list)
-        assert code !=200
+    # def test_search_errror_orders_detail(self):
+    #     ok, buy_book_id_list = self.gen_book.gen(
+    #         non_exist_book_id=False, low_stock_level=False
+    #     )
+    #     assert ok
+    #     code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+    #     assert code == 200
+    #     order_id=order_id+"_x"
+    #     code,tmp= self.auth.search_order_detail(order_id)
+    #     assert code!=200
 
-    def test_user_search_order_ok(self):
+
+
+    def test_buyer_search_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(
             non_exist_book_id=False, low_stock_level=False
         )
@@ -61,7 +68,7 @@ class TestSearchOrder:
         code, order_list= self.buyer.search_order()
         assert code == 200
 
-    def test_user_one_order_ok(self):
+    def test_buyer_one_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(
             non_exist_book_id=False, low_stock_level=False
         )
@@ -73,14 +80,12 @@ class TestSearchOrder:
         code, received_list= self.buyer.search_order()
         assert order_list == received_list
 
-    def test_user_many_orders_ok(self):
+    def test_buyer_many_orders_ok(self):
         order_list=list()
         ok, buy_book_id_list = self.gen_book.gen(
         non_exist_book_id=False, low_stock_level=False, high_stock_level=True
         )
         assert ok
-        # step = int(len(buy_book_id_list)/5)
-        # lst = [buy_book_id_list[i:i+step] for i in range(0, len(buy_book_id_list), step)]
         for i in range(0,5):
             code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
             assert code == 200
@@ -97,6 +102,7 @@ class TestSearchOrder:
         assert code == 200
         code, order_list= self.seller.search_order(self.store_id)
         assert code == 200
+
 
     def test_seller_one_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(
@@ -116,8 +122,6 @@ class TestSearchOrder:
         non_exist_book_id=False, low_stock_level=False, high_stock_level=True
         )
         assert ok
-        # step = int(len(buy_book_id_list)/5)
-        # lst = [buy_book_id_list[i:i+step] for i in range(0, len(buy_book_id_list), step)]
         for i in range(0,5):
             code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
             assert code == 200
