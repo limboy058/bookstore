@@ -548,7 +548,7 @@ self.conn['store'].update_one({'book_id':i[0],'store_id':store_id},{'$inc':{"sto
 total_price=cursor['total_price']
 if(current_status=="paid_but_not_delivered"):
 	cursor=self.conn['user'].find_one_and_update(
-		'user_id':user_id},{'$inc':{'balance':total_price}},session=session)
+		{'user_id':user_id},{'$inc':{'balance':total_price}},session=session)
 ```
 
 该sql作用为：若订单已支付，将生成订单时扣除的金额返还买家的账户。在`user`中，`balance`储存买家的账户资金；在`new_order`中，`total_price`储存该订单支付的总金额。

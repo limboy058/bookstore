@@ -121,7 +121,4 @@ class Seller(db_conn.DBConn):
             return 528, "{}".format(str(e)),""
         except BaseException as e:
             return 530, "{}".format(str(e)),""
-
-        session.commit_transaction()
-        session.end_session()
         return 200, "ok", result
