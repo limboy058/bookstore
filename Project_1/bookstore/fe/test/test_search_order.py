@@ -48,8 +48,10 @@ class TestSearchOrder:
             non_exist_book_id=False, low_stock_level=False
         )
         assert ok
-        code,_ = self.buyer.new_order(self.store_id, buy_book_id_list)
-        assert code !=200
+        code,order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 200
+        code,_= self.auth.search_order_detail(order_id+"_y")
+        assert code!=200
 
     def test_user_search_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(

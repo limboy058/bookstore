@@ -132,14 +132,17 @@ class Buyer(db_conn.DBConn):
 
     def search_order(self, user_id):
         try:
+            cursor=self.conn['user'].find_one({'user_id':user_id})
+            if(cursor is None):
+                return error.error_non_exist_user_id(user_id)+("",)
             cursor=self.conn['new_order'].find({'user_id':user_id})
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
+            return 528, "{}".format(str(e)),""
         except Exception as e:
-            return 530, "{}".format(str(e))
+            return 530, "{}".format(str(e)),""
         return 200, "ok", result
 
 
