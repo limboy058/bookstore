@@ -1,7 +1,7 @@
 import jwt
 
-import sys
-#sys.path.append("D:/code/数据库系统/AllStuRead-master/Project_1/bookstore")
+#import sys
+#sys.path.append("D:/dbproject/Project_1/bookstore")
 
 import time
 import logging
@@ -114,7 +114,7 @@ class User(db_conn.DBConn):
 
             token = jwt_encode(user_id, terminal)
             self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':token,'terminal':terminal}},session=session)
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
+        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e)),""
         except BaseException as e:return 530, "{}".format(str(e)), ""
         session.commit_transaction()
         session.end_session()
@@ -188,20 +188,17 @@ class User(db_conn.DBConn):
         try:
             cursor=self.conn['new_order'].find_one({'order_id':order_id})
             if cursor is None:
-                return error.error_non_exist_order_id(order_id)
+                ret=error.error_non_exist_order_id(order_id)
+                return ret[0],ret[1],""
             order_detail_list=(cursor['detail'],cursor['total_price'],cursor['status'])
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
-        except BaseException as e:return 530, "{}".format(str(e))
+        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e)),""
+        except BaseException as e:return 530, "{}".format(str(e)),""
         return 200, "ok", order_detail_list
+    
 
 # import be.model
 # if __name__ == "__main__":
 #     u=User()
-#     cursor=u.conn['store'].find_one({'book_id':"1044827",'store_id':"test_search_order_store_id_5c241c9b-0528-11ef-86c6-dce994284070"})
-#     #print(cursor)
-#     cur=cursor['book_info']
-#     print(cur)
-#     cur_price=cur['price']
-#     print(cur_price)
-#     assert cursor!=None
+#     ret=u.search_order_detail("heyheyyoyo")
+#     print(ret)
     

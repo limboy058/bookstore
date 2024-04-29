@@ -101,14 +101,16 @@ class Seller(db_conn.DBConn):
         session.start_transaction()
         try:
             cursor=self.conn['new_order'].find({'store_id':store_id},session=session)
+            if(cursor is None):
+                return error.error_non_exist_store_id(store_id)+("",)
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
 
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
+            return 528, "{}".format(str(e)),""
         except Exception as e:
-            return 530, "{}".format(str(e))
+            return 530, "{}".format(str(e)),""
         session.commit_transaction()
         session.end_session()
         return 200, "ok", result
