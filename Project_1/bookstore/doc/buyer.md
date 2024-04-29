@@ -107,7 +107,6 @@ Status Code:
 5XX | 无效参数
 401 | 授权失败 
 
-
 ## 买家充值
 
 #### URL：
@@ -115,9 +114,8 @@ POST http://[address]/buyer/add_funds
 
 #### Request
 
-
-
 ##### Body:
+
 ```json
 {
   "user_id": "user_id",
@@ -142,3 +140,126 @@ Status Code:
 200 | 充值成功
 401 | 授权失败
 5XX | 无效参数
+
+## 买家取消订单
+
+#### URL：
+
+POST http://[address]/buyer/receive_books
+
+#### Request
+
+##### Body:
+
+```json
+{
+  "user_id": "user_id",
+  "order_id": "order_id",
+}
+```
+
+##### 属性说明：
+
+| key      | 类型   | 描述       | 是否可为空 |
+| -------- | ------ | ---------- | ---------- |
+| user_id  | string | 买家用户ID | N          |
+| order_id | string | 订单ID     | N          |
+
+
+Status Code:
+
+| 码   | 描述             |
+| ---- | :--------------- |
+| 200  | 取消成功         |
+| 5XX  | 无效参数         |
+| 5XX  | 订单状态错误     |
+| 5XX  | 订单号不存在     |
+| 5XX  | 用户ID不存在     |
+| 5XX  | 订单不属于该用户 |
+| 528  | 数据库错误       |
+
+
+
+## 买家收货
+
+#### URL：
+
+POST http://[address]/buyer/receive_books
+
+#### Request
+
+##### Body:
+
+```json
+{
+  "user_id": "user_id",
+  "order_id": "order_id",
+}
+```
+
+##### 属性说明：
+
+| key      | 类型   | 描述       | 是否可为空 |
+| -------- | ------ | ---------- | ---------- |
+| user_id  | string | 买家用户ID | N          |
+| order_id | string | 订单ID     | N          |
+
+
+Status Code:
+
+| 码   | 描述             |
+| ---- | :--------------- |
+| 200  | 收货成功         |
+| 5XX  | 无效参数         |
+| 5XX  | 订单状态错误     |
+| 5XX  | 订单号不存在     |
+| 5XX  | 用户ID不存在     |
+| 5XX  | 订单不属于该用户 |
+| 528  | 数据库错误       |
+
+
+
+## 买家搜索订单
+
+#### URL：
+
+POST http://[address]/buyer/search_order
+
+#### Request
+
+##### Body:
+
+```json
+{
+  "user_id": "user_id",
+}
+```
+
+##### 属性说明：
+
+| key     | 类型   | 描述       | 是否可为空 |
+| ------- | ------ | ---------- | ---------- |
+| user_id | string | 买家用户ID | N          |
+
+
+Status Code:
+
+| 码   | 描述         |
+| ---- | :----------- |
+| 200  | 搜索成功     |
+| 5XX  | 用户ID不存在 |
+| 528  | 数据库错误   |
+
+##### Body:
+
+```json
+{
+  "order_id_list": "order_id_list"
+}
+```
+
+##### 属性说明：
+
+| 变量名        | 类型 | 描述                     | 是否可为空 |
+| ------------- | ---- | ------------------------ | ---------- |
+| order_id_list | list | 该用户的所有订单的订单号 | Yes        |
