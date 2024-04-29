@@ -32,7 +32,7 @@ class Seller(db_conn.DBConn):
 
             ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':json.loads(book_json),'stock_level':stock_level,'sales':0},session=session)
             if not ret.acknowledged:
-                return 528, "{}".format(str(ret))  
+                return 528, "{}".format(str(ret))
         except BaseException as e:
             return 530, "{}".format(str(e))
         session.commit_transaction()
@@ -77,16 +77,16 @@ class Seller(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
-    
+
     def send_books(self, store_id: str, order_id: str) -> (int, str):
         session=self.client.start_session()
         session.start_transaction()
         try:
             if not self.store_id_exist(store_id,session=session):
                 return error.error_non_exist_store_id(store_id)
-            
+
             cursor = self.conn['new_order'].find_one_and_update(
-                {'order_id':order_id}, 
+                {'order_id':order_id},
                 {'$set': {'status': "delivered_but_not_received"}},
                 session=session)
             if(cursor is None):
@@ -101,27 +101,38 @@ class Seller(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
-    def search_order(self, store_id):
+    def search_order(self, seller_id, store_id):
         session=self.client.start_session()
         session.start_transaction()
         try:
+            ret=self.conn['user'].find({'user_id':seller_id},session=session)
+            if(ret is None):
+                return error.error_non_exist_user_id(seller_id)+("",)
+            ret=self.conn['user'].find({'store_id':store_id},session=session)
+            if(ret is None):
+                return error.error_non_exist_store_id(store_id)+("",)
+            ret=self.conn['user'].find_one({'store_id':store_id,'user_id':seller_id},session=session)
+            if(ret is None):
+                return error.unmatched_seller_store(seller_id,store_id)+("",)
             cursor=self.conn['new_order'].find({'store_id':store_id},session=session)
+            
             result=list()
             for i in cursor:
                 result.append(i['order_id'])
 
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
-        except Exception as e:
-            return 530, "{}".format(str(e))
+            return 528, "{}".format(str(e)),""
+        except BaseException as e:
+            return 530, "{}".format(str(e)),""
         session.commit_transaction()
         session.end_session()
         return 200, "ok", result
     
 
-
-# import uuid
+    
 # if __name__ == "__main__":
 #     s=Seller()
-#     code = s.add_stock_level("2", "2", "2", 2000)#-(cursor['stock_level']+1)
+#     code,message,result = s.search_order("test_search_order_seller_id_56351562-05f0-11ef-a7e7-dce994284070","test_search_order_store_id_56351563-05f0-11ef-976b-dce994284070")
 #     print(code)
+#     print(message)
+#     print(result)

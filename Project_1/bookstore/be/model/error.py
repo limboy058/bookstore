@@ -19,6 +19,7 @@ error_code = {
     527: "unfished seller orders",
     528: "unmatched order {} and store {}",
     529: "unmatched order {} and user {}",
+    531: "unmatched store {} and user {}",
 }
 
 def error_unfished_buyer_orders():
@@ -98,3 +99,6 @@ def unmatched_order_store(order_id, store_id):
 
 def unmatched_order_user(order_id, user_id):
     return 529, error_code[529].format(order_id, user_id)
+
+def unmatched_seller_store(seller_id, store_id):
+    return 531, error_code[531].format(seller_id, store_id)
