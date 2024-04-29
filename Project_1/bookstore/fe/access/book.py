@@ -108,9 +108,3 @@ class BookDB:
             # print(tags)
 
         return books
-
-
-# if __name__=='__main__':
-#     bdb=BookDB()
-#     for item in bdb.get_book_info(0,1000):
-#         print(item.id)

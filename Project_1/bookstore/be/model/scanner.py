@@ -3,8 +3,6 @@
  
 import time,datetime
 import pymongo.errors
-# import sys
-# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
 from be.model import db_conn
 
 class Scanner(db_conn.DBConn):
@@ -67,13 +65,3 @@ class Scanner(db_conn.DBConn):
             time.sleep(self.scan_interval)
             if not keep:
                 t+=1
-        
-
-# if __name__ == "__main__":
-#     tmp=Scanner(10,2)
-#     g=tmp.keep_running(keep=True)
-#     while 1:
-#         try:
-#             print(next(g))
-#         except:
-#             break

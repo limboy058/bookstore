@@ -27,3 +27,7 @@ class TestAddFunds:
         self.buyer.password = self.buyer.password + "_x"
         code = self.buyer.add_funds(10)
         assert code != 200
+
+    def test_decrease_more_than_having(self):
+        code = self.buyer.add_funds(-1000)
+        assert code != 200

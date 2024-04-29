@@ -1,5 +1,5 @@
 # import sys
-# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
+# sys.path.append('D:/dbproject/Project_1/bookstore')
 from be import serve
 
 

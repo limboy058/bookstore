@@ -52,9 +52,3 @@ class TestScanner:
                 assert(res['sales']==0)
         code = self.buyer.cancel(order_id)
         assert code == 518
-
-
-# if __name__ == "__main__":
-#     tmp = TestScanner()
-#     tmp.pre_run_initialization()
-#     tmp.test_cancel()

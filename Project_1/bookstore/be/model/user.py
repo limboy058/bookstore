@@ -1,8 +1,4 @@
 import jwt
-
-#import sys
-#sys.path.append("D:/dbproject/Project_1/bookstore")
-
 import time
 import logging
 from be.model import error
@@ -194,11 +190,3 @@ class User(db_conn.DBConn):
         except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e)),""
         except BaseException as e:return 530, "{}".format(str(e)),""
         return 200, "ok", order_detail_list
-    
-
-# import be.model
-# if __name__ == "__main__":
-#     u=User()
-#     ret=u.search_order_detail("heyheyyoyo")
-#     print(ret)
-    

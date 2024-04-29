@@ -1,7 +1,5 @@
 import pymongo
 import uuid
-# import sys
-# sys.path.append('D:\\DS_bookstore\\Project_1\\bookstore')
 import json
 import logging
 import time
@@ -141,8 +139,6 @@ class Buyer(db_conn.DBConn):
             return 528, "{}".format(str(e)),""
         except Exception as e:
             return 530, "{}".format(str(e)),""
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
-        except BaseException as e:return 530, "{}".format(str(e))
         return 200, "ok", result
 
 
