@@ -17,7 +17,9 @@ error_code = {
     525: "not enough fund id{}",
     526: "unfished buyer orders",
     527: "unfished seller orders",
-    528: "",
+    528: "unmatched order {} and store {}",
+    529: "unmatched order {} and user {}",
+    531: "unmatched store {} and user {}",
 }
 
 def error_unfished_buyer_orders():
@@ -90,3 +92,13 @@ def error_out_of_stock(book_id):
   
 def error_non_enough_fund(user_id):
     return 525, error_code[525].format(user_id)
+
+def unmatched_order_store(order_id, store_id):
+    return 528, error_code[528].format(order_id, store_id)
+
+
+def unmatched_order_user(order_id, user_id):
+    return 529, error_code[529].format(order_id, user_id)
+
+def unmatched_seller_store(seller_id, store_id):
+    return 531, error_code[531].format(seller_id, store_id)
