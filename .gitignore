@@ -76,3 +76,5 @@ Project_1/bookstore/fe/test/__pycache__/test_aregister.cpython-311-pytest-8.1.1.
 Project_1/bookstore/fe/test/__pycache__/test_ascanner.cpython-311-pytest-8.1.1.pyc
 Project_1/bookstore/fe/test/__pycache__/test_scanner.cpython-311-pytest-8.1.1.pyc
 Project_1/report.md
+Project_1/bookstore/fe/test/__pycache__/test_hot_book.cpython-311-pytest-8.1.1.pyc
+Project_1/bookstore/fe/bench/__pycache__/check.cpython-311.pyc
