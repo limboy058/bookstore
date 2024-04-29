@@ -66,6 +66,7 @@ class Seller:
 
     def search_order(self,  store_id: str) -> [int, list]:
         json = {
+            "seller_id":self.seller_id,
             "store_id": store_id,
         }
         url = urljoin(self.url_prefix, "search_order")

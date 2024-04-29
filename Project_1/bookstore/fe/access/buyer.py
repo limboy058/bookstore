@@ -76,6 +76,7 @@ class Buyer:
     def receive_books(self, order_id: str) -> [int, list]:
         json = {
             "order_id":order_id,
+            "user_id":self.user_id
         }
         url = urljoin(self.url_prefix, "receive_books")
         headers = {"token": self.token}

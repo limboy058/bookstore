@@ -88,7 +88,8 @@ def send_books():
 
 @bp_seller.route("/search_order", methods=["POST"])
 def search_order():
+    seller_id = request.json.get("seller_id")
     store_id = request.json.get("store_id")
     s = seller.Seller()
-    code, message, order_id_list = s.search_order(store_id)
+    code, message, order_id_list = s.search_order(seller_id,store_id)
     return jsonify({"message": message, "order_id_list": order_id_list}), code
