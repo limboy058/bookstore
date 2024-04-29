@@ -63,21 +63,31 @@ XXX 10225101XXX
 
 #### 小人鱼 10225101483
 
-实现查找书籍功能，实现爬虫获取book.db数据。
+实现查找书籍功能及其测试
 
-(分工内容)
+增加事务处理
+
+重新实现buyer原有功能，即创建新订单与支付模块
 
 #### 徐翔宇 10225101535
 
 实现功能：主动取消订单、卖家发货、买家收货、搜索买家订单、搜索卖家订单、搜索订单详细信息，以及各功能测试
+
+在性能测试增加对取消订单、发货、收货的测试以及正确性检查
+
+增加多个用户对热门书并发购买的正确性测试
+
+设计部分索引
+
+以及部分bug fix，代码改进/更新，和mongodb语句优化。
+
+#### XXX 10225101XXX
 
 (分工内容)
 
 #### XXX 10225101XXX
 
 (分工内容)
-
-
 
 ## Ⅱ  设计
 
@@ -101,11 +111,32 @@ XXX 10225101XXX
 
 ![image-20240428195838803](report.assets/image-20240428195838803.png)
 
-#### 后端接口：
+#### 后端接口
 
 代码路径：be/view/book.py
 
-![image-20240428193024719](report.assets/image-20240428193024719.png)
+```
+@bp_auth.route("/search_book",methods=["POST"])
+def search_book():
+    searchbook=searchBook()
+    page_no=request.json.get("page_no","")
+    page_size=request.json.get("page_size","")
+    foozytitle=request.json.get("foozytitle",None)
+    reqtags=request.json.get("reqtags",None)
+    id=request.json.get("id",None)
+    isbn=request.json.get("isbn",None)
+    author=request.json.get("author",None)
+    lowest_price=request.json.get("lowest_price",None)
+    highest_price=request.json.get("highest_price",None)
+    lowest_pub_year=request.json.get("lowest_pub_year",None)
+    highest_pub_year=request.json.get("highest_pub_year",None)
+    store_id=request.json.get("store_id",None)
+    publisher=request.json.get("publisher",None)
+    translator=request.json.get("translator",None)
+    binding=request.json.get("binding",None)
+    order_by_method=request.json.get("order_by_method",None)
+    having_stock=request.json.get("having_stock",None)
+```
 
 前端调用时必须填写的参数包括当前页数以及页大小（每页显示几本书信息），其他为可选参数，如模糊标题、标签列表、书本id等。
 
@@ -155,7 +186,7 @@ cursor = self.conn['store'].find(conditions).limit(xxx).skip(xxx).sort(xxx)
 
 在实现过程中误以为将limit、skip、sort写在find内会更高效，但后续经过实验验证两者应该是等效的。且后者的limit，skip，sort的先后顺序是没有影响的。
 
-#### 代码测试：
+#### 代码测试
 
 代码路径：fe/test/test_search_book.py
 
@@ -196,6 +227,131 @@ self.conn["store"].create_index({"store_id":1})
 2.
 
 对其他会使用到的需求建立普通索引。由于大部分情况下单个条件就足以有选择性，能够筛选出少量满足效果的数据，因此不考虑建立复合索引。
+
+### 创建新订单
+
+#### 后端接口
+
+```
+@bp_buyer.route("/new_order", methods=["POST"])
+def new_order():
+    user_id: str = request.json.get("user_id")
+    store_id: str = request.json.get("store_id")
+    books: [] = request.json.get("books")
+```
+
+参数为买家id，目标商店id，购买的书的id以及数量的列表。
+
+#### 后端逻辑
+
+在user表中查询商店属于的卖家。（利用数组索引加速查询）
+
+对书籍列表中的每本书尝试将其数量减少相应的购买数量，如果书本数量不足则回滚事务，保证了整个操作的原子性和正确性。（查询方面使用store_id或book_id索引查询并更新）
+
+在new_order 表中插入该订单，包含了买家，卖家，商店，书籍与购买数量列表。
+
+#### 数据库操作
+
+代码路径：be/model/buyer.py 的 new_order 函数
+
+```python
+		   session=self.client.start_session()
+            session.start_transaction()
+            if not self.user_id_exist(user_id,session=session):
+                return error.error_non_exist_user_id(user_id) + (order_id,)
+
+            res=self.conn['user'].find_one({'store_id':store_id},{'user_id':1},session=session)
+            if res is None:
+                return error.error_non_exist_store_id(store_id) + (order_id,)
+            seller_id=res['user_id']
+
+            uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
+            sum_price=0
+            for book_id, count in id_and_count:
+                cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id},{"$inc":{"stock_level":-count,"sales":count}},session=session)
+                results=cursor
+                if results==None:
+                    return error.error_non_exist_book_id(book_id) + (order_id,)
+                stock_level = int(results['stock_level'])
+                book_info = results['book_info']
+                price = book_info["price"]
+                if stock_level < count:
+                    return error.error_stock_level_low(book_id) + (order_id,)
+                sum_price += price * count
+            self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'seller_id':seller_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time()),'total_price':sum_price,'detail':id_and_count},session=session)
+            session.commit_transaction()
+```
+
+使用find_one_and_update对单本书同时进行查询和更新，将两次查询简化为一次查询。并且由于做了事务处理，所以更新后stock_level如果变为负数，或者之后的某本书库存不足，所有书也会被回滚至原先状态。
+
+#### 代码测试
+
+代码路径：fe/test/test_new_order.py
+
+是原本代码中已写好的test。包括了正确执行的检查，和对非法的书id，用户id，商店id，以及书库存不足的错误处理检查。
+
+#### 亮点：表结构改动与索引
+
+用户与商店的从属关系不再使用原先额外的user_store表记录，而是给每个卖家user记录其管理的商店列表（如果一个user不是卖家，则它的文档中没有这一属性）。另一种没有采用的方案是在store表中给每个商店记录其卖家。但由于store表中一个文档代表着一个store中的一本book，所以存储的user数量会等于book数量，因此造成了冗余。例如：10个用户，每个用户有2家商店，每家商店10本书，则每个用户的id在store表中要存20次（2*10），总数为10\*20=200次。而我们的设计并无冗余，因为每家商店仅属于一个用户。
+
+在这种表结构的基础上，我们计划对store_id列表建立数组索引来加快通过store_id查询其所属卖家的user_id的查询。
+
+通过explain可以看到根据store_id的查询使用了我们对store_id建立的索引。
+
+![image-20240429141110396](report.assets/image-20240429141110396.png)
+
+### 支付功能
+
+我们的逻辑是用户支付后的钱并不会立刻转达给商家，仅在用户收到货物后才给商家增加相应的金额。
+
+#### 后端接口
+
+```python
+@bp_buyer.route("/payment", methods=["POST"])
+def payment():
+    user_id: str = request.json.get("user_id")
+    order_id: str = request.json.get("order_id")
+    password: str = request.json.get("password")
+```
+
+参数为支付的用户id，订单id以及用户密码。
+
+#### 后端逻辑
+
+```python
+cursor=conn['new_order'].find_one_and_update({'order_id':order_id,'status':"unpaid"},{'$set':{'status':'paid_but_not_delivered'}},session=session)
+            if cursor is None:
+                return error.error_invalid_order_id(order_id)
+            order_id = cursor['order_id']
+            buyer_id = cursor['user_id']
+            seller_id = cursor['seller_id']
+            if not self.user_id_exist(seller_id,session=session):
+                return error.error_non_exist_user_id(seller_id)
+            total_price = cursor['total_price']
+            if buyer_id != user_id:
+                return error.error_authorization_fail()
+            cursor=conn['user'].find_one_and_update({'user_id':user_id},{'$inc':{'balance':-total_price}},session=session)
+            if cursor is None:
+                return error.error_non_exist_user_id(buyer_id)
+            if password != cursor['password']:
+                return error.error_authorization_fail()
+            if(cursor['balance']<total_price):
+                return error.error_not_sufficient_funds(order_id)
+```
+
+正确性检查：检查用户是否存在，用户密码是否存在，用户金额是否充足，订单是否存在且状态是否正确，订单是否属于该用户，订单对应的卖家是否仍然存在。
+
+通过正确性检查后，给用户减少订单对应的金额数，并改变订单的状态为“已支付，未发货”（该状态下用户仍能够主动取消订单）。
+
+由于使用了事务处理和find_one_and_update，可以将原本的多条查询语句（检查用户合法，检查订单合法，更新用户金额，更新订单状态）合并成两句查询且仍能够保证操作的正确性。并且由于在新的表结构中我们的new_order中存入了订单对应的总价格，因此不需要通过遍历
+
+#### 数据库操作
+
+#### 代码测试
+
+#### 亮点
+
+
 
 
 
@@ -509,4 +665,5 @@ cursor=self.conn['user'].find_one_and_update(
 
 
 ## Ⅳ  亮点
+
 

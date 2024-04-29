@@ -41,12 +41,12 @@ class Store:
         self.conn['store'].create_index({'book_info.title':'text'})
         #self.conn['store'].create_index({})
 
-        self.conn["user"].create_index({"user_id":1})
-        self.conn["user"].create_index({"store_id":1})
+        self.conn["user"].create_index([("user_id",1)],unique=True)
+        self.conn["user"].create_index({"stroe_id":1})
 
-        self.conn["dead_user"].create_index({"user_id":1})
+        self.conn["dead_user"].create_index([("user_id",1)],unique=True)
 
-        self.conn["new_order"].create_index({"order_id":1})
+        self.conn["new_order"].create_index([("order_id",1)],unique=True)
         self.conn["new_order"].create_index({"store_id":1})
         self.conn["new_order"].create_index({"user_id":1})
         self.conn["new_order"].create_index({"order_time":1})
