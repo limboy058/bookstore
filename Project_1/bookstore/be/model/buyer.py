@@ -31,7 +31,7 @@ class Buyer(db_conn.DBConn):
             uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
             sum_price=0
             for book_id, count in id_and_count:
-                cursor=self.conn['store'].find_one({'store_id':store_id,'book_id':book_id},session=session)
+                cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id},{"$inc":{"stock_level":-count,"sales":count}},session=session)
                 results=cursor
                 if results==None:
                     return error.error_non_exist_book_id(book_id) + (order_id,)
@@ -41,8 +41,6 @@ class Buyer(db_conn.DBConn):
                 if stock_level < count:
                     return error.error_stock_level_low(book_id) + (order_id,)
                 sum_price += price * count
-                cursor=self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id},
-                                                        {"$inc":{"stock_level":-count,"sales":count}},session=session)
             self.conn['new_order'].insert_one({'order_id':uid,'store_id':store_id,'seller_id':seller_id,'user_id':user_id,'status':'unpaid','order_time':int(time.time()),'total_price':sum_price,'detail':id_and_count},session=session)
             session.commit_transaction()
             order_id = uid
