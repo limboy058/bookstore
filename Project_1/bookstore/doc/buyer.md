@@ -132,6 +132,7 @@ user_id | string | 买家用户ID | N
 password | string | 用户密码 | N
 add_value | int | 充值金额，以分为单位 | N
 
+#### Response
 
 Status Code:
 
@@ -165,6 +166,7 @@ POST http://[address]/buyer/receive_books
 | user_id  | string | 买家用户ID | N          |
 | order_id | string | 订单ID     | N          |
 
+#### Response
 
 Status Code:
 
@@ -204,6 +206,7 @@ POST http://[address]/buyer/receive_books
 | user_id  | string | 买家用户ID | N          |
 | order_id | string | 订单ID     | N          |
 
+#### Response
 
 Status Code:
 
@@ -241,6 +244,7 @@ POST http://[address]/buyer/search_order
 | ------- | ------ | ---------- | ---------- |
 | user_id | string | 买家用户ID | N          |
 
+#### Response
 
 Status Code:
 
