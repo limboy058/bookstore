@@ -20,7 +20,9 @@
 
 
 
-建议使用代码文件中附带的*609.book.json*,使用mongodb的importdata工具从json文件导入本地609数据库
+建议使用代码文件中附带的*\Project_1\bookstore\fe\data\609.book.json*,
+
+使用mongodb的importdata工具从json文件导入本地609数据库
 
 以下是详细步骤:
 
@@ -2665,7 +2667,7 @@ cursor=self.conn['new_order'].find_one({'order_id':order_id})
 
 
 
-### 20 性能测试
+### 19 性能测试
 
 代码路径：fe/bench/session.py	fe/bench/workload.py	fe/bench/check.py	fe/test/test_bench.py
 
@@ -2728,7 +2730,7 @@ def checkSumMoney(money):
 
 
 
-### 21 热门书籍并发购买测试
+### 20 热门书籍并发购买测试
 
 代码路径：fe/bench/session.py	fe/bench/workload.py	fe/bench/check.py	fe/test/test_hot_book.py
 
@@ -2802,13 +2804,61 @@ def gen_hot_test_procedure(self):
 
 ## Ⅳ  其他
 
-github协作...
+### 在github协作
+
+我们在开发过程中全程使用github来进行协作,
+
+这是我们的github仓库链接:[limboy058/bookstore (github.com)](https://github.com/limboy058/bookstore)
+
+(可能当前是private状态, 待作业提交后会公开)
+
+具体来说:
+
+①所有的发布版本均在master分支上;
+
+②每个人修改代码时,首先从远程仓库master分支拉取最新代码,在本地修改后, 推送至远程仓库的个人分支, 最后在github上merge到master分支.
+
+以下是一些统计数据:
+
+
+
+##### 进行了187次commit和59次merge(截至目前)
+
+<img src="report.assets/image-20240430133643335.png" alt="image-20240430133643335" style="zoom: 50%;" />
+
+<img src="report.assets/image-20240430133658024.png" alt="image-20240430133658024" style="zoom:50%;" />
+
+
+
+<img src="report.assets/image-20240430133410748.png" alt="image-20240430133410748" style="zoom:50%;" />
+
+
+
+##### 这是具体每个人整改的代码数量
+
+由于存在一些例如实验报告markdown的整合,所以数值上仅供参考
+
+<img src="report.assets/image-20240430133513466.png" alt="image-20240430133513466" style="zoom: 50%;" />
+
+
+
+##### 一些分支图
+
+<img src="report.assets/image-20240430134328290.png" alt="image-20240430134328290" style="zoom:50%;" />
+
+<img src="report.assets/image-20240430134331172.png" alt="image-20240430134331172" style="zoom:50%;" />
+
+
+
+
 
 
 
 
 
 ## Ⅴ 最终运行结果
+
+
 
 最终的代码覆盖率为95%，绝大多数未覆盖到的代码为一些未知异常（如事务冲突，机器掉电）引发的统一错误处理。
 
