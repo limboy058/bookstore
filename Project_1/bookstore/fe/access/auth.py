@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 
 class Auth:
+
     def __init__(self, url_prefix):
         self.url_prefix = urljoin(url_prefix, "auth/")
 
@@ -18,7 +19,8 @@ class Auth:
         r = requests.post(url, json=json)
         return r.status_code
 
-    def password(self, user_id: str, old_password: str, new_password: str) -> int:
+    def password(self, user_id: str, old_password: str,
+                 new_password: str) -> int:
         json = {
             "user_id": user_id,
             "oldPassword": old_password,
@@ -41,33 +43,49 @@ class Auth:
         r = requests.post(url, json=json)
         return r.status_code
 
-    def searchbook(self,page_no, page_size,
-                      foozytitle:str=None,
-                      reqtags:str=None,
-                      id:str=None,
-                      isbn:str=None,
-                      author:str=None,
-                      lowest_price:int=None,
-                      highest_price:int=None,
-                      lowest_pub_year:str=None,
-                      highest_pub_year:str=None,
-                      store_id:str=None,
-                      publisher:str=None,
-                      translator:str=None,
-                      binding:str=None,
-                      order_by_method:list=None,
-                      having_stock:bool=None
-                      ):
-        json = {"page_no": page_no, "page_size": page_size,"foozytitle":foozytitle,"reqtags":reqtags
-        ,"id":id,"isbn":isbn,"author":author,"lowest_price":lowest_price,"highest_price":highest_price,
-        "lowest_pub_year":lowest_pub_year,"highest_pub_year":highest_pub_year,"store_id":store_id,
-        "publisher":publisher,"translator":translator,"binding":binding,"order_by_method":order_by_method,
-        "having_stock":having_stock}
+    def searchbook(self,
+                   page_no,
+                   page_size,
+                   foozytitle: str = None,
+                   reqtags: str = None,
+                   id: str = None,
+                   isbn: str = None,
+                   author: str = None,
+                   lowest_price: int = None,
+                   highest_price: int = None,
+                   lowest_pub_year: str = None,
+                   highest_pub_year: str = None,
+                   store_id: str = None,
+                   publisher: str = None,
+                   translator: str = None,
+                   binding: str = None,
+                   order_by_method: list = None,
+                   having_stock: bool = None):
+        json = {
+            "page_no": page_no,
+            "page_size": page_size,
+            "foozytitle": foozytitle,
+            "reqtags": reqtags,
+            "id": id,
+            "isbn": isbn,
+            "author": author,
+            "lowest_price": lowest_price,
+            "highest_price": highest_price,
+            "lowest_pub_year": lowest_pub_year,
+            "highest_pub_year": highest_pub_year,
+            "store_id": store_id,
+            "publisher": publisher,
+            "translator": translator,
+            "binding": binding,
+            "order_by_method": order_by_method,
+            "having_stock": having_stock
+        }
         url = urljoin(self.url_prefix, "search_book")
         r = requests.post(url, json=json)
-        return r.status_code,r.json().get("book_info"),r.json().get("message")
-    
-    def search_order_detail(self,order_id) -> [int, list]:
+        return r.status_code, r.json().get("book_info"), r.json().get(
+            "message")
+
+    def search_order_detail(self, order_id) -> [int, list]:
         json = {
             "order_id": order_id,
         }
