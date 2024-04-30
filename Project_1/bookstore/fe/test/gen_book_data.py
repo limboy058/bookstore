@@ -6,6 +6,7 @@ from fe.access.new_seller import register_new_seller
 
 
 class GenBook:
+
     def __init__(self, user_id, store_id):
         self.user_id = user_id
         self.store_id = store_id
@@ -22,9 +23,11 @@ class GenBook:
     def return_seller(self):
         return self.seller
 
-    def gen(
-        self, non_exist_book_id: bool, low_stock_level, max_book_count: int = 100, high_stock_level: bool = False
-    ) -> (bool, []):
+    def gen(self,
+            non_exist_book_id: bool,
+            low_stock_level,
+            max_book_count: int = 100,
+            high_stock_level: bool = False) -> (bool, []):
         self.__init_book_list__()
         ok = True
         book_db = book.BookDB(conf.Use_Large_DB)
@@ -52,7 +55,7 @@ class GenBook:
             stock_level = book_id_stock_level[bk.id]
             if stock_level > 1:
                 if high_stock_level:
-                    buy_num = random.randint(1, int(stock_level/5))
+                    buy_num = random.randint(1, int(stock_level / 5))
                 else:
                     buy_num = random.randint(1, stock_level)
             else:

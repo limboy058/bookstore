@@ -22,11 +22,14 @@ error_code = {
     531: "unmatched store {} and user {}",
 }
 
+
 def error_unfished_buyer_orders():
     return 526, error_code[526]
 
+
 def error_unfished_seller_orders():
     return 527, error_code[527]
+
 
 def error_non_exist_user_id(user_id):
     return 511, error_code[511].format(user_id)
@@ -86,12 +89,15 @@ def error_illegal_order_condition(order_condition):
 
 def error_order_user_id(order_id, user_id):
     return 523, error_code[523].format(order_id, user_id)
-  
+
+
 def error_out_of_stock(book_id):
     return 524, error_code[524].format(book_id)
-  
+
+
 def error_non_enough_fund(user_id):
     return 525, error_code[525].format(user_id)
+
 
 def unmatched_order_store(order_id, store_id):
     return 532, error_code[532].format(order_id, store_id)
@@ -99,6 +105,7 @@ def unmatched_order_store(order_id, store_id):
 
 def unmatched_order_user(order_id, user_id):
     return 529, error_code[529].format(order_id, user_id)
+
 
 def unmatched_seller_store(seller_id, store_id):
     return 531, error_code[531].format(seller_id, store_id)

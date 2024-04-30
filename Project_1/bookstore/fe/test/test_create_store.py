@@ -5,6 +5,7 @@ import uuid
 
 
 class TestCreateStore:
+
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.user_id = "test_create_store_user_{}".format(str(uuid.uuid1()))

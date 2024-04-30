@@ -7,10 +7,12 @@ import uuid
 
 
 class TestAddBook:
+
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         # do before test
-        self.seller_id = "test_add_books_seller_id_{}".format(str(uuid.uuid1()))
+        self.seller_id = "test_add_books_seller_id_{}".format(str(
+            uuid.uuid1()))
         self.store_id = "test_add_books_store_id_{}".format(str(uuid.uuid1()))
         self.password = self.seller_id
         self.seller = register_new_seller(self.seller_id, self.password)
