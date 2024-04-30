@@ -5,7 +5,7 @@ POST http://$address$/auth/register
 
 #### Request
 
-Body:
+Body: 
 ```json
 {
     "user_id":"$user name$",
@@ -67,6 +67,8 @@ Status Code:
 --- | ---
 200 | 注销成功
 401 | 注销失败，用户名不存在或密码不正确
+526 | 注销失败, 有作为买家未完成的订单 
+527 | 注销失败. 有作为卖家未完成的订单 
 
 
 Body:
