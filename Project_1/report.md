@@ -81,11 +81,11 @@ rs.initiate()
 
 本小组为第五组,组员为
 
-##### 小人鱼 10225101483
+##### 许如云 10225101483
 
-##### 需香芋 10225101535
+##### 吸血呀 10225101535
 
-##### 太阳花 10225101XXX
+##### 天意还 10225101529
 
 
 
@@ -113,7 +113,9 @@ rs.initiate()
 
 补充错误码
 
-以下功能的前端接口、后端接口、各功能测试样例（28个）：
+修改爬虫以正确爬取书籍信息
+
+以下功能的前端接口、后端接口、各功能测试样例（28个）、json api补充：
 
 主动取消订单
 
@@ -233,11 +235,13 @@ eg:`[ ['bookid1',10], ['bookid2',5] ] `表示  id为 bookid1的书10本, id为 b
 
 
 
-`store_id`   (string)是商店的唯一id, 建立索引便于查询 (这个商店里有多少书,商店id就会被存多少次)
+`store_id`   (string)是商店的唯一id(这个商店里有多少书,商店id就会被存多少次)
 
 `book_id`  (string) 是书的id,可能会重复, 相当于不同商店上架了同一本书, 但每个商店内book_id不会重复
 
 换句话说, store_id和book_id二元组才可以唯一确定某件商品
+
+因此建立store_id+book_id的多级索引，该多级索引同时也是唯一索引，在一些功能中（例如new order）可以通过该多级索引唯一快速查找信息。只使用store_id进行搜索的语句也可以使用该多级索引。
 
 `book_info` (object) 是一个子文档:
 
@@ -342,7 +346,7 @@ class Store:
         self.conn=self.client['609']
 ```
 
-同时定义了一些函数,用于进行一些快捷操作,比如清空数据库,建立索引等.其部分代码如下:
+同时定义了一些函数,用于进行一些快捷操作,比如清空数据库,建立索引等.这些功能会在测试开始时或是性能测试开始时被调用。其部分代码如下:
 
 ```python
     def clear_tables(self):  #清空表,包括索引
@@ -362,17 +366,19 @@ class Store:
         self.conn["dead_user"].delete_many({})
             
     def build_tables(self): #建立索引
-        self.conn["store"].create_index({"store_id":1})
-        self.conn["store"].create_index({"book_info.translator":1})
-        self.conn["store"].create_index({"book_info.publisher":1})
-        self.conn["store"].create_index({"stock_level":1})
-        self.conn["store"].create_index({"book_info.price":1})
-        self.conn["store"].create_index({"book_info.pub_year":1})
-        self.conn["store"].create_index({"book_info.id":1})
-        self.conn["store"].create_index({"book_info.isbn":1})
-        self.conn["store"].create_index({"book_info.author":1})
-        self.conn["store"].create_index({"book_info.binding":1})
-        self.conn['store'].create_index({'book_info.title':'text'})
+        self.conn["store"].create_index({"book_info.translator": 1})
+        self.conn["store"].create_index({"book_info.publisher": 1})
+        self.conn["store"].create_index({"stock_level": 1})
+        self.conn["store"].create_index({"book_info.price": 1})
+        self.conn["store"].create_index({"book_info.pub_year": 1})
+        self.conn["store"].create_index({"book_info.id": 1})
+        self.conn["store"].create_index({"book_info.isbn": 1})
+        self.conn["store"].create_index({"book_info.author": 1})
+        self.conn["store"].create_index({"book_info.binding": 1})
+        self.conn['store'].create_index({'book_info.title': 'text'})
+        self.conn['store'].create_index(([("store_id", 1),
+                                          ("book_info.id", 1)]),
+                                        unique=True)
 
         self.conn["user"].create_index([("user_id",1)],unique=True)
         self.conn["user"].create_index({"stroe_id":1})
@@ -532,6 +538,8 @@ ret = self.conn['dead_user'].find_one({'user_id':user_id},session=session)
 在user和dead_user中查询id, 用于检查id唯一性
 
 在user中插入一条用户的数据.id,password, balance即余额, token以及terminal.
+
+此处的事务处理可以保证操作的原子性，防止了一些攻击或意外（例如两个请求同时请求注册相同的id，如果未加事务处理则可能会发生同时注册成功导致未知错误发生（user_id为唯一值）
 
 #### 代码测试
 
@@ -1868,7 +1876,7 @@ self.conn['store'].update_one({'book_id':i[0],'store_id':store_id},{'$inc':{"sto
 total_price=cursor['total_price']
 if(current_status=="paid_but_not_delivered"):
 	cursor=self.conn['user'].find_one_and_update(
-		'user_id':user_id},{'$inc':{'balance':total_price}},session=session)
+		{'user_id':user_id},{'$inc':{'balance':total_price}},session=session)
 ```
 
 该Mongodb语句作用为：若订单已支付，将生成订单时扣除的金额返还买家的账户。在`user`中，`balance`储存买家的账户资金；在`new_order`中，`total_price`储存该订单支付的总金额。
@@ -1905,7 +1913,7 @@ if(current_status=="paid_but_not_delivered"):
 
 ![image-20240429211843748](report.assets/image-20240429211843748.png)
 
-执行第三句Mongodb语句时，`user`中`usr_id`上的索引能够加速执行过程。
+执行第三句Mongodb语句时，`user`中`user_id`上的索引能够加速执行过程。
 
 ![image-20240429212107423](report.assets/image-20240429212107423.png)
 
@@ -2795,8 +2803,6 @@ def gen_hot_test_procedure(self):
 ## Ⅳ  其他
 
 github协作...
-
-
 
 
 
