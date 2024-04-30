@@ -176,3 +176,87 @@ Status Code:
 200 | 创建商铺成功
 5XX | 商铺ID不存在 
 5XX | 图书ID不存在 
+
+## 商家发货
+
+#### URL
+
+POST http://[address]/seller/send_books
+
+#### Request
+
+Body:
+
+```json
+{
+  "store_id": "$store id$",
+  "order_id": "$order id$",
+}
+```
+
+| key      | 类型   | 描述   | 是否可为空 |
+| -------- | ------ | ------ | ---------- |
+| store_id | string | 商铺ID | N          |
+| order_id | string | 订单ID | N          |
+
+#### Response
+
+Status Code:
+
+| 码   | 描述             |
+| ---- | :--------------- |
+| 200  | 发货成功         |
+| 5XX  | 商铺ID不存在     |
+| 5XX  | 订单号不存在     |
+| 5XX  | 图书ID不存在     |
+| 5XX  | 订单状态错误     |
+| 5XX  | 订单不属于该商户 |
+| 528  | 数据库错误       |
+
+## 商家搜索相关订单
+
+#### URL
+
+POST http://[address]/seller/search_order
+
+#### Request
+
+Body:
+
+```json
+{
+  "seller_id": "$seller id$",
+  "store_id ": "$store id$",
+}
+```
+
+| key       | 类型   | 描述   | 是否可为空 |
+| --------- | ------ | ------ | ---------- |
+| store_id  | string | 商铺ID | N          |
+| seller_id | string | 卖家ID | N          |
+
+#### Response
+
+Status Code:
+
+| 码   | 描述             |
+| ---- | :--------------- |
+| 200  | 发货成功         |
+| 5XX  | 店铺ID不存在     |
+| 5XX  | 用户ID不存在     |
+| 5XX  | 店铺不属于该用户 |
+| 528  | 数据库错误       |
+
+##### Body:
+
+```json
+{
+  "order_id_list": "order_id_list"
+}
+```
+
+##### 属性说明：
+
+| 变量名        | 类型 | 描述                     | 是否可为空 |
+| ------------- | ---- | ------------------------ | ---------- |
+| order_id_list | list | 该店铺的所有订单的订单号 | Yes        |

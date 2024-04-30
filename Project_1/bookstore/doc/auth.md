@@ -6,7 +6,7 @@ POST http://$address$/auth/register
 #### Request
 
 Body:
-```
+```json
 {
     "user_id":"$user name$",
     "password":"$user password$"
@@ -29,7 +29,7 @@ Status Code:
 5XX | 注册失败，用户名重复
 
 Body:
-```
+```json
 {
     "message":"$error message$"
 }
@@ -46,7 +46,7 @@ POST http://$address$/auth/unregister
 #### Request
 
 Body:
-```
+```json
 {
     "user_id":"$user name$",
     "password":"$user password$"
@@ -70,7 +70,7 @@ Status Code:
 
 
 Body:
-```
+```json
 {
     "message":"$error message$"
 }
@@ -87,7 +87,7 @@ POST http://$address$/auth/login
 #### Request
 
 Body:
-```
+```json
 {
     "user_id":"$user name$",
     "password":"$user password$",
@@ -111,7 +111,7 @@ Status Code:
 401 | 登录失败，用户名或密码错误
 
 Body:
-```
+```json
 {
     "message":"$error message$",
     "token":"$access token$"
@@ -136,7 +136,7 @@ POST http://$address$/auth/password
 #### Request
 
 Body:
-```
+```json
 {
     "user_id":"$user name$",
     "oldPassword":"$old password$",
@@ -160,7 +160,7 @@ Status Code:
 401 | 更改密码失败
 
 Body:
-```
+```json
 {
     "message":"$error message$",
 }
@@ -172,6 +172,7 @@ message | string | 返回错误消息，成功时为"ok" | N
 ## 用户登出
 
 #### URL：
+
 POST http://$address$/auth/logout
 
 #### Request
@@ -183,7 +184,7 @@ key | 类型 | 描述
 token | string | 访问token
 
 Body:
-```
+```json
 {
     "user_id":"$user name$"
 }
@@ -203,7 +204,7 @@ Status Code:
 401 | 登出失败，用户名或token错误
 
 Body:
-```
+```json
 {
     "message":"$error message$"
 }
@@ -211,6 +212,7 @@ Body:
 变量名 | 类型 | 描述 | 是否可为空
 ---|---|---|---
 message | string | 返回错误消息，成功时为"ok" | N
+
 
 
 
