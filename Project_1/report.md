@@ -20,7 +20,7 @@
 
 
 
-建议使用代码文件中附带的*\Project_1\bookstore\fe\data\609.book.json*,
+建议使用代码文件中附带的 *Project_1\bookstore\fe\data\609.book.json*,
 
 使用mongodb的importdata工具从json文件导入本地609数据库
 
@@ -2858,9 +2858,11 @@ def gen_hot_test_procedure(self):
 
 ## Ⅴ 最终运行结果
 
+#### 代码覆盖率为95%
 
+绝大多数未覆盖到的代码为一些未知异常（如事务冲突，机器掉电）引发的统一错误处理。
 
-最终的代码覆盖率为95%，绝大多数未覆盖到的代码为一些未知异常（如事务冲突，机器掉电）引发的统一错误处理。
+以下为test.sh的详细输出,您也可以尝试运行test.sh来获得结果
 
 ```
 $ bash script/test.sh
