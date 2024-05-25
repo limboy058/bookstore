@@ -5,42 +5,39 @@ class DBConn:
 
     def __init__(self):
         self.conn = store.get_db_conn()
-        self.client = store.get_db_client()
 
-    def user_id_exist(self, user_id, session=None):
+    def update_conn(self):#when you need a connection
+        self.conn=store.get_db_conn()
+    def user_id_exist(self, user_id):
         res = None
-        res = self.conn['user'].find_one({'user_id': user_id}, session=session)
-        if res is None:
-            return False
-        else:
-            return True
+        with self.conn.cursor() as cur:
+            cur.execute("select * from \"user\" where user_id=%s",[user_id])
+            res=cur.fetchone()
+            if res==None:
+                cur.execute("select * from dead_user where user_id=%s",[user_id])
+                res=cur.fetchone()
+                return res!=None
+            else:
+                return True
 
-    def book_id_exist(self, store_id, book_id, session=None):
+    def book_id_exist(self, store_id, book_id):
         res = None
-        res = self.conn['store'].find_one(
-            {
-                'store_id': store_id,
-                'book_id': book_id
-            }, session=session)
-        if res is None:
-            return False
-        else:
-            return True
+        with self.conn.cursor() as cur:
+            cur.execute("select * from store where book_id= %s and store_id= %s",[book_id,store_id])
+            res=cur.fetchone()
+            return res!=None
 
-    def store_id_exist(self, store_id, session=None):
+    def store_id_exist(self, store_id):
         res = None
-        res = self.conn['user'].find_one({'store_id': store_id},
-                                         session=session)
-        if res is None:
-            return False
-        else:
-            return True
+        with self.conn.cursor() as cur:
+            cur.execute("select * from store where store_id= \""+store_id+"\"")
+            res=cur.fetchone()
+            return res!=None
 
-    def order_id_exist(self, order_id, session=None):
+    def order_id_exist(self, order_id):
         res = None
-        res = self.conn['new_order'].find_one({'order_id': order_id},
-                                              session=session)
-        if res is None:
-            return False
-        else:
-            return True
+        with self.conn.cursor() as cur:
+            cur.execute("select * from new_order where order_id= \""+order_id+"\"")
+            res=cur.fetchone()
+            return res!=None
+        
