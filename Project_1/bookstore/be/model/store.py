@@ -3,65 +3,93 @@ import os
 import sqlite3 as sqlite
 import threading
 import pymongo
-
-
+import psycopg2
 class Store:
     database: str
 
     def __init__(self):
         #self.database = os.path.join(db_path, "be.db")
         #self.bookdatabase=os.path.join(db_path, "book.db")
+        self.user_name="mamba"
+        self.user_password="out"
         self.client = pymongo.MongoClient()
-        self.conn = self.client['609']
-
+        self.conn = psycopg2.connect(host="localhost",database="609A", user=self.user_name, password=self.user_password)
+        
     def clear_tables(self):
-        self.conn["user"].drop()
-        self.conn["store"].drop()
-        self.conn["new_order"].drop()
-        self.conn["dead_user"].drop()
-        self.conn["user"]
-        self.conn["store"]
-        self.conn["new_order"]
-        self.conn["dead_user"]
+        conn=self.get_db_conn()
+        cur=conn.cursor()
+        cur.execute("drop table if exists \"store\";")
+        cur.execute("drop table if exists \"user\";")
+        cur.execute("drop table if exists \"dead_user\";")
+        cur.execute("drop table if exists \"new_order\";")
+        cur.execute("drop table if exists \"order_detail\";")
+        cur.execute("drop table if exists \"book_info\";")
+        cur.execute("drop table if exists \"book_tag\";")
+        conn.commit()
+        cur.close()
+        conn.close()
 
     def clean_tables(self):
-        self.conn["user"].delete_many({})
-        self.conn["store"].delete_many({})
-        self.conn["new_order"].delete_many({})
-        self.conn["dead_user"].delete_many({})
+        conn=self.get_db_conn()
+        cur=conn.cursor()
+        cur.execute("delete from \"store\";")
+        cur.execute("delete from \"user\";")
+        cur.execute("delete from \"dead_user\";")
+        cur.execute("delete from \"new_order\";")
+        cur.execute("delete from \"order_detail\";")
+        cur.execute("delete from \"book_info\";")
+        cur.execute("delete from \"book_tag\";")
+        conn.commit()
+        cur.close()
+        conn.close()
 
     def build_tables(self):
-        self.conn["store"].create_index({"book_info.translator": 1})
-        self.conn["store"].create_index({"book_info.publisher": 1})
-        self.conn["store"].create_index({"stock_level": 1})
-        self.conn["store"].create_index({"book_info.price": 1})
-        self.conn["store"].create_index({"book_info.pub_year": 1})
-        self.conn["store"].create_index({"book_info.id": 1})
-        self.conn["store"].create_index({"book_info.isbn": 1})
-        self.conn["store"].create_index({"book_info.author": 1})
-        self.conn["store"].create_index({"book_info.binding": 1})
-        self.conn['store'].create_index({'book_info.title': 'text'})
-        self.conn['store'].create_index(([("store_id", 1),
-                                          ("book_info.id", 1)]),
-                                        unique=True)
-        #self.conn['store'].create_index({})
+        conn=self.get_db_conn()
+        cur=conn.cursor()
 
-        self.conn["user"].create_index([("user_id", 1)], unique=True)
-        self.conn["user"].create_index({"stroe_id": 1})
+        cur.execute("create table store("+
+            "store_id varchar(255),user_id varchar(255),primary key(store_id)"        
+        +")")
 
-        self.conn["dead_user"].create_index([("user_id", 1)], unique=True)
+        cur.execute("create table book_info("+
+            "book_id varchar(255),store_id varchar(255),price int,stock_level int,sales int, "+
+            "title varchar(255),author varchar(255),"+
+            "publisher varchar(255),original_title varchar(255),translator varchar(255),"+   
+            "pub_year varchar(255),pages int,currency_unit varchar(255),"+         
+            "binding varchar(255),isbn int,author_intro varchar(255),"+     
+            "book_intro varchar(255),content varchar(255),picture varchar(255),"+ 
+            " primary key(store_id,book_id)"+    
+        ")")
 
-        self.conn["new_order"].create_index([("order_id", 1)], unique=True)
-        self.conn["new_order"].create_index({"store_id": 1})
-        self.conn["new_order"].create_index({"user_id": 1})
-        self.conn["new_order"].create_index({"order_time": 1})
-        self.conn["new_order"].create_index({"seller_id": 1})
+        cur.execute("create table dead_user("+
+            "user_id varchar(255),primary key(user_id)"        
+        +")")
 
-    def get_db_client(self):
-        return self.client
+        cur.execute("create table \"user\"("+
+            "user_id varchar(255),password varchar(255),balance int,token varchar(255),terminal varchar(255), primary key(user_id)"        
+        +")")
+
+        cur.execute("create table new_order("+
+            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price int, primary key(order_id)"        
+        +")")
+
+        cur.execute("create table order_detail("+
+            "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
+        +")")
+
+        cur.execute("create table book_tag("+
+            "store_id varchar(255),book_id varchar(255), tag varchar(255), primary key(tag,store_id,book_id)"        
+        +")")
+
+        conn.commit()
 
     def get_db_conn(self):
-        return self.conn
+        return psycopg2.connect(
+            host="localhost",
+            database="609A",
+            user=self.user_name,
+            password=self.user_password
+        )
 
 
 database_instance: Store = None
@@ -72,20 +100,16 @@ init_completed_event = threading.Event()
 def init_database():
     global database_instance
     database_instance = Store()
+    database_instance.clear_tables()
+    database_instance.build_tables()
 
 
 def get_db_conn():
+
     global database_instance
     if (database_instance == None):
         init_database()
     return database_instance.get_db_conn()
-
-
-def get_db_client():
-    global database_instance
-    if (database_instance == None):
-        init_database()
-    return database_instance.get_db_client()
 
 
 def clear_db():
@@ -107,3 +131,15 @@ def clean_db():
     if (database_instance == None):
         init_database()
     database_instance.clean_tables()
+
+
+# if __name__=="__main__":
+#     clear_db()
+#     build_db()
+#     conn=get_db_conn()
+#     cur=conn.cursor()
+#     cur.execute("insert into dead_user values ('abc')")
+#     cur.execute("select * from dead_user")
+#     res=cur.fetchall()
+#     for i in res:
+#         print(i,len(i[0]))

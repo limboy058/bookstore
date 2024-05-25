@@ -1,9 +1,13 @@
 import pymongo
+import sys
+sys.path.append("D:\dbproject\Project_1\\bookstore")
 import uuid
 import json
 import logging
 import time
+import datetime
 import pymongo.errors
+import psycopg2
 from be.model import db_conn
 from be.model import error
 
@@ -16,57 +20,44 @@ class Buyer(db_conn.DBConn):
     def new_order(self, user_id: str, store_id: str,
                   id_and_count: [(str, int)]) -> (int, str, str):
         order_id = ""
+        self.update_conn()
         try:
-            session = self.client.start_session()
-            session.start_transaction()
-            if not self.user_id_exist(user_id, session=session):
+            cur=self.conn.cursor()
+            if not self.user_id_exist(user_id):
                 return error.error_non_exist_user_id(user_id) + (order_id, )
-
-            res = self.conn['user'].find_one({'store_id': store_id},
-                                             {'user_id': 1},
-                                             session=session)
+            
+            cur.execute("select user_id from store where store_id=%s and user_id=%s",[store_id,user_id])
+            res=cur.fetchone()
             if res is None:
                 return error.error_non_exist_store_id(store_id) + (order_id, )
-            seller_id = res['user_id']
 
             uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
             sum_price = 0
+
+            book_id_lst=list()
+            for i in id_and_count:
+                book_id_lst.append(i[0])
+
+            cur.execute("select price,stock_level,book_id from book_info where store_id=%s and book_id in %s ;",[store_id,tuple(book_id_lst)])
+
+            res=cur.fetchall()
+            for price,stock_level,target_id in res:
+                for book_id,count in id_and_count:
+                    if(book_id==target_id):
+                        sum_price += price * count
+                        if(stock_level<count):
+                            return error.error_stock_level_low(book_id) + (order_id, )
+                        else:break
+
             for book_id, count in id_and_count:
-                cursor = self.conn['store'].find_one_and_update(
-                    {
-                        'store_id': store_id,
-                        'book_id': book_id
-                    }, {"$inc": {
-                        "stock_level": -count,
-                        "sales": count
-                    }},
-                    session=session)
-                results = cursor
-                if results == None:
-                    return error.error_non_exist_book_id(book_id) + (
-                        order_id, )
-                stock_level = int(results['stock_level'])
-                book_info = results['book_info']
-                price = book_info["price"]
-                if stock_level < count:
-                    return error.error_stock_level_low(book_id) + (order_id, )
-                sum_price += price * count
-            self.conn['new_order'].insert_one(
-                {
-                    'order_id': uid,
-                    'store_id': store_id,
-                    'seller_id': seller_id,
-                    'user_id': user_id,
-                    'status': 'unpaid',
-                    'order_time': int(time.time()),
-                    'total_price': sum_price,
-                    'detail': id_and_count
-                },
-                session=session)
-            session.commit_transaction()
+                cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s",[count,count,store_id,book_id])
+            query="insert into new_order values(%s,%s,%s,%s,%s,%s)"
             order_id = uid
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e)), ""
+            cur.execute(query,[order_id,store_id,user_id,'unpaid',datetime.datetime.now(),sum_price])
+            
+        except psycopg2.Error as e:  return 528, "{}".format(str(e)), ""
         except BaseException as e:  return 530, "{}".format(str(e)), ""
+        self.conn.commit()
         return 200, "ok", order_id
 
     def payment(self, user_id: str, password: str,
@@ -219,3 +210,20 @@ class Buyer(db_conn.DBConn):
         session.commit_transaction()
         session.end_session()
         return 200, "ok"
+
+if __name__=="__main__":
+    buyer=Buyer()
+    cur=buyer.conn.cursor()
+    cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
+    cur.execute("insert into \"user\" values('buyer','abc',1000,'a','a')")
+    cur.execute("insert into store values('store','seller')")
+    cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
+    buyer.conn.commit()
+    buyer.update_conn()
+    res=buyer.new_order('seller','store',[('mamba out!',5)])
+    print(res)
+    buyer.update_conn()
+    cur.execute("select * from new_order")
+    res=cur.fetchall()
+    for i in res:
+        print(i)
