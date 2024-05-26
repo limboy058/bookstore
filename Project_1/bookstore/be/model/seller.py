@@ -53,8 +53,6 @@ class Seller(db_conn.DBConn):
                 return error.error_non_exist_book_id(book_id)
             ret = self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':-add_stock_level}},{'$inc': {'stock_level': add_stock_level}},session=session)
             if ret is None:
-                session.abort_transaction()
-                session.end_session()
                 return error.error_out_of_stock(book_id)
         except BaseException as e:
             return 530, "{}".format(str(e))
