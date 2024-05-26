@@ -7,13 +7,16 @@ import uuid
 
 
 class TestAddStockLevel:
+
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
-        self.user_id = "test_add_book_stock_level1_user_{}".format(str(uuid.uuid1()))
-        self.store_id = "test_add_book_stock_level1_store_{}".format(str(uuid.uuid1()))
+        self.user_id = "test_add_book_stock_level1_user_{}".format(
+            str(uuid.uuid1()))
+        self.store_id = "test_add_book_stock_level1_store_{}".format(
+            str(uuid.uuid1()))
         self.password = self.user_id
         self.seller = register_new_seller(self.user_id, self.password)
-        self.dbconn=db_conn.DBConn()
+        self.dbconn = db_conn.DBConn()
         code = self.seller.create_store(self.store_id)
         assert code == 200
         book_db = book.BookDB(conf.Use_Large_DB)
@@ -26,37 +29,40 @@ class TestAddStockLevel:
     def test_error_user_id(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(
-                self.user_id + "_x", self.store_id, book_id, 10
-            )
+            code = self.seller.add_stock_level(self.user_id + "_x",
+                                               self.store_id, book_id, 10)
             assert code != 200
 
     def test_error_store_id(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(
-                self.user_id, self.store_id + "_x", book_id, 10
-            )
+            code = self.seller.add_stock_level(self.user_id,
+                                               self.store_id + "_x", book_id,
+                                               10)
             assert code != 200
 
     def test_error_book_id(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(
-                self.user_id, self.store_id, book_id + "_x", 10
-            )
+            code = self.seller.add_stock_level(self.user_id, self.store_id,
+                                               book_id + "_x", 10)
             assert code != 200
 
     def test_ok(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, 10)
+            code = self.seller.add_stock_level(self.user_id, self.store_id,
+                                               book_id, 10)
             assert code == 200
 
     def test_error_book_stock(self):
         for b in self.books:
             book_id = b.id
-            cursor=self.dbconn.conn['store'].find_one({'store_id':self.store_id,'book_id':book_id})
-            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, -(cursor['stock_level']+1))#-(cursor['stock_level']+1)
+            cursor = self.dbconn.conn['store'].find_one({
+                'store_id': self.store_id,
+                'book_id': book_id
+            })
+            code = self.seller.add_stock_level(
+                self.user_id, self.store_id, book_id,
+                -(cursor['stock_level'] + 1))  #-(cursor['stock_level']+1)
             assert code != 200
-            

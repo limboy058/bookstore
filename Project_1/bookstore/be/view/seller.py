@@ -22,7 +22,7 @@ def seller_add_book():
     store_id: str = request.json.get("store_id")
     book_info: str = request.json.get("book_info")
     # book_id: str = request.json.get("book_id")
-    
+
     # title: str = request.json.get("title")
     # author: str = request.json.get("author")
     # publisher: str = request.json.get("publisher")
@@ -43,7 +43,10 @@ def seller_add_book():
 
     s = seller.Seller()
     code, message = s.add_book(
-        user_id, store_id, book_info.get("id"), json.dumps(book_info),
+        user_id,
+        store_id,
+        book_info.get("id"),
+        json.dumps(book_info),
         # book_id,
         # title,
         # author,
@@ -61,8 +64,7 @@ def seller_add_book():
         # content,
         # tags,
         # picture,
-        stock_level
-    )
+        stock_level)
 
     return jsonify({"message": message}), code
 
@@ -78,6 +80,7 @@ def add_stock_level():
 
     return jsonify({"message": message}), code
 
+
 @bp_seller.route("/send_books", methods=["POST"])
 def send_books():
     store_id = request.json.get("store_id")
@@ -86,10 +89,11 @@ def send_books():
     code, message = s.send_books(store_id, order_id)
     return jsonify({"message": message}), code
 
+
 @bp_seller.route("/search_order", methods=["POST"])
 def search_order():
     seller_id = request.json.get("seller_id")
     store_id = request.json.get("store_id")
     s = seller.Seller()
-    code, message, order_id_list = s.search_order(seller_id,store_id)
+    code, message, order_id_list = s.search_order(seller_id, store_id)
     return jsonify({"message": message, "order_id_list": order_id_list}), code

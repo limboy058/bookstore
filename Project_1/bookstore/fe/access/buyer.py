@@ -4,9 +4,8 @@ from urllib.parse import urljoin
 from fe.access.auth import Auth
 
 
-
-
 class Buyer:
+
     def __init__(self, url_prefix, user_id, password):
         self.url_prefix = urljoin(url_prefix, "buyer/")
         self.user_id = user_id
@@ -14,10 +13,12 @@ class Buyer:
         self.token = ""
         self.terminal = "my terminal"
         self.auth = Auth(url_prefix)
-        code, self.token = self.auth.login(self.user_id, self.password, self.terminal)
+        code, self.token = self.auth.login(self.user_id, self.password,
+                                           self.terminal)
         assert code == 200
 
-    def new_order(self, store_id: str, book_id_and_count: [(str, int)]) -> (int, str):
+    def new_order(self, store_id: str,
+                  book_id_and_count: [(str, int)]) -> (int, str):
         books = []
         for id_count_pair in book_id_and_count:
             books.append({"id": id_count_pair[0], "count": id_count_pair[1]})
@@ -28,8 +29,6 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         response_json = r.json()
         return r.status_code, response_json.get("order_id")
-
-
 
     def payment(self, order_id: str):
         json = {
@@ -62,7 +61,7 @@ class Buyer:
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
-    
+
     def search_order(self) -> [int, list]:
         json = {
             "user_id": self.user_id,
@@ -74,12 +73,8 @@ class Buyer:
         return r.status_code, response_json.get("order_id_list")
 
     def receive_books(self, order_id: str) -> [int, list]:
-        json = {
-            "order_id":order_id,
-            "user_id":self.user_id
-        }
+        json = {"order_id": order_id, "user_id": self.user_id}
         url = urljoin(self.url_prefix, "receive_books")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
-    

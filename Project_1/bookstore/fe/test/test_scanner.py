@@ -9,7 +9,10 @@ from fe.access.new_buyer import register_new_buyer
 from fe.test.gen_book_data import GenBook
 from fe.access.auth import Auth
 from fe import conf
+
+
 class TestScanner:
+
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self, live_time=10, scan_interval=2):
         self.buyer_id = "test_scanner_buyer_{}".format(str(uuid.uuid1()))
@@ -21,7 +24,7 @@ class TestScanner:
 
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
-        self.auth=Auth(conf.URL)
+        self.auth = Auth(conf.URL)
         self.live_time = live_time
         self.scan_interval = scan_interval
         self.scanner = be.model.scanner.Scanner(live_time=live_time,
@@ -46,15 +49,11 @@ class TestScanner:
             except:
                 assert 0
         assert chk
-        code,lst,_=self.auth.searchbook(0,len(buy_book_id_list),store_id=self.store_id)
+        code, lst, _ = self.auth.searchbook(0,
+                                            len(buy_book_id_list),
+                                            store_id=self.store_id)
         for i in lst:
-                res=json.loads(i)
-                assert(res['sales']==0)
+            res = json.loads(i)
+            assert (res['sales'] == 0)
         code = self.buyer.cancel(order_id)
         assert code == 518
-
-
-# if __name__ == "__main__":
-#     tmp = TestScanner()
-#     tmp.pre_run_initialization()
-#     tmp.test_cancel()
