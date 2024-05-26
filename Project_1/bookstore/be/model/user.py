@@ -4,6 +4,8 @@ import logging
 from be.model import error
 from be.model import db_conn
 import pymongo.errors
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # encode a json string like:
 #   {
@@ -254,3 +256,21 @@ class User(db_conn.DBConn):
         except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e)), ""
         except BaseException as e:  return 530, "{}".format(str(e)), ""
         return 200, "ok", order_detail_list
+
+    def search_order_detail(self, order_id):
+        self.update_conn()
+        try:
+            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+                cur.execute("SELECT detail, total_price, status FROM new_order WHERE order_id = %s", (order_id,))
+                order = cur.fetchone()
+                
+                if order is None:
+                    ret = error.error_non_exist_order_id(order_id)
+                    return ret[0], ret[1], ""
+                
+                order_detail_list = (order['detail'], order['total_price'], order['status'])
+                return 200, "ok", order_detail_list
+
+        except psycopg2.Error as e:return 528, "{}".format(str(e))
+        except BaseException as e: return 530, "{}".format(str(e))

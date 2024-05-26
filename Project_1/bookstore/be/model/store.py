@@ -133,13 +133,13 @@ def clean_db():
     database_instance.clean_tables()
 
 
-# if __name__=="__main__":
-#     clear_db()
-#     build_db()
-#     conn=get_db_conn()
-#     cur=conn.cursor()
-#     cur.execute("insert into dead_user values ('abc')")
-#     cur.execute("select * from dead_user")
-#     res=cur.fetchall()
-#     for i in res:
-#         print(i,len(i[0]))
+if __name__=="__main__":
+    clear_db()
+    build_db()
+    conn=get_db_conn()
+    cur=conn.cursor()
+    cur.execute("insert into dead_user values ('abc')")
+    cur.execute("select * from dead_user")
+    res=cur.fetchall()
+    for i in res:
+        print(i,len(i[0]))
