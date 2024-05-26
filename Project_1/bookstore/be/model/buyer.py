@@ -86,27 +86,26 @@ class Buyer(db_conn.DBConn):
                     
                 cur.execute("update new_order set status=%s where order_id=%s",["paid_but_not_delivered",order_id])
                 conn.commit()
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
+        except psycopg2.Error as e:  return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
         return 200, "ok"
 
     def add_funds(self, user_id, password, add_value) -> (int, str):
-        session = self.client.start_session()
-        session.start_transaction()
         try:
-            cursor = self.conn['user'].find_one_and_update(
-                {'user_id': user_id}, {'$inc': {
-                    'balance': add_value
-                }},
-                session=session)
-            if (cursor['password'] != password):
-                return error.error_authorization_fail()
-            if (cursor['balance'] < -add_value):
-                return error.error_non_enough_fund(user_id)
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
+            with self.get_conn() as conn:
+                cur=conn.cursor()
+                cur.execute("select password,balance from \"user\" where user_id=user_id")
+                res=cur.fetchone()
+                if(res==None):
+                    return error.error_non_exist_user_id(user_id)
+                elif res[0]!=password:
+                    return error.error_authorization_fail()
+                elif res[1]<-add_value:
+                    return error.error_non_enough_fund(user_id)
+                cur.execute("update \"user\" set balance=balance+%s where user_id=user_id",[add_value,])
+                conn.commit()
+        except psycopg2.Error as e:  return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
         return 200, "ok"
 
     def cancel(self, user_id, order_id) -> (int, str):
@@ -205,10 +204,13 @@ if __name__=="__main__":
     conn=buyer.get_conn()
     cur=conn.cursor()
     cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
-    cur.execute("insert into \"user\" values('buyer','abc',1000,'a','a')")
+    cur.execute("insert into \"user\" values('buyer','abc',0,'a','a')")
+    
     cur.execute("insert into store values('store','seller')")
     cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
     conn.commit()
+    res=buyer.add_funds("buyer","abc",1000)
+    print(res)
     res=buyer.new_order('buyer','store',[('mamba out!',5)])
     print(res)
     conn=buyer.get_conn()
