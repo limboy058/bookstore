@@ -80,7 +80,9 @@ class BookDB:
 
             book.currency_unit = row[9]
             book.binding = row[10]
-            book.isbn = int(row[11])
+            book.isbn = row[11]
+            if(book.isbn is not None):
+                book.isbn=str(book.isbn)
             book.author_intro = row[12]
             book.book_intro = row[13]
             book.content = row[14]
