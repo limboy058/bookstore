@@ -50,6 +50,7 @@ class BookDB:
         conn.execute("delete from book where id is NULL or price=NULL or title is NULL")
         conn.commit()
         conn.close()
+        
     def get_book_info(self, start, size) -> [Book]:
         books = []
         conn = sqlite.connect(self.book_db)
@@ -75,6 +76,8 @@ class BookDB:
             book.pages = row[7]
             book.price = row[8]
 
+
+
             book.currency_unit = row[9]
             book.binding = row[10]
             book.isbn = row[11]
@@ -84,7 +87,7 @@ class BookDB:
             tags = row[15]
 
             picture = row[16]
-
+            
             for tag in tags.split("\n"):
                 if tag.strip() != "":
                     book.tags.append(tag)
@@ -100,3 +103,8 @@ class BookDB:
             # print(tags)
 
         return books
+
+
+# if __name__=='__main__':
+#     b=BookDB(large=True)
+#     b.clean_book_db()
