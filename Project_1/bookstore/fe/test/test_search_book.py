@@ -1,7 +1,7 @@
 import time
 import sys
 import json
-#sys.path.append("D:/dbproject/Project_1/bookstore")
+sys.path.append("D:/dbproject/Project_1/bookstore")
 import pytest
 import random
 from fe.access.auth import Auth
@@ -15,7 +15,7 @@ import uuid
 
 class TestSearchBook:
 
-    @pytest.fixture(autouse=True)
+    #@pytest.fixture(autouse=True)
     def pre_run_initialization(self):
 
         self.seller_id = "test_add_books_seller_id_{}".format(str(
@@ -51,7 +51,7 @@ class TestSearchBook:
             for i in lst:
                 res = json.loads(i)
                 tmp_judge = False
-                assert (res['id'] == book_id)
+                assert (res['book_id'] == book_id)
 
     def test_search_book_title(self):
         cnt = 0
@@ -277,3 +277,15 @@ class TestSearchBook:
                 res = json.loads(i)
                 assert (res['sales'] <= las_sales or las_sales == -1)
                 las_price = res['sales']
+
+
+# if __name__=="__main__":
+#     test=TestSearchBook()
+#     test.pre_run_initialization()
+#     # test.test_search_book_isbn()
+#     # test.test_search_book_non_exist_store()
+#     # test.test_search_book_price()
+#     # test.test_search_book_pub_year()
+#     test.test_search_book_stock()
+#     test.test_search_book_store_id()
+#     #test.test_search_book_tags()

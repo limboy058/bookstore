@@ -41,13 +41,13 @@ class searchBook(db_conn.DBConn):
         fill=list()
         try:
             if (foozytitle != None):
-                conditions+=" title @>%s and"
-                fill.append(foozytitle)
+                conditions+=" title like %s and"
+                fill.append("%"+foozytitle+"%")
             if (reqtags != None):
                 conditions+= " tags@> %s and"
                 fill.append(reqtags)
             if (id != None):
-                conditions+=" id=%s and"
+                conditions+=" book_id=%s and"
                 fill.append(id)
             if (isbn != None):
                 conditions+=" isbn=%s and"
@@ -68,8 +68,8 @@ class searchBook(db_conn.DBConn):
                 conditions+=" pub_year>=%s and"
                 fill.append(lowest_pub_year)
             if (highest_pub_year != None):
-                conditions+=" pub_year<=%s and"
-                fill.append(highest_pub_year)
+                conditions+=" pub_year<%s and"
+                fill.append(str(int(highest_pub_year)+1))
             if (publisher != None):
                 conditions+=" publisher=%s and"
                 fill.append(publisher)
@@ -79,8 +79,8 @@ class searchBook(db_conn.DBConn):
             if (binding != None):
                 conditions+=" binding=%s and"
                 fill.append(binding)
-            if (having_stock != None and having_stock == True):
-                condition+="stock_level>=0 and"
+            if (having_stock == True):
+                conditions+=" stock_level>0 and"
 
             if(len(conditions)>7):
                 conditions=conditions[:-3]
@@ -100,7 +100,7 @@ class searchBook(db_conn.DBConn):
             
             conn=self.get_conn()
             cur=conn.cursor()
-            cur.execute(query+conditions+" limit "+str(page_size)+" skip "+str(page_no*page_size),fill)
+            cur.execute(query+conditions+" limit "+str(page_size)+" offset "+str(page_no*page_size),fill)
             res=cur.fetchall()
             for row in res:
                 book=dict()
@@ -111,19 +111,21 @@ class searchBook(db_conn.DBConn):
                 book['sales']=row[4]
                 book['title']=row[5]
                 book['author']=row[6]
-                book['publisher']=row[7]
-                book['original_title']=row[8]
-                book['translator']=row[9]
-                book['pub_year']=row[10]
-                book['pages']=row[11]
-                book['currency_unit']=row[12]
-                book['binding']=row[13]
-                book['isbn']=row[14]
-                book['author_intro']=row[15]
-                book['book_intro']=row[16]
-                book['content']=row[17]
-                book['picture']=row[18]
-                books.append(json.dumps(book['book_info']))
+                book['tags']=row[7]
+
+                book['publisher']=row[8]
+                book['original_title']=row[9]
+                book['translator']=row[10]
+                book['pub_year']=row[11]
+                book['pages']=row[12]
+                book['currency_unit']=row[13]
+                book['binding']=row[14]
+                book['isbn']=row[15]
+                book['author_intro']=row[16]
+                book['book_intro']=row[17]
+                book['content']=row[18]
+                book['picture']=row[19]
+                books.append(json.dumps(book))
         except psycopg2.Error as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e)), ""
