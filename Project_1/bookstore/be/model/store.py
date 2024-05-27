@@ -50,16 +50,33 @@ class Store:
         cur.execute("create table store("+
             "store_id varchar(255),user_id varchar(255),primary key(store_id)"        
         +")")
+        cur.execute("create index store_user_id_idx on store using hash(user_id)")
 
         cur.execute("create table book_info("+
             "book_id varchar(255),store_id varchar(255),price int,stock_level int,sales int, "+
-            "title varchar(255),author varchar(255),"+
+            "title TEXT,author varchar(255), tags TEXT[], "+
             "publisher varchar(255),original_title varchar(255),translator varchar(255),"+   
             "pub_year varchar(255),pages int,currency_unit varchar(255),"+         
             "binding varchar(255),isbn bigint,author_intro varchar(255),"+     
             "book_intro varchar(255),content varchar(255),picture varchar(255),"+ 
+            "title_idx tsvector,"+
             " primary key(store_id,book_id)"+    
+            
         ")")
+        #对有排序需求和范围查询需求的字段做b+tree索引，只等值连接的字段做哈希索引
+        cur.execute("create index book_info_book_id_idx on book_info using hash(book_id)")
+        cur.execute("create index book_info_price_idx on book_info (price)")
+        cur.execute("create index book_info_stock_level_idx on book_info (stock_level)")
+        cur.execute("create index book_info_sales_idx on book_info (sales)")
+        cur.execute("create index book_info_title_idx on book_info using GIN(title_idx)")
+        cur.execute("create index book_info_tags_idx on book_info using GIN(tags)")
+        cur.execute("create index book_info_author_idx on book_info using hash(author)")
+        cur.execute("create index book_info_publisher_idx on book_info using hash(publisher)")
+        cur.execute("create index book_info_original_title_idx on book_info using hash(original_title)")
+        cur.execute("create index book_info_translator_idx on book_info using hash(translator)")
+        cur.execute("create index book_info_pub_year_idx on book_info (pub_year)")
+        cur.execute("create index book_info_binding_idx on book_info using hash(binding)")
+        cur.execute("create index book_info_isbn_idx on book_info (isbn)")
 
         cur.execute("create table dead_user("+
             "user_id varchar(255),primary key(user_id)"        
@@ -73,13 +90,11 @@ class Store:
             "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price int, primary key(order_id)"        
         +")")
 
+
         cur.execute("create table order_detail("+
             "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
         +")")
 
-        cur.execute("create table book_tag("+
-            "store_id varchar(255),book_id varchar(255), tag varchar(255), primary key(tag,store_id,book_id)"        
-        +")")
 
         conn.commit()
 
@@ -136,10 +151,10 @@ def clean_db():
 if __name__=="__main__":
     clear_db()
     build_db()
-    # conn=get_db_conn()
-    # cur=conn.cursor()
-    # cur.execute("insert into dead_user values ('abc')")
-    # cur.execute("select * from dead_user")
-    # res=cur.fetchall()
-    # for i in res:
-    #     print(i,len(i[0]))
+    conn=get_db_conn()
+    cur=conn.cursor()
+    cur.execute("insert into dead_user values ('abc')")
+    cur.execute("select * from dead_user")
+    res=cur.fetchall()
+    for i in res:
+        print(i,len(i[0]))

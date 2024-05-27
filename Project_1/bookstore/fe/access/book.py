@@ -30,7 +30,6 @@ class Book:
 
 
 class BookDB:
-
     def __init__(self, large: bool = False):
         parent_path = os.path.dirname(os.path.dirname(__file__))
         self.db_s = os.path.join(parent_path, "data/book.db")
@@ -48,12 +47,10 @@ class BookDB:
 
     def clean_book_db(self):
         conn = sqlite.connect(self.book_db)
-        conn.execute(
-            "delete from book where id is NULL or title is NULL or author is NULL or publisher is NULL or price is NULL or binding is NULL or pub_year is NULL or isbn is NULL"
-        )
+        conn.execute("delete from book where id is NULL or price=NULL or title is NULL")
         conn.commit()
         conn.close()
-
+        
     def get_book_info(self, start, size) -> [Book]:
         books = []
         conn = sqlite.connect(self.book_db)
@@ -79,6 +76,8 @@ class BookDB:
             book.pages = row[7]
             book.price = row[8]
 
+
+
             book.currency_unit = row[9]
             book.binding = row[10]
             book.isbn = row[11]
@@ -87,8 +86,8 @@ class BookDB:
             book.content = row[14]
             tags = row[15]
 
-            #picture = row[16]
-            picture = None
+            picture = row[16]
+            
             for tag in tags.split("\n"):
                 if tag.strip() != "":
                     book.tags.append(tag)
