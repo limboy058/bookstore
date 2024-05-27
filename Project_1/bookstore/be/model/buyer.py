@@ -1,6 +1,6 @@
 import pymongo
 import sys
-sys.path.append("D:\dbproject\Project_1\\bookstore")
+# sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 import uuid
 import json
 import logging
@@ -108,96 +108,108 @@ class Buyer(db_conn.DBConn):
         except BaseException as e:  return 530, "{}".format(str(e))
         return 200, "ok"
 
+    
     def cancel(self, user_id, order_id) -> (int, str):
-        session = self.client.start_session()
-        session.start_transaction()
-        unprosssing_status = ["unpaid", "paid_but_not_delivered"]
         try:
-            cursor = self.conn['new_order'].find_one_and_update(
-                {'order_id': order_id}, {'$set': {
-                    'status': "canceled"
-                }},
-                session=session)
-            if (cursor is None):
-                return error.error_non_exist_order_id(order_id)
+            with self.get_conn() as conn:
+                cur=conn.cursor()
+                unprossing_status = ["unpaid", "paid_but_not_delivered"]
 
-            if (cursor['status'] not in unprosssing_status):
-                return error.error_invalid_order_id(order_id)
+                
+                cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                order = cur.fetchone()
+                if not order:
+                    return error.error_non_exist_order_id(order_id)
 
-            if (cursor['user_id'] != user_id):
-                return error.error_order_user_id(order_id, user_id)
+                buyer_id=order[0]
+                current_status = order[1]
+                total_price = order[2]
+                store_id = order[3]
+                
 
-            current_status = cursor['status']
-            store_id = cursor['store_id']
-            total_price = cursor['total_price']
-            detail = list(cursor['detail'])
+                if current_status not in unprossing_status:
+                    return error.error_invalid_order_id(order_id)
 
-            for i in detail:
-                self.conn['store'].update_one(
-                    {
-                        'book_id': i[0],
-                        'store_id': store_id
-                    }, {'$inc': {
-                        "stock_level": i[1],
-                        "sales": -i[1]
-                    }},
-                    session=session)
-            if (current_status == "paid_but_not_delivered"):
-                cursor = self.conn['user'].find_one_and_update(
-                    {'user_id': user_id}, {'$inc': {
-                        'balance': total_price
-                    }},
-                    session=session)
+                if buyer_id != user_id:
+                    return error.error_order_user_id(order_id, user_id)
+                
+                cur.execute("""
+                    UPDATE new_order
+                    SET status = 'canceled'
+                    WHERE order_id = %s
+                """, (order_id,))
 
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
-        except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+                cur.execute("select book_id, count from order_detail WHERE order_id = %s", (order_id,))
+                detail = cur.fetchall()
 
+                for item in detail:
+                    cur.execute("""
+                        UPDATE book_info
+                        SET stock_level = stock_level + %s, sales = sales - %s
+                        WHERE book_id = %s AND store_id = %s
+                    """, (item[1], item[1], item[0], store_id))
+
+                if current_status == "paid_but_not_delivered":
+                    cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
+
+                conn.commit()
+                return 200, "ok",order_id
+
+        except psycopg2.Error as e: return 528, "{}".format(str(e))
+        except BaseException as e: return 530, "{}".format(str(e))
+
+    
     def search_order(self, user_id):
         try:
-            cursor = self.conn['user'].find_one({'user_id': user_id})
-            if (cursor is None):
-                return error.error_non_exist_user_id(user_id) + ("", )
-            cursor = self.conn['new_order'].find({'user_id': user_id})
-            result = list()
-            for i in cursor:
-                result.append(i['order_id'])
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e)), ""
-        except Exception as e:  return 530, "{}".format(str(e)), ""
-        return 200, "ok", result
+            with self.get_conn() as conn:
+                cur=conn.cursor()
+                cur.execute('SELECT user_id FROM "user" WHERE user_id = %s', (user_id,))
+                if not cur.fetchone():
+                    return error.error_non_exist_user_id(user_id), ""
+
+                cur.execute("SELECT order_id FROM new_order WHERE buyer_id = %s", (user_id,))
+                orders = cur.fetchall()
+                result = [order[0] for order in orders]
+                return 200, "ok", result
+
+        except psycopg2.Error as e:  return 528, "{}".format(str(e)), ""
+        except BaseException as e:  return 530, "{}".format(str(e)), ""
+        
 
     def receive_books(self, user_id, order_id) -> (int, str):
-        session = self.client.start_session()
-        session.start_transaction()
         try:
-            if not self.user_id_exist(user_id, session=session):
-                return error.error_non_exist_user_id(user_id)
-            cursor = self.conn['new_order'].find_one_and_update(
-                {'order_id': order_id}, {'$set': {
-                    'status': "received"
-                }},
-                session=session)
-            if (cursor == None):
-                return error.error_invalid_order_id(order_id)
-            if (cursor['status'] != "delivered_but_not_received"):
-                return error.error_invalid_order_id(order_id)
-            if (cursor['user_id'] != user_id):
-                return error.unmatched_order_user(order_id, user_id)
-            total_price = cursor['total_price']
-            seller_id = cursor['seller_id']
-            cursor = self.conn['user'].find_one_and_update(
-                {'user_id': seller_id}, {'$inc': {
-                    'balance': total_price
-                }},
-                session=session)
+            with self.get_conn() as conn:
+                cur=conn.cursor()
+                cur.execute('SELECT user_id FROM "user" WHERE user_id = %s', (user_id,))
+                if not cur.fetchone():
+                    return error.error_non_exist_user_id(user_id)
 
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
+                cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                order = cur.fetchone()
+                if not order:
+                    return error.error_invalid_order_id(order_id)
+
+                if order[1] != "delivered_but_not_received":
+                    return error.error_invalid_order_id(order_id)
+
+                if order[0] != user_id:
+                    return error.unmatched_order_user(order_id, user_id)
+
+                total_price = order[2]
+                seller_id = order[3]
+
+                cur.execute("""
+                    UPDATE new_order
+                    SET status = 'received'
+                    WHERE order_id = %s
+                """, (order_id,))
+                
+                cur.execute('UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, seller_id))
+                conn.commit()
+                return 200, "ok"
+
+        except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
 
 if __name__=="__main__":
     buyer=Buyer()
@@ -213,19 +225,68 @@ if __name__=="__main__":
     print(res)
     res=buyer.new_order('buyer','store',[('mamba out!',5)])
     print(res)
+    res=buyer.search_order('buyer')
+    print(res)
+    # res=buyer.receive_books('buyer')
+    # print(res)
+
     conn=buyer.get_conn()
+    cur=conn.cursor()
+    cur.execute('select balance from "user" where user_id = %s',('buyer',))
+    res=cur.fetchall()
+    print(res)
+    conn.commit()
+
+    conn=buyer.get_conn()
+    cur=conn.cursor()
+    cur.execute("UPDATE new_order SET status = %s",['paid_but_not_delivered',])
+    conn.commit()
+    cur=conn.cursor()
+
+    conn=buyer.get_conn()
+    cur=conn.cursor()
     cur.execute("select * from new_order")
     res=cur.fetchone()
     print(res)
     order_id=res[0]
+    res=buyer.cancel('buyer',order_id)
+    print(res)
     conn.commit()
-    res=buyer.payment("buyer","abc",order_id)
-    print(res)
+
+    
+
     conn=buyer.get_conn()
-    cur.execute("select * from new_order")
-    res=cur.fetchone()
-    print(res)
-    cur.execute("select * from \"user\"")
+    cur=conn.cursor()
+    cur.execute('select balance from "user" where user_id = %s',('buyer',))
     res=cur.fetchall()
-    for i in res:
-        print(i)
+    print(res)
+    conn.commit()
+    
+#    # conn=psycopg2.connect(host="localhost",database="609A", user="mamba", password="out")
+#     cur.execute("select * from new_order")
+#     res=cur.fetchall()
+#     print(len(res))
+#     for i in res:
+#         print(i)
+#     conn.commit()
+#     conn=buyer.get_conn()
+#     cur=conn.cursor()
+#     res=buyer.receive_books('buyer',order_id)
+#     print(res)
+#     conn.commit()
+    # cur.execute("UPDATE new_order SET status = 'delivered_but_not_received' WHERE order_id = %s", (order_id,))
+    #conn.commit()
+    # res=buyer.receive_books('buyer',order_id)
+    # print(res)
+    
+    # conn.commit()
+    # res=buyer.payment("buyer","abc",order_id)
+    # print(res)
+    # conn=buyer.get_conn()
+    # cur.execute("select * from new_order")
+    # res=cur.fetchone()
+    # print(res)
+    # cur.execute("select * from \"user\"")
+    # res=cur.fetchall()
+    # for i in res:
+    #     print(i)

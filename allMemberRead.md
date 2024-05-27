@@ -27,3 +27,9 @@ select datname from pg_database;
 第二句执行后出现609A即成功。
 
 之后可以尝试运行一下be/model/store.py或buyer.py的main函数，检测一下是否可以执行成功
+
+
+
+
+
+## 问题：货款在订单完成时进入卖家账户，是否有记录
