@@ -1,5 +1,5 @@
 import os
-import pymongo
+import sqlite3 as sqlite
 import random
 import base64
 import simplejson as json
@@ -32,94 +32,63 @@ class Book:
 class BookDB:
 
     def __init__(self, large: bool = False):
-        self.client = pymongo.MongoClient()
-        self.conn = self.client['609']
+        parent_path = os.path.dirname(os.path.dirname(__file__))
+        self.db_s = os.path.join(parent_path, "data/book.db")
+        self.db_l = os.path.join(parent_path, "data/book_lx.db")
         if large:
-            self.book_db = self.conn['book_lx']
+            self.book_db = self.db_l
         else:
-            self.book_db = self.conn['book']
-
-    def clean_db(self):
-        self.book_db.delete_many({
-            "$or": [{
-                "id": None
-            }, {
-                "title": None
-            }, {
-                "author": None
-            }, {
-                "publisher": None
-            }, {
-                "pub_year": None
-            }, {
-                "price": None
-            }, {
-                "binding": None
-            }, {
-                "isbn": None
-            }, {
-                "tags": None
-            }, {
-                "picture": None
-            }]
-        })
+            self.book_db = self.db_s
 
     def get_book_count(self):
-        return self.book_db.count_documents({})
+        conn = sqlite.connect(self.book_db)
+        cursor = conn.execute("SELECT count(id) FROM book")
+        row = cursor.fetchone()
+        return row[0]
+
+    def clean_book_db(self):
+        conn = sqlite.connect(self.book_db)
+        conn.execute(
+            "delete from book where id is NULL or title is NULL or author is NULL or publisher is NULL or price is NULL or binding is NULL or pub_year is NULL or isbn is NULL"
+        )
+        conn.commit()
+        conn.close()
 
     def get_book_info(self, start, size) -> [Book]:
         books = []
-        cursor = self.book_db.aggregate([{
-            "$sort": {
-                "id": 1
-            }
-        }, {
-            "$skip": start
-        }, {
-            "$limit": size
-        }, {
-            "$project": {
-                "id": 1,
-                "title": 1,
-                "author": 1,
-                "publisher": 1,
-                "original_title": 1,
-                "translator": 1,
-                "pub_year": 1,
-                "pages": 1,
-                "price": 1,
-                "currency_unit": 1,
-                "binding": 1,
-                "isbn": 1,
-                "author_intro": 1,
-                "book_intro": 1,
-                "content": 1,
-                "tags": 1,
-                "picture": 1
-            }
-        }])
+        conn = sqlite.connect(self.book_db)
+        cursor = conn.execute(
+            "SELECT id, title, author, "
+            "publisher, original_title, "
+            "translator, pub_year, pages, "
+            "price, currency_unit, binding, "
+            "isbn, author_intro, book_intro, "
+            "content, tags, picture FROM book ORDER BY id "
+            "LIMIT ? OFFSET ?",
+            (size, start),
+        )
         for row in cursor:
             book = Book()
-            book.id = row['id']
-            book.title = row['title']
-            book.author = row["author"]
-            book.publisher = row["publisher"]
-            book.original_title = row["original_title"]
-            book.translator = row["translator"]
-            book.pub_year = row["pub_year"]
-            book.pages = row["pages"]
-            book.price = row["price"]
+            book.id = row[0]
+            book.title = row[1]
+            book.author = row[2]
+            book.publisher = row[3]
+            book.original_title = row[4]
+            book.translator = row[5]
+            book.pub_year = row[6]
+            book.pages = row[7]
+            book.price = row[8]
 
-            book.currency_unit = row["currency_unit"]
-            book.binding = row["binding"]
-            book.isbn = row["isbn"]
-            book.author_intro = row["author_intro"]
-            book.book_intro = row["book_intro"]
-            book.content = row["content"]
-            tags = row["tags"]
-            picture = None  #speed up test
-            #picture = row["picture"]
+            book.currency_unit = row[9]
+            book.binding = row[10]
+            book.isbn = row[11]
+            book.author_intro = row[12]
+            book.book_intro = row[13]
+            book.content = row[14]
+            tags = row[15]
 
+            #picture = row[16]
+            picture = None
             for tag in tags.split("\n"):
                 if tag.strip() != "":
                     book.tags.append(tag)
@@ -135,3 +104,8 @@ class BookDB:
             # print(tags)
 
         return books
+
+
+# if __name__=='__main__':
+#     b=BookDB(large=True)
+#     b.clean_book_db()

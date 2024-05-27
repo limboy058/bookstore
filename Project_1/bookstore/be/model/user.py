@@ -1,9 +1,15 @@
 import jwt
 import time
 import logging
+import psycopg2
+
+import sys
+
+sys.path.append(r'D:\DS_bookstore\Project_1\bookstore')
+
 from be.model import error
 from be.model import db_conn
-import pymongo.errors
+
 
 # encode a json string like:
 #   {
@@ -41,7 +47,7 @@ class User(db_conn.DBConn):
     token_lifetime: int = 3600  # 3600 second
 
     def __init__(self):
-        db_conn.DBConn.__init__(self)
+        super().__init__()
 
     def __check_token(self, user_id, db_token, token) -> bool:
         try:
@@ -58,199 +64,192 @@ class User(db_conn.DBConn):
             return False
 
     def register(self, user_id: str, password: str):
-        session = self.client.start_session()
-        session.start_transaction()
         try:
-            ret = self.conn['user'].find_one({'user_id': user_id},
-                                             session=session)
-            if ret is not None:
-                return error.error_exist_user_id(user_id)
-            ret = self.conn['dead_user'].find_one({'user_id': user_id},
-                                                  session=session)
-            if ret is not None:
-                return error.error_exist_user_id(user_id)
-            terminal = "terminal_{}".format(str(time.time()))
-            token = jwt_encode(user_id, terminal)
-            ret = self.conn['user'].insert_one(
-                {
-                    'user_id': user_id,
-                    'password': password,
-                    'balance': 0,
-                    'token': token,
-                    'terminal': terminal
-                },
-                session=session)
-            if not ret.acknowledged: return 528, "{}".format(str(ret))
-        except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
+            with self.get_conn() as conn:
+                with conn.cursor() as cur:
+                    conn.autocommit = False
+
+                    cur.execute('select user_id from "user" where user_id=%s',
+                                (user_id,))
+                    ret = cur.fetchone()
+                    if ret is not None:
+                        return error.error_exist_user_id(user_id)
+
+                    cur.execute(
+                        'select user_id from dead_user where user_id=%s' ,
+                        (user_id,))
+                    ret = cur.fetchone()
+                    if ret is not None:
+                        return error.error_exist_user_id(user_id)
+
+                    terminal = "terminal_{}".format(str(time.time()))
+                    token = jwt_encode(user_id, terminal)
+
+                    cur.execute(
+                        'insert into "user" (user_id, password, balance, token, terminal) VALUES (%s, %s, %s, %s, %s)'
+                        ,(user_id, password, 0, token, terminal,))
+                    conn.commit()
+        except psycopg2.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def check_token(self,
-                    user_id: str,
-                    token: str,
-                    session=None) -> (int, str):
-        ret = self.conn['user'].find_one({'user_id': user_id}, {
-            '_id': 0,
-            'token': 1
-        },
-                                         session=session)
+    def check_token(self, user_id: str, token: str,
+                    cur) -> (int, str):
+        cur.execute('select token from "user" where user_id=%s' , (user_id,))
+        ret = cur.fetchone()
         if ret is None:
             return error.error_authorization_fail()
-        db_token = ret['token']
+        db_token = ret[0]
         if not self.__check_token(user_id, db_token, token):
             return error.error_authorization_fail()
         return 200, "ok"
 
-    def check_password(self,
-                       user_id: str,
-                       password: str,
-                       session=None) -> (int, str):
-        ret = self.conn['user'].find_one({'user_id': user_id}, {
-            '_id': 0,
-            'password': 1
-        },
-                                         session=session)
+    def check_password(self, user_id: str, password: str, cur) -> (int, str):
+
+        cur.execute('select password from "user" where user_id=%s' , (user_id,))
+        ret = cur.fetchone()
 
         if ret is None:
             return error.error_authorization_fail()
 
-        if password != ret['password']:
+        if password != ret[0]:
             return error.error_authorization_fail()
 
         return 200, "ok"
 
     def login(self, user_id: str, password: str,
               terminal: str) -> (int, str, str):
-        session = self.client.start_session()
-        session.start_transaction()
-        token = ""
         try:
-            code, message = self.check_password(user_id,
-                                                password,
-                                                session=session)
-            if code != 200:
-                return code, message, ""
+            with self.get_conn() as conn:
+                with conn.cursor() as cur:
+                    conn.autocommit = False
 
-            token = jwt_encode(user_id, terminal)
-            self.conn['user'].update_one(
-                {'user_id': user_id},
-                {'$set': {
-                    'token': token,
-                    'terminal': terminal
-                }},
-                session=session)
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e)), ""
-        except BaseException as e:  return 530, "{}".format(str(e)), ""
-        session.commit_transaction()
-        session.end_session()
+                    code, message = self.check_password(user_id, password, cur)
+                    if code != 200:
+                        return code, message, ""
+
+                    token = jwt_encode(user_id, terminal)
+                    cur.execute(
+                        'update "user" set token=%s ,terminal=%s where user_id=%s'
+                        , (token, terminal, user_id,))
+
+                    conn.commit()
+        except psycopg2.Error as e:
+            return 528, "{}".format(str(e)), ""
+        except BaseException as e:
+            return 530, "{}".format(str(e)), ""
         return 200, "ok", token
 
     def logout(self, user_id: str, token: str) -> bool:
-        session = self.client.start_session()
-        session.start_transaction()
         try:
-            code, message = self.check_token(user_id, token, session=session)
-            if code != 200:
-                return code, message
-            terminal = "terminal_{}".format(str(time.time()))
-            dummy_token = jwt_encode(user_id, terminal)
-            ret = self.conn['user'].update_one(
-                {'user_id': user_id},
-                {'$set': {
-                    'token': dummy_token,
-                    'terminal': terminal
-                }},
-                session=session)
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
-        except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
+            with self.get_conn() as conn:
+                with conn.cursor() as cur:
+                    conn.autocommit = False
+
+                    code, message = self.check_token(user_id, token, cur)
+                    if code != 200:
+                        return code, message
+
+                    terminal = "terminal_{}".format(str(time.time()))
+                    dummy_token = jwt_encode(user_id, terminal)
+                    cur.execute(
+                        'update "user" set token=%s ,terminal=%s where user_id=%s'
+                        , (dummy_token, terminal, user_id,))
+                    conn.commit()
+        except psycopg2.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
         return 200, "ok"
 
     def unregister(self, user_id: str, password: str) -> (int, str):
-        session = self.client.start_session()
-        session.start_transaction()
         try:
-            code, message = self.check_password(user_id,
-                                                password,
-                                                session=session)
-            if code != 200:
-                return code, message
+            with self.get_conn() as conn:
+                with conn.cursor() as cur:
+                    conn.autocommit = False
 
-            cursor = self.conn['new_order'].find(
-                {'$or': [{
-                    'seller_id': user_id
-                }, {
-                    'user_id': user_id
-                }]},
-                session=session)
-            for item in cursor:
-                if item['status'] != 'received' and item[
-                        'status'] != 'canceled':
-                    if item['user_id'] == user_id:
-                        return error.error_unfished_buyer_orders()
-                    if item['seller_id'] == user_id:
-                        return error.error_unfished_seller_orders()
+                    code, message = self.check_password(user_id, password, cur)
+                    if code != 200:
+                        return code, message
+                    
+                    cur.execute('''
+                                select new_order.buyer_id, store.user_id 
+                                from new_order 
+                                inner join store on new_order.store_id=store.store_id 
+                                where (buyer_id =%s or user_id=%s ) and (status !='recieved' and status !='canceled') 
+                                ''',(user_id,user_id,))
+                    ret=cur.fetchone()
+                    if ret is not None:
+                        if ret[0]==user_id:
+                            return error.error_unfished_buyer_orders()
+                        elif ret[1]==user_id:
+                            return error.error_unfished_seller_orders()
+                        
+                    cur.execute('''
+                                UPDATE book_info
+                                SET stock_level = 0
+                                WHERE store_id IN (SELECT store_id FROM store WHERE user_id = %s)
+                                ''',(user_id,))
 
-            ret = self.conn['user'].find_one({'user_id': user_id},
-                                             {'store_id': 1},
-                                             session=session)
-            if len(ret) == 2:
-                store_list = list(ret['store_id'])
-                if len(store_list) != 0:
-                    ret = self.conn['store'].update_many(
-                        {'store_id': {
-                            '$in': store_list
-                        }}, {'$set': {
-                            'stock_level': 0
-                        }},
-                        session=session)  #修改书库存
+                    cur.execute('delete from "user" where user_id=%s',(user_id,))
+                    cur.execute('INSERT INTO dead_user (user_id) VALUES (%s)',(user_id,))
 
-            ret = self.conn['user'].delete_one({'user_id': user_id},
-                                               session=session)
-            self.conn['dead_user'].insert_one({'user_id': user_id},
-                                              session=session)
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
-        except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
+                    conn.commit()
+        except psycopg2.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
         return 200, "ok"
 
     def change_password(self, user_id: str, old_password: str,
                         new_password: str) -> bool:
-        session = self.client.start_session()
-        session.start_transaction()
         try:
-            code, message = self.check_password(user_id,
+            with self.get_conn() as conn:
+                with conn.cursor() as cur:
+                    conn.autocommit = False
+
+                    code, message = self.check_password(user_id,
                                                 old_password,
-                                                session=session)
-            if code != 200:
-                return code, message
-            terminal = "terminal_{}".format(str(time.time()))
-            token = jwt_encode(user_id, terminal)
-            self.conn['user'].update_one({'user_id': user_id}, {
-                '$set': {
-                    'password': new_password,
-                    'token': token,
-                    'terminal': terminal
-                }
-            },
-                                         session=session)
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e))
-        except BaseException as e:  return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
+                                                cur)
+                    if code != 200:
+                        return code, message
+
+                    terminal = "terminal_{}".format(str(time.time()))
+                    token = jwt_encode(user_id, terminal)
+                    cur.execute('update "user" set password=%s ,token=%s,terminal=%s where user_id=%s',(new_password,token,terminal,user_id,))
+                    conn.commit()
+        except psycopg2.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def search_order_detail(self, order_id):
-        try:
-            cursor = self.conn['new_order'].find_one({'order_id': order_id})
-            if cursor is None:
-                ret = error.error_non_exist_order_id(order_id)
-                return ret[0], ret[1], ""
-            order_detail_list = (cursor['detail'], cursor['total_price'],
-                                 cursor['status'])
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e)), ""
-        except BaseException as e:  return 530, "{}".format(str(e)), ""
-        return 200, "ok", order_detail_list
+    # def search_order_detail(self, order_id)://此处替换须香芋的代码
+    #     try:
+    #         cursor = self.conn['new_order'].find_one({'order_id': order_id})
+    #         if cursor is None:
+    #             ret = error.error_non_exist_order_id(order_id)
+    #             return ret[0], ret[1], ""
+    #         order_detail_list = (cursor['detail'], cursor['total_price'],
+    #                              cursor['status'])
+    #     except pymongo.errors.PyMongoError as e:
+    #         return 528, "{}".format(str(e)), ""
+    #     except BaseException as e:
+    #         return 530, "{}".format(str(e)), ""
+    #     return 200, "ok", order_detail_list
+
+
+# if __name__=='__main__':
+#     u=User()
+
+#     print(u.register('uid1','psd1'))
+#     print(u.register('uid1','psd1'))
+#     print(u.login('uid1','psd1','tml1'))
+#     print(u.login('uid1','ps1','tml1'))
+#     print(u.change_password('uid1','psd1','ps1'))
+#     print(u.login('uid1','psd1','tml1'))
+#     print(u.login('uid1','ps1','tml1'))
+#     print(u.unregister('uid1','psd1'))
+#     print(u.unregister('uid1','ps1'))

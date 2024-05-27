@@ -56,7 +56,7 @@ class Store:
             "title varchar(255),author varchar(255),"+
             "publisher varchar(255),original_title varchar(255),translator varchar(255),"+   
             "pub_year varchar(255),pages int,currency_unit varchar(255),"+         
-            "binding varchar(255),isbn int,author_intro varchar(255),"+     
+            "binding varchar(255),isbn bigint,author_intro varchar(255),"+     
             "book_intro varchar(255),content varchar(255),picture varchar(255),"+ 
             " primary key(store_id,book_id)"+    
         ")")
@@ -100,8 +100,8 @@ init_completed_event = threading.Event()
 def init_database():
     global database_instance
     database_instance = Store()
-    database_instance.clear_tables()
-    database_instance.build_tables()
+    database_instance.clear_tables()#注释这一行来关掉每次建立连接清空数据
+    database_instance.build_tables()#注释这一行来关掉每次建立连接清空数据
 
 
 def get_db_conn():
@@ -133,13 +133,13 @@ def clean_db():
     database_instance.clean_tables()
 
 
-# if __name__=="__main__":
-#     clear_db()
-#     build_db()
-#     conn=get_db_conn()
-#     cur=conn.cursor()
-#     cur.execute("insert into dead_user values ('abc')")
-#     cur.execute("select * from dead_user")
-#     res=cur.fetchall()
-#     for i in res:
-#         print(i,len(i[0]))
+if __name__=="__main__":
+    clear_db()
+    build_db()
+    # conn=get_db_conn()
+    # cur=conn.cursor()
+    # cur.execute("insert into dead_user values ('abc')")
+    # cur.execute("select * from dead_user")
+    # res=cur.fetchall()
+    # for i in res:
+    #     print(i,len(i[0]))
