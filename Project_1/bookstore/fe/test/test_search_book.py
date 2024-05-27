@@ -15,7 +15,7 @@ import uuid
 
 class TestSearchBook:
 
-    #@pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
 
         self.seller_id = "test_add_books_seller_id_{}".format(str(
