@@ -1,6 +1,6 @@
 import pymongo
 import sys
-# sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
+sys.path.append("D:\\dbproject\\Project_1\\bookstore")
 import uuid
 import json
 import logging
@@ -94,7 +94,7 @@ class Buyer(db_conn.DBConn):
         try:
             with self.get_conn() as conn:
                 cur=conn.cursor()
-                cur.execute("select password,balance from \"user\" where user_id=user_id")
+                cur.execute("select password,balance from \"user\" where user_id=%s",[user_id,])
                 res=cur.fetchone()
                 if(res==None):
                     return error.error_non_exist_user_id(user_id)
@@ -102,7 +102,7 @@ class Buyer(db_conn.DBConn):
                     return error.error_authorization_fail()
                 elif res[1]<-add_value:
                     return error.error_non_enough_fund(user_id)
-                cur.execute("update \"user\" set balance=balance+%s where user_id=user_id",[add_value,])
+                cur.execute("update \"user\" set balance=balance+%s where user_id=%s",[add_value,user_id])
                 conn.commit()
         except psycopg2.Error as e:  return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
@@ -211,82 +211,53 @@ class Buyer(db_conn.DBConn):
         except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
 
-if __name__=="__main__":
-    buyer=Buyer()
-    conn=buyer.get_conn()
-    cur=conn.cursor()
-    cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
-    cur.execute("insert into \"user\" values('buyer','abc',0,'a','a')")
-    
-    cur.execute("insert into store values('store','seller')")
-    cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
-    conn.commit()
-    res=buyer.add_funds("buyer","abc",1000)
-    print(res)
-    res=buyer.new_order('buyer','store',[('mamba out!',5)])
-    print(res)
-    res=buyer.search_order('buyer')
-    print(res)
-    # res=buyer.receive_books('buyer')
-    # print(res)
-
-    conn=buyer.get_conn()
-    cur=conn.cursor()
-    cur.execute('select balance from "user" where user_id = %s',('buyer',))
-    res=cur.fetchall()
-    print(res)
-    conn.commit()
-
-    conn=buyer.get_conn()
-    cur=conn.cursor()
-    cur.execute("UPDATE new_order SET status = %s",['paid_but_not_delivered',])
-    conn.commit()
-    cur=conn.cursor()
-
-    conn=buyer.get_conn()
-    cur=conn.cursor()
-    cur.execute("select * from new_order")
-    res=cur.fetchone()
-    print(res)
-    order_id=res[0]
-    res=buyer.cancel('buyer',order_id)
-    print(res)
-    conn.commit()
-
-    
-
-    conn=buyer.get_conn()
-    cur=conn.cursor()
-    cur.execute('select balance from "user" where user_id = %s',('buyer',))
-    res=cur.fetchall()
-    print(res)
-    conn.commit()
-    
-#    # conn=psycopg2.connect(host="localhost",database="609A", user="mamba", password="out")
-#     cur.execute("select * from new_order")
-#     res=cur.fetchall()
-#     print(len(res))
-#     for i in res:
-#         print(i)
-#     conn.commit()
+# if __name__=="__main__":
+#     buyer=Buyer()
 #     conn=buyer.get_conn()
 #     cur=conn.cursor()
-#     res=buyer.receive_books('buyer',order_id)
+#     cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
+#     cur.execute("insert into \"user\" values('buyer','abc',0,'a','a')")
+    
+#     cur.execute("insert into store values('store','seller')")
+#     cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
+#     conn.commit()
+#     res=buyer.add_funds("buyer","abc",1000)
+#     print(res)
+#     res=buyer.new_order('buyer','store',[('mamba out!',5)])
+#     print(res)
+#     res=buyer.search_order('buyer')
+#     print(res)
+#     # res=buyer.receive_books('buyer')
+#     # print(res)
+
+#     conn=buyer.get_conn()
+#     cur=conn.cursor()
+#     cur.execute('select balance from "user" where user_id = %s',('buyer',))
+#     res=cur.fetchall()
 #     print(res)
 #     conn.commit()
-    # cur.execute("UPDATE new_order SET status = 'delivered_but_not_received' WHERE order_id = %s", (order_id,))
-    #conn.commit()
-    # res=buyer.receive_books('buyer',order_id)
-    # print(res)
+
+#     conn=buyer.get_conn()
+#     cur=conn.cursor()
+#     cur.execute("UPDATE new_order SET status = %s",['paid_but_not_delivered',])
+#     conn.commit()
+#     cur=conn.cursor()
+
+#     conn=buyer.get_conn()
+#     cur=conn.cursor()
+#     cur.execute("select * from new_order")
+#     res=cur.fetchone()
+#     print(res)
+#     order_id=res[0]
+#     res=buyer.cancel('buyer',order_id)
+#     print(res)
+#     conn.commit()
+
     
-    # conn.commit()
-    # res=buyer.payment("buyer","abc",order_id)
-    # print(res)
-    # conn=buyer.get_conn()
-    # cur.execute("select * from new_order")
-    # res=cur.fetchone()
-    # print(res)
-    # cur.execute("select * from \"user\"")
-    # res=cur.fetchall()
-    # for i in res:
-    #     print(i)
+
+#     conn=buyer.get_conn()
+#     cur=conn.cursor()
+#     cur.execute('select balance from "user" where user_id = %s',('buyer',))
+#     res=cur.fetchall()
+#     print(res)
+#     conn.commit()

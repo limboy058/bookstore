@@ -84,7 +84,6 @@ class User(db_conn.DBConn):
 
                     terminal = "terminal_{}".format(str(time.time()))
                     token = jwt_encode(user_id, terminal)
-
                     cur.execute(
                         'insert into "user" (user_id, password, balance, token, terminal) VALUES (%s, %s, %s, %s, %s)'
                         ,(user_id, password, 0, token, terminal,))

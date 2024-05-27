@@ -1,5 +1,4 @@
 import pytest
-
 from fe.access.buyer import Buyer
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
@@ -82,3 +81,8 @@ class TestPayment:
 
         code = self.buyer.payment(self.order_id)
         assert code != 200
+
+# if __name__=="__main__":
+#     test=TestPayment()
+#     test.pre_run_initialization()
+#     print(test.test_ok())

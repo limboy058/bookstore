@@ -61,7 +61,6 @@ class Store:
             "book_intro varchar(255),content varchar(255),picture varchar(255),"+ 
             "title_idx tsvector,"+
             " primary key(store_id,book_id)"+    
-            
         ")")
         #对有排序需求和范围查询需求的字段做b+tree索引，只等值连接的字段做哈希索引
         cur.execute("create index book_info_book_id_idx on book_info using hash(book_id)")
@@ -83,7 +82,7 @@ class Store:
         +")")
 
         cur.execute("create table \"user\"("+
-            "user_id varchar(255),password varchar(255),balance int,token varchar(255),terminal varchar(255), primary key(user_id)"        
+            "user_id varchar(255),password varchar(255),balance int,token varchar(1023),terminal varchar(1023), primary key(user_id)"        
         +")")
 
         cur.execute("create table new_order("+
@@ -148,13 +147,13 @@ def clean_db():
     database_instance.clean_tables()
 
 
-if __name__=="__main__":
-    clear_db()
-    build_db()
-    conn=get_db_conn()
-    cur=conn.cursor()
-    cur.execute("insert into dead_user values ('abc')")
-    cur.execute("select * from dead_user")
-    res=cur.fetchall()
-    for i in res:
-        print(i,len(i[0]))
+# if __name__=="__main__":
+#     clear_db()
+#     build_db()
+#     conn=get_db_conn()
+#     cur=conn.cursor()
+#     cur.execute("insert into dead_user values ('abc')")
+#     cur.execute("select * from dead_user")
+#     res=cur.fetchall()
+#     for i in res:
+#         print(i,len(i[0]))
