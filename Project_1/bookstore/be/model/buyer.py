@@ -8,7 +8,6 @@ import time
 import datetime
 import pymongo.errors
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from be.model import db_conn
 from be.model import error
 

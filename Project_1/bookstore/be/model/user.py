@@ -1,6 +1,8 @@
 import jwt
 import time
 import logging
+import sys
+# sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import error
 from be.model import db_conn
 import pymongo.errors
@@ -245,32 +247,56 @@ class User(db_conn.DBConn):
         session.end_session()
         return 200, "ok"
 
-    def search_order_detail(self, order_id):
-        try:
-            cursor = self.conn['new_order'].find_one({'order_id': order_id})
-            if cursor is None:
-                ret = error.error_non_exist_order_id(order_id)
-                return ret[0], ret[1], ""
-            order_detail_list = (cursor['detail'], cursor['total_price'],
-                                 cursor['status'])
-        except pymongo.errors.PyMongoError as e:  return 528, "{}".format(str(e)), ""
-        except BaseException as e:  return 530, "{}".format(str(e)), ""
-        return 200, "ok", order_detail_list
 
     def search_order_detail(self, order_id):
-        self.update_conn()
         try:
-            with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
+            with self.get_conn() as conn:
+                cur=conn.cursor()
 
-                cur.execute("SELECT detail, total_price, status FROM new_order WHERE order_id = %s", (order_id,))
+                cur.execute("SELECT total_price, status FROM new_order WHERE order_id = %s", (order_id,))
                 order = cur.fetchone()
+
+                cur.execute("select book_id, count from order_detail WHERE order_id = %s", (order_id,))
+                detail = cur.fetchall()
+                detail_dict = {book_id: count for book_id, count in detail}
                 
                 if order is None:
                     ret = error.error_non_exist_order_id(order_id)
                     return ret[0], ret[1], ""
                 
-                order_detail_list = (order['detail'], order['total_price'], order['status'])
+                order_detail_list = (detail_dict, order[0], order[1])
                 return 200, "ok", order_detail_list
 
         except psycopg2.Error as e:return 528, "{}".format(str(e))
         except BaseException as e: return 530, "{}".format(str(e))
+
+# import datetime
+# if __name__=="__main__":
+#     user=User()
+
+#     conn=user.get_conn()
+#     cur=conn.cursor()
+#     cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
+#     cur.execute("insert into \"user\" values('buyer','abc',1000,'a','a')")
+#     cur.execute("insert into store values('store','seller')")
+#     cur.execute("insert into order_detail values('order66666','mamba out!',24)")
+#     cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
+#     query="insert into new_order values(%s,%s,%s,%s,%s,%s)"
+#     order_id = 'order66666'
+#     cur.execute(query,[order_id,'store','buyer','unpaid',datetime.datetime.now(),25000])
+#     conn.commit()
+
+#     conn=user.get_conn()
+#     cur=conn.cursor()
+#     cur.execute("select * from new_order")
+#     res=cur.fetchall()
+#     print(res)
+#     conn.commit()
+
+#     conn=user.get_conn()
+#     cur=conn.cursor()
+#     order_id='order66666'
+#     res=user.search_order_detail(order_id)
+#     print(res)
+#     conn.commit()
+
