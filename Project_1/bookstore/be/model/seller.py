@@ -10,9 +10,6 @@ from be.model import db_conn
 import psycopg2
 
 
-import psycopg2
-
-
 class Seller(db_conn.DBConn):
 
     def __init__(self):
