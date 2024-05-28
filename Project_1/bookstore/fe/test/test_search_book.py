@@ -279,13 +279,3 @@ class TestSearchBook:
                 las_price = res['sales']
 
 
-# if __name__=="__main__":
-#     test=TestSearchBook()
-#     test.pre_run_initialization()
-#     # test.test_search_book_isbn()
-#     # test.test_search_book_non_exist_store()
-#     # test.test_search_book_price()
-#     # test.test_search_book_pub_year()
-#     test.test_search_book_stock()
-#     test.test_search_book_store_id()
-#     #test.test_search_book_tags()

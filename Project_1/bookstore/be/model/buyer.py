@@ -42,13 +42,18 @@ class Buyer(db_conn.DBConn):
                 cur.execute("select price,stock_level,book_id from book_info where store_id=%s and book_id in %s ;",[store_id,tuple(book_id_lst)])
 
                 res=cur.fetchall()
-                for price,stock_level,target_id in res:
-                    for book_id,count in id_and_count:
+                for book_id,count in id_and_count:
+                    judge=False
+                    for price,stock_level,target_id in res:
                         if(book_id==target_id):
                             sum_price += price * count
                             if(stock_level<count):
                                 return error.error_stock_level_low(book_id) + (order_id, )
-                            else:break
+                            else:
+                                judge=True
+                                break
+                    if not judge:
+                        return error.error_non_exist_book_id(book_id) + (order_id, )
 
                 for book_id, count in id_and_count:
                     cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s",[count,count,store_id,book_id])

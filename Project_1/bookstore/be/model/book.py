@@ -44,7 +44,7 @@ class searchBook(db_conn.DBConn):
                 conditions+=" title like %s and"
                 fill.append("%"+foozytitle+"%")
             if (reqtags != None):
-                conditions+= " tags@> %s and"
+                conditions+= " tags @> %s and"
                 fill.append(reqtags)
             if (id != None):
                 conditions+=" book_id=%s and"
@@ -91,12 +91,11 @@ class searchBook(db_conn.DBConn):
                     (order_by_method[1] != 1 and order_by_method[1] != -1)):
                     return 522, error.error_illegal_order_condition(
                         str(order_by_method[0] + ' ' + order_by_method[1])), ""
-                conditions+=" order by %s %s"
-                fill.append(order_by_method[0])
+                conditions+=" order by "+"\""+order_by_method[0]+"\" "
                 if(order_by_method[1]==1):
-                    fill.append("asc")
+                    conditions+="asc "
                 else:
-                    fill.append("desc")
+                    conditions+="desc "
             
             conn=self.get_conn()
             cur=conn.cursor()
