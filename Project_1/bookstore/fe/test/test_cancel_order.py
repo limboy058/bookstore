@@ -9,7 +9,7 @@ import uuid
 
 class TestCancelOrder:
 
-    #@pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.seller_id = "test_cancel_seller_id_{}".format(str(uuid.uuid1()))
         self.store_id = "test_cancel_store_id_{}".format(str(uuid.uuid1()))
@@ -19,7 +19,7 @@ class TestCancelOrder:
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
         self.seller = self.gen_book.return_seller()
-        #yield
+        yield
 
     def test_unpaid_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,
@@ -105,7 +105,6 @@ class TestCancelOrder:
             for book_id,stock_level in res:
                 if book_id == book_info[0]:
                     check_stock = (book_info[1] == stock_level)
-                    print(book_info[1],stock_level)
                     assert check_stock
                     break
         assert code == 200
@@ -151,10 +150,10 @@ class TestCancelOrder:
         code = self.buyer.cancel(order_id)
         assert code != 200
 
-if __name__=="__main__":
-    test=TestCancelOrder()
-    test.pre_run_initialization()
-   # test.test_cancel_paid_order_refund_ok()
-    test.test_order_stock_ok()
+# if __name__=="__main__":
+#     test=TestCancelOrder()
+#     test.pre_run_initialization()
+#    # test.test_cancel_paid_order_refund_ok()
+#     test.test_order_stock_ok()
 
 
