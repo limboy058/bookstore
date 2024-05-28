@@ -1,5 +1,6 @@
 import pytest
-
+import sys
+sys.path.append("D:/dbproject/Project_1/bookstore")
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
 import uuid
@@ -53,3 +54,12 @@ class TestNewOrder:
         assert ok
         code, _ = self.buyer.new_order(self.store_id + "_x", buy_book_id_list)
         assert code != 200
+
+
+# if __name__=="__main__":
+#     test=TestNewOrder()
+#     test.pre_run_initialization()
+#     test.test_ok()
+#     test.test_non_exist_store_id()
+#     test.test_non_exist_user_id()
+#     test.test_low_stock_level()

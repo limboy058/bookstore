@@ -58,11 +58,14 @@ class TestAddStockLevel:
     def test_error_book_stock(self):
         for b in self.books:
             book_id = b.id
-            cursor = self.dbconn.conn['store'].find_one({
-                'store_id': self.store_id,
-                'book_id': book_id
-            })
+            conn=self.dbconn.get_conn()
+            cur=conn.cursor()
+            cur.execute("select stock_level from book_info where store_id=%s and book_id=%s",[self.store_id,book_id])
+            res=cur.fetchone()
+            assert(res is not None)
+            stock_level=res[0]
+            conn.close()
             code = self.seller.add_stock_level(
                 self.user_id, self.store_id, book_id,
-                -(cursor['stock_level'] + 1))  #-(cursor['stock_level']+1)
+                -(stock_level + 1))  #-(cursor['stock_level']+1)
             assert code != 200

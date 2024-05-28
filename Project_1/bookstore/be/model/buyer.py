@@ -27,9 +27,9 @@ class Buyer(db_conn.DBConn):
                 if not self.user_id_exist(user_id,cur):
                     return error.error_non_exist_user_id(user_id) + (order_id, )
                 
-                cur.execute("select count(1) from store where store_id=%s",[store_id])
+                cur.execute("select count(1) from store where store_id=%s",[store_id,])
                 res=cur.fetchone()
-                if res is None:
+                if res[0]==0:
                     return error.error_non_exist_store_id(store_id) + (order_id, )
 
                 uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
@@ -52,6 +52,7 @@ class Buyer(db_conn.DBConn):
 
                 for book_id, count in id_and_count:
                     cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s",[count,count,store_id,book_id])
+                    cur.execute("insert into order_detail values(%s,%s,%s)",[uid,book_id,count])
                 query="insert into new_order values(%s,%s,%s,%s,%s,%s)"
                 order_id = uid
                 cur.execute(query,[order_id,store_id,user_id,'unpaid',datetime.datetime.now(),sum_price])
@@ -144,8 +145,8 @@ class Buyer(db_conn.DBConn):
 
                 for item in detail:
                     cur.execute("""
-                        UPDATE book_info
-                        SET stock_level = stock_level + %s, sales = sales - %s
+                        UPDATE book_info 
+                        SET stock_level = stock_level + %s, sales = sales - %s 
                         WHERE book_id = %s AND store_id = %s
                     """, (item[1], item[1], item[0], store_id))
 
@@ -153,7 +154,7 @@ class Buyer(db_conn.DBConn):
                     cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
 
                 conn.commit()
-                return 200, "ok",order_id
+                return 200, "ok"
 
         except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e: return 530, "{}".format(str(e))
@@ -211,38 +212,37 @@ class Buyer(db_conn.DBConn):
         except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
 
-# if __name__=="__main__":
-#     buyer=Buyer()
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
-#     cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
-#     cur.execute("insert into \"user\" values('buyer','abc',0,'a','a')")
+if __name__=="__main__":
+    buyer=Buyer()
+    conn=buyer.get_conn()
+    cur=conn.cursor()
+    cur.execute("delete from order_detail")
+    cur.execute("delete from \"user\"")
+    cur.execute("delete from store")
+    cur.execute("delete from new_order")
+    cur.execute("delete from book_info")
+    cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
+    cur.execute("insert into \"user\" values('buyer','abc',0,'a','a')")
     
-#     cur.execute("insert into store values('store','seller')")
-#     cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
-#     conn.commit()
-#     res=buyer.add_funds("buyer","abc",1000)
-#     print(res)
-#     res=buyer.new_order('buyer','store',[('mamba out!',5)])
-#     print(res)
-#     res=buyer.search_order('buyer')
-#     print(res)
-#     # res=buyer.receive_books('buyer')
-#     # print(res)
+    cur.execute("insert into store values('store','seller')")
+    cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
+    conn.commit()
 
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
-#     cur.execute('select balance from "user" where user_id = %s',('buyer',))
-#     res=cur.fetchall()
-#     print(res)
-#     conn.commit()
+    res=buyer.add_funds("buyer","abc",1000)
+    print(res)
+    res=buyer.new_order('buyer','store',[('mamba out!',5)])
+    print(res)
+    cur.execute("select * from order_detail")
+    res=cur.fetchone()
+    print(res)
+    order_id=res[2]
+    res=buyer.cancel('buyer',order_id)
+    print(res)
 
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
-#     cur.execute("UPDATE new_order SET status = %s",['paid_but_not_delivered',])
-#     conn.commit()
-#     cur=conn.cursor()
-
+    conn=buyer.get_conn()
+    cur=conn.cursor()
+    cur.execute("select stock_level from book_info where book_id=%s",["mamba out!",])
+    print(cur.fetchone()[0])
 #     conn=buyer.get_conn()
 #     cur=conn.cursor()
 #     cur.execute("select * from new_order")
