@@ -59,7 +59,4 @@ class TestNewOrder:
 # if __name__=="__main__":
 #     test=TestNewOrder()
 #     test.pre_run_initialization()
-#     test.test_ok()
-#     test.test_non_exist_store_id()
-#     test.test_non_exist_user_id()
-#     test.test_low_stock_level()
+#     test.test_non_exist_book_id()
