@@ -13,7 +13,7 @@ class Store:
         self.user_name="mamba"
         self.user_password="out"
         self.client = pymongo.MongoClient()
-        self.conn = psycopg2.connect(host="localhost",database="609A", user=self.user_name, password=self.user_password)
+        #self.conn = psycopg2.connect(host="localhost",database="609A", user=self.user_name, password=self.user_password)
         
     def clear_tables(self):
         conn=self.get_db_conn()
@@ -114,8 +114,8 @@ init_completed_event = threading.Event()
 def init_database():
     global database_instance
     database_instance = Store()
-    database_instance.clear_tables()#注释这一行来关掉每次建立连接清空数据
-    database_instance.build_tables()#注释这一行来关掉每次建立连接清空数据
+    #database_instance.clear_tables()#注释这一行来关掉每次建立连接清空数据
+    #database_instance.build_tables()#注释这一行来关掉每次建立连接清空数据
 
 
 def get_db_conn():
