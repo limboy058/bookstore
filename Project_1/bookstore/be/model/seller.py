@@ -1,13 +1,15 @@
 import json
+import os,base64
+
 # import sys
-
-
 # sys.path.append(r'D:\DS_bookstore\Project_1\bookstore')
 
 
 from be.model import error
 from be.model import db_conn
 import psycopg2
+
+
 
 
 class Seller(db_conn.DBConn):
@@ -42,7 +44,30 @@ class Seller(db_conn.DBConn):
                         return error.error_authorization_fail()
                     if self.book_id_exist(store_id, book_id, cur):
                         return error.error_exist_book_id(book_id)
+                    
+                    #加载路径
+                    current_file_path = os.path.abspath(__file__)
+                    current_directory = os.path.dirname(current_file_path)
+                    parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+                    data_path=os.path.abspath(parent_directory+'/data')
+                    #保证路径存在
+                    os.makedirs(data_path, exist_ok=True)
+                    os.makedirs(data_path+'/img', exist_ok=True)
+                    os.makedirs(data_path+'/book_intro', exist_ok=True)
+                    os.makedirs(data_path+'/auth_intro', exist_ok=True)
+                    os.makedirs(data_path+'/content', exist_ok=True)
+                    #加载json中的资源並存儲
                     data = json.loads(book_json)
+                    image_data=base64.b64decode(data['pictures'])
+                    with open(data_path+'/img/'+data['id']+'.png', 'wb') as image_file:
+                        image_file.write(image_data)
+                    with open(data_path+'/auth_intro/'+data['id']+'.txt', 'w',encoding='utf-8') as ai_file:
+                        ai_file.write(data['author_intro'])
+                    with open(data_path+'/book_intro/'+data['id']+'.txt', 'w',encoding='utf-8') as bi_file:
+                        bi_file.write(data['book_intro'])
+                    with open(data_path+'/content/'+data['id']+'.txt', 'w',encoding='utf-8') as ct_file:
+                        ct_file.write(data['content'])
+
                     cur.execute('''
                                 insert into book_info 
                                 (book_id,store_id,price,stock_level,sales,title,author,publisher,original_title,
@@ -64,10 +89,10 @@ class Seller(db_conn.DBConn):
                         data['currency_unit'],
                         data['binding'],
                         data['isbn'],
-                        'unsetpath',
-                        'unsetpath',
-                        'unsetpath',
-                        'unsetpath',
+                        './be/data/auth_intro/'+data['id']+'.txt',
+                        './be/data/book_intro/'+data['id']+'.txt',
+                        './be/data/content/'+data['id']+'.txt',
+                        './be/data/img/'+data['id']+'.png',
                     ))
                     conn.commit()
         except psycopg2.Error as e:
@@ -182,6 +207,19 @@ class Seller(db_conn.DBConn):
 
         except psycopg2.Error as e:return 528, "{}".format(str(e))
         except BaseException as e:return 530, "{}".format(str(e))
+
+
+# import fe.access.book
+# if  __name__=='__main__':
+
+#     b=fe.access.book.BookDB()
+#     s=Seller()
+#     books=b.get_book_info(12,10)
+#     for book in books:
+#         js=json.dumps(book.__dict__)
+#         data=json.loads(js)
+#         print(s.add_book('uid1','sid1',data['id'],js,10))
+        
 
 # import datetime
 # if __name__=="__main__":
