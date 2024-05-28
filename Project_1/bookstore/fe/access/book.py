@@ -1,6 +1,6 @@
 import os
 import sqlite3 as sqlite
-import random
+
 import base64
 import simplejson as json
 
@@ -22,7 +22,7 @@ class Book:
     book_intro: str
     content: str
     tags: [str]
-    pictures: [bytes]
+    pictures: bytes
 
     def __init__(self):
         self.tags = []
@@ -82,21 +82,23 @@ class BookDB:
             book.binding = row[10]
             book.isbn = row[11]
             if(book.isbn is not None):
-                book.isbn=str(book.isbn)
+                book.isbn=int(book.isbn)
             book.author_intro = row[12]
             book.book_intro = row[13]
             book.content = row[14]
             tags = row[15]
 
-            picture = row[16]
-            
+            # image = Image.open(BytesIO(picture))
+            # image.show()
+
             for tag in tags.split("\n"):
                 if tag.strip() != "":
                     book.tags.append(tag)
-            for i in range(0, random.randint(0, 9)):
-                if picture is not None:
-                    encode_str = base64.b64encode(picture).decode("utf-8")
-                    book.pictures.append(encode_str)
+
+            if row[16] is not None:
+                encode_str = base64.b64encode(row[16]).decode("utf-8")
+                book.pictures=encode_str
+
             books.append(book)
             # print(tags.decode('utf-8'))
 
@@ -108,5 +110,5 @@ class BookDB:
 
 
 # if __name__=='__main__':
-#     b=BookDB(large=True)
-#     b.clean_book_db()
+#     b=BookDB()
+#     b.get_book_info(10,3)
