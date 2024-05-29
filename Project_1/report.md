@@ -1936,7 +1936,7 @@ def test_cancel_paid_order_refund_ok(self):
     cursor=self.dbconn.conn['user'].find_one({'user_id':self.seller_id})
     origin_seller_balance=cursor['balance']
     code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
-    origin_buyer_balance=10000000000
+    origin_buyer_balance=10000000
     code = self.buyer.add_funds(origin_buyer_balance)
     code = self.buyer.payment(order_id)
     assert code == 200

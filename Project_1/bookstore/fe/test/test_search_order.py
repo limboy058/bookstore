@@ -1,4 +1,6 @@
 import pytest
+import sys
+sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from fe.access.auth import Auth
 from fe import conf
 from be.model import db_conn
@@ -10,7 +12,7 @@ import random
 
 class TestSearchOrder:
 
-    @pytest.fixture(autouse=True)
+    # @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.seller_id = "test_search_order_seller_id_{}".format(
             str(uuid.uuid1()))
@@ -24,7 +26,7 @@ class TestSearchOrder:
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
         self.seller = self.gen_book.return_seller()
-        yield
+        # yield
 
     def test_search_orders_detail_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,
@@ -33,23 +35,19 @@ class TestSearchOrder:
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
         tol_price = 0
+        conn=self.dbconn.get_conn()
+        cursor=conn.cursor()
         for info in buy_book_id_list:
-            cursor = self.dbconn.conn['store'].find_one({
-                'book_id':
-                info[0],
-                'store_id':
-                self.store_id
-            })
-            assert cursor != None
-            cur = cursor['book_info']
-            cur_price = cur['price']
+            cursor.execute("select price from book_info where book_id=%s and store_id=%s",[info[0],self.store_id,])
+            res=cursor.fetchone()
+            assert res != None
+            cur_price = res[0]
             tol_price += cur_price * info[1]
-
-        cursor = self.dbconn.conn['new_order'].find_one({'order_id': order_id})
+        cursor.close()
         code, tmp = self.auth.search_order_detail(order_id)
         assert (code == 200)
         (book_list, price, status) = tmp
-        assert buy_book_id_list.sort() == book_list.sort()
+        assert list(book_list).sort() == buy_book_id_list.sort()
         assert tol_price == price
         assert status == 'unpaid'
 
@@ -182,3 +180,9 @@ class TestSearchOrder:
             order_list.append(order_id)
         code, received_list = self.seller.search_order(self.store_id)
         assert order_list == received_list
+
+if __name__=="__main__":
+    test=TestSearchOrder()
+    test.pre_run_initialization()
+   # test.test_cancel_paid_order_refund_ok()
+    test.test_seller_search_unmatch_order()

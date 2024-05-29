@@ -1,6 +1,6 @@
 import pytest
-import sys
-sys.path.append("D:/dbproject/Project_1/bookstore")
+# import sys
+# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import db_conn
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
@@ -9,7 +9,7 @@ import uuid
 
 class TestCancelOrder:
 
-    @pytest.fixture(autouse=True)
+    # @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.seller_id = "test_cancel_seller_id_{}".format(str(uuid.uuid1()))
         self.store_id = "test_cancel_store_id_{}".format(str(uuid.uuid1()))
@@ -19,7 +19,7 @@ class TestCancelOrder:
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
         self.seller = self.gen_book.return_seller()
-        yield
+        # yield
 
     def test_unpaid_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,
@@ -144,7 +144,7 @@ class TestCancelOrder:
                                                  low_stock_level=False)
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(10000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         code = self.buyer.cancel(order_id)
@@ -154,6 +154,6 @@ class TestCancelOrder:
 #     test=TestCancelOrder()
 #     test.pre_run_initialization()
 #    # test.test_cancel_paid_order_refund_ok()
-#     test.test_order_stock_ok()
+#     test.test_delivering_order_id()
 
 
