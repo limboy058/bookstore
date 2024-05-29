@@ -79,6 +79,7 @@ Project_1/bookstore/fe/test/__pycache__/test_scanner.cpython-311-pytest-8.1.1.py
 Project_1/bookstore/fe/test/__pycache__/test_hot_book.cpython-311-pytest-8.1.1.pyc
 Project_1/bookstore/fe/bench/__pycache__/check.cpython-311.pyc
 Project_1/bookstore/fe/data/book.db
+Project_1/bookstore/be/data
 Project_1/bookstore/be/data/auth_intro/1002299.txt
 Project_1/bookstore/be/data/auth_intro/1020644.txt
 Project_1/bookstore/be/data/auth_intro/1021957.txt
