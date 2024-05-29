@@ -190,15 +190,15 @@ class Seller(db_conn.DBConn):
                 cur=conn.cursor()
                 cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (seller_id,))
                 if not cur.fetchone():
-                    return error.error_non_exist_user_id(seller_id), ""
+                    return error.error_non_exist_user_id(seller_id)+ ("",)
 
                 cur.execute("SELECT 1 FROM store WHERE store_id = %s", (store_id,))
                 if not cur.fetchone():
-                    return error.error_non_exist_store_id(store_id), ""
+                    return error.error_non_exist_store_id(store_id)+ ("",)
 
                 cur.execute('SELECT 1 FROM store WHERE store_id = %s AND user_id = %s', (store_id, seller_id))
                 if not cur.fetchone():
-                    return error.unmatched_seller_store(seller_id, store_id), ""
+                    return error.unmatched_seller_store(seller_id, store_id)+ ("",)
 
                 cur.execute("SELECT order_id FROM new_order WHERE store_id = %s", (store_id,))
                 orders = cur.fetchall()

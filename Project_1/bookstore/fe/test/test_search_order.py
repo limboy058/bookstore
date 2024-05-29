@@ -12,7 +12,7 @@ import random
 
 class TestSearchOrder:
 
-    # @pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.seller_id = "test_search_order_seller_id_{}".format(
             str(uuid.uuid1()))
@@ -26,7 +26,7 @@ class TestSearchOrder:
         self.buyer = register_new_buyer(self.buyer_id, self.password)
         self.gen_book = GenBook(self.seller_id, self.store_id)
         self.seller = self.gen_book.return_seller()
-        # yield
+        yield
 
     def test_search_orders_detail_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,
@@ -181,8 +181,8 @@ class TestSearchOrder:
         code, received_list = self.seller.search_order(self.store_id)
         assert order_list == received_list
 
-if __name__=="__main__":
-    test=TestSearchOrder()
-    test.pre_run_initialization()
-   # test.test_cancel_paid_order_refund_ok()
-    test.test_seller_search_unmatch_order()
+# if __name__=="__main__":
+#     test=TestSearchOrder()
+#     test.pre_run_initialization()
+#    # test.test_cancel_paid_order_refund_ok()
+#     test.test_seller_search_unmatch_order()

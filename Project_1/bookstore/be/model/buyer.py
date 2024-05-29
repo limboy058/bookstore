@@ -171,7 +171,7 @@ class Buyer(db_conn.DBConn):
                 cur=conn.cursor()
                 cur.execute('SELECT user_id FROM "user" WHERE user_id = %s', (user_id,))
                 if not cur.fetchone():
-                    return error.error_non_exist_user_id(user_id), ""
+                    return error.error_non_exist_user_id(user_id)+ ("",)
 
                 cur.execute("SELECT order_id FROM new_order WHERE buyer_id = %s", (user_id,))
                 orders = cur.fetchall()
