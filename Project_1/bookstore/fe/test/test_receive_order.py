@@ -1,4 +1,6 @@
 import pytest
+import sys
+# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
 
@@ -28,7 +30,7 @@ class TestreceiveOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         code = self.buyer.receive_books(order_id)
@@ -40,7 +42,7 @@ class TestreceiveOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         self.buyer.user_id = self.seller_id
@@ -74,7 +76,7 @@ class TestreceiveOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         order_id = order_id + "_x"
@@ -87,7 +89,7 @@ class TestreceiveOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         self.buyer.user_id = self.buyer.user_id + "_x"
@@ -100,7 +102,13 @@ class TestreceiveOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.buyer.receive_books(order_id)
         assert code != 200
+
+# if __name__=="__main__":
+#     test=TestreceiveOrder()
+#     test.pre_run_initialization()
+#    # test.test_cancel_paid_order_refund_ok()
+#     test.test_ok()

@@ -1,6 +1,6 @@
 import pytest
-import sys
-sys.path.append("D:/dbproject/Project_1/bookstore")
+# import sys
+# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import db_conn
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
@@ -43,7 +43,7 @@ class TestCancelOrder:
         conn.close()
 
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
-        origin_buyer_balance = 100000000
+        origin_buyer_balance = 1000000000
         code = self.buyer.add_funds(origin_buyer_balance)
         assert code==200
         code = self.buyer.payment(order_id)
@@ -139,14 +139,17 @@ class TestCancelOrder:
         self.buyer.user_id = origin_user_id
         assert code != 200
 
-    def test_delivering_order_id(self):
+    def test_cancel_delivering_order_id(self):
         ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,
                                                  low_stock_level=False)
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
+        assert code == 200
         code = self.buyer.payment(order_id)
+        assert code == 200
         code = self.seller.send_books(self.store_id, order_id)
+        assert code == 200
         code = self.buyer.cancel(order_id)
         assert code != 200
 
@@ -154,6 +157,6 @@ class TestCancelOrder:
 #     test=TestCancelOrder()
 #     test.pre_run_initialization()
 #    # test.test_cancel_paid_order_refund_ok()
-#     test.test_order_stock_ok()
+#     test.test_delivering_order_id()
 
 

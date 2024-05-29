@@ -1,4 +1,6 @@
 import pytest
+import sys
+# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
 
@@ -30,7 +32,7 @@ class TestSendOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id_x, order_id)
         assert code != 200
@@ -41,7 +43,7 @@ class TestSendOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         code = self.seller.send_books(self.store_id, order_id)
         assert code == 200
@@ -52,7 +54,7 @@ class TestSendOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.seller.send_books(self.store_id, order_id)
         assert code != 200
 
@@ -72,7 +74,7 @@ class TestSendOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         order_id = order_id + "_x"
         code = self.seller.send_books(self.store_id, order_id)
@@ -84,8 +86,14 @@ class TestSendOrder:
         assert ok
         code, order_id = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
-        code = self.buyer.add_funds(10000000000)
+        code = self.buyer.add_funds(100000000)
         code = self.buyer.payment(order_id)
         self.store_id = self.store_id + "_x"
         code = self.seller.send_books(self.store_id, order_id)
         assert code != 200
+
+# if __name__=="__main__":
+#     test=TestSendOrder()
+#     test.pre_run_initialization()
+#    # test.test_cancel_paid_order_refund_ok()
+#     test.test_ok()

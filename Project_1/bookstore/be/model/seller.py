@@ -2,7 +2,7 @@ import json
 import os,base64
 
 # import sys
-# sys.path.append(r'D:\DS_bookstore\Project_1\bookstore')
+# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 
 
 from be.model import error
@@ -190,15 +190,15 @@ class Seller(db_conn.DBConn):
                 cur=conn.cursor()
                 cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (seller_id,))
                 if not cur.fetchone():
-                    return error.error_non_exist_user_id(seller_id), ""
+                    return error.error_non_exist_user_id(seller_id)+ ("",)
 
                 cur.execute("SELECT 1 FROM store WHERE store_id = %s", (store_id,))
                 if not cur.fetchone():
-                    return error.error_non_exist_store_id(store_id), ""
+                    return error.error_non_exist_store_id(store_id)+ ("",)
 
                 cur.execute('SELECT 1 FROM store WHERE store_id = %s AND user_id = %s', (store_id, seller_id))
                 if not cur.fetchone():
-                    return error.unmatched_seller_store(seller_id, store_id), ""
+                    return error.unmatched_seller_store(seller_id, store_id)+ ("",)
 
                 cur.execute("SELECT order_id FROM new_order WHERE store_id = %s", (store_id,))
                 orders = cur.fetchall()
@@ -206,8 +206,8 @@ class Seller(db_conn.DBConn):
 
                 return 200, "ok", result
 
-        except psycopg2.Error as e:return 528, "{}".format(str(e))
-        except BaseException as e:return 530, "{}".format(str(e))
+        except psycopg2.Error as e:return 528, "{}".format(str(e)), ""
+        except BaseException as e:return 530, "{}".format(str(e)), ""
 
 
 # import fe.access.book
@@ -235,8 +235,8 @@ class Seller(db_conn.DBConn):
 #     order_id = 'order66666'
 #     cur.execute(query,[order_id,'store','buyer','unpaid',datetime.datetime.now(),25000])
 #     conn.commit()
-#     # res=buyer.receive_books('buyer')
-#     # print(res)
+#     res=seller.search_order('buyer','store')
+#     print(res)
 
 #     conn=seller.get_conn()
 #     cur=conn.cursor()
