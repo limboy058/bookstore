@@ -71,8 +71,8 @@ class Seller(db_conn.DBConn):
                     cur.execute('''
                                 insert into book_info 
                                 (book_id,store_id,price,stock_level,sales,title,author,publisher,original_title,
-                                translator,pub_year,pages,currency_unit,binding,isbn,author_intro,book_intro,content,picture)
-                                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                                translator,pub_year,pages,currency_unit,binding,isbn,author_intro,book_intro,content,picture,tags)
+                                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                                 ''' , (
                         book_id,
                         store_id,
@@ -93,6 +93,7 @@ class Seller(db_conn.DBConn):
                         './be/data/book_intro/'+data['id']+'.txt',
                         './be/data/content/'+data['id']+'.txt',
                         './be/data/img/'+data['id']+'.png',
+                        data['tags']
                     ))
                     conn.commit()
         except psycopg2.Error as e:
