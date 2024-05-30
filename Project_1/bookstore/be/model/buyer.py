@@ -1,4 +1,3 @@
-import pymongo
 import sys
 sys.path.append("D:\\dbproject\\Project_1\\bookstore")
 import uuid
@@ -6,7 +5,6 @@ import json
 import logging
 import time
 import datetime
-import pymongo.errors
 import psycopg2
 from be.model import db_conn
 from be.model import error
