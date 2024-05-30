@@ -24,7 +24,6 @@ class Store:
         cur.execute("drop table if exists \"new_order\";")
         cur.execute("drop table if exists \"order_detail\";")
         cur.execute("drop table if exists \"book_info\";")
-        cur.execute("drop table if exists \"book_tag\";")
         conn.commit()
         cur.close()
         conn.close()
@@ -38,7 +37,6 @@ class Store:
         cur.execute("delete from \"new_order\";")
         cur.execute("delete from \"order_detail\";")
         cur.execute("delete from \"book_info\";")
-        cur.execute("delete from \"book_tag\";")
         conn.commit()
         cur.close()
         conn.close()
@@ -82,7 +80,7 @@ class Store:
         +")")
 
         cur.execute("create table \"user\"("+
-            "user_id varchar(255),password varchar(255),balance int,token varchar(1023),terminal varchar(1023), primary key(user_id)"        
+            "user_id varchar(255),password varchar(255),balance bigint,token varchar(1023),terminal varchar(1023), primary key(user_id)"        
         +")")
 
         cur.execute("create table new_order("+

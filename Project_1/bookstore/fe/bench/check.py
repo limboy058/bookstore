@@ -1,19 +1,16 @@
-import pymongo
+import psycopg2
 from be.model.store import get_db_conn
 
 
 def checkSumMoney(money):
     conn = get_db_conn()
-    cursor = conn['user'].find({})
-    for i in cursor:
-        money -= i['balance']
-    cursor = conn['new_order'].find({
-        '$or': [{
-            'status': 'paid_but_not_delivered'
-        }, {
-            'status': 'delivered_but_not_received'
-        }]
-    })
-    for i in cursor:
-        money -= i['total_price']
+    cur=conn.cursor()
+    cur.execute("select sum(balance) from \"user\" ")
+    res=cur.fetchone()
+    if(res is not None and res[0] is not None):
+        money-=res[0]
+    cur.execute("select sum(total_price) from new_order where status='paid_but_not_delivered' or status='delivered_but_not_received'")
+    res=cur.fetchone()
+    if(res is not None and res[0] is not None):
+        money-=res[0]
     assert (money == 0)
