@@ -200,8 +200,13 @@ class Buyer(db_conn.DBConn):
                     return error.unmatched_order_user(order_id, user_id)
 
                 total_price = order[2]
-                seller_id = order[3]
 
+                store_id=order[3]
+                cur.execute("select user_id from store where store_id=%s",[store_id,])
+                res=cur.fetchone()
+                if(res is None):
+                    return error.error_non_exist_store_id(store_id)
+                seller_id = res[0]
                 cur.execute("""
                     UPDATE new_order
                     SET status = 'received'
