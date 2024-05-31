@@ -84,7 +84,7 @@ class Store:
         +")")
 
         cur.execute("create table new_order("+
-            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price int, primary key(order_id)"        
+            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint, primary key(order_id)"        
         +")")
 
 
