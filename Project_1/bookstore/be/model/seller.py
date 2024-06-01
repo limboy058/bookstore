@@ -101,6 +101,61 @@ class Seller(db_conn.DBConn):
         except BaseException as e:
             return 530, "{}".format(str(e))
         return 200, "ok"
+    
+    def del_book(
+        self,
+        user_id: str,
+        store_id: str,
+        book_id: str,
+    ):
+        try:
+            with self.get_conn() as conn:
+                with conn.cursor() as cur:
+                    conn.autocommit = False
+                    if not self.user_id_exist(user_id, cur):
+                        return error.error_non_exist_user_id(user_id)
+                    if not self.store_id_exist(store_id, cur):
+                        return error.error_non_exist_store_id(store_id)
+                    cur.execute(
+                        'select * from store where store_id=%s and user_id!=%s',
+                        (
+                            store_id,
+                            user_id,
+                        ))
+                    ret = cur.fetchone()
+                    if ret != None:
+                        return error.error_authorization_fail()
+                        
+                    if not self.book_id_exist(store_id, book_id, cur):
+                        return error.error_non_exist_book_id(book_id)
+                    
+                    cur.execute(
+                    'select author_intro, book_intro, content, picture  from book_info where book_id=%s and store_id=%s',
+                    (
+                        book_id,
+                        store_id,
+                    ))
+                    file_paths = cur.fetchone()
+                    if file_paths is None:
+                        return error.error_non_exist_book_id(book_id)
+
+                    cur.execute(
+                    'delete from book_info where book_id=%s and store_id=%s',
+                    (
+                        book_id,
+                        store_id,
+                    ))
+
+                    for path in file_paths:
+                        if path and os.path.exists(path):
+                            os.remove(path)
+                    
+                    conn.commit()
+        except psycopg2.Error as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
 
     def add_stock_level(self, user_id: str, store_id: str, book_id: str,
                         add_stock_level: int):
@@ -187,18 +242,16 @@ class Seller(db_conn.DBConn):
     def search_order(self, seller_id, store_id):
         try:
             with self.get_conn() as conn:
-                cur=conn.cursor()
-                cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (seller_id,))
-                if not cur.fetchone():
-                    return error.error_non_exist_user_id(seller_id)+ ("",)
-
-                cur.execute("SELECT 1 FROM store WHERE store_id = %s", (store_id,))
-                if not cur.fetchone():
+                cur=conn.cursor()                
+                if not self.user_id_exist(seller_id, cur):
+                        return error.error_non_exist_user_id(seller_id)+ ("",)
+                if not self.store_id_exist(store_id, cur):
                     return error.error_non_exist_store_id(store_id)+ ("",)
 
                 cur.execute('SELECT 1 FROM store WHERE store_id = %s AND user_id = %s', (store_id, seller_id))
                 if not cur.fetchone():
                     return error.unmatched_seller_store(seller_id, store_id)+ ("",)
+                    
 
                 cur.execute("SELECT order_id FROM new_order WHERE store_id = %s", (store_id,))
                 orders = cur.fetchall()
@@ -208,7 +261,55 @@ class Seller(db_conn.DBConn):
 
         except psycopg2.Error as e:return 528, "{}".format(str(e)), ""
         except BaseException as e:return 530, "{}".format(str(e)), ""
+    
+    def cancel(self, store_id, order_id) -> (int, str):
+        try:
+            with self.get_conn() as conn:
+                cur=conn.cursor()
+                unprossing_status = ["unpaid", "paid_but_not_delivered"]
+                    
+                cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                order = cur.fetchone()
 
+                if not order:
+                    return error.error_non_exist_order_id(order_id)
+                    
+
+                buyer_id=order[0]
+                current_status = order[1]
+                total_price = order[2]
+                store_id_ = order[3]
+
+                if current_status not in unprossing_status:
+                    return error.error_invalid_order_id(order_id)
+
+                if store_id != store_id_:
+                    return error.unmatched_order_store(order_id, store_id)
+                
+                cur.execute("""
+                    UPDATE new_order
+                    SET status = 'canceled'
+                    WHERE order_id = %s
+                """, (order_id,))
+
+                cur.execute("select book_id, count from order_detail WHERE order_id = %s", (order_id,))
+                detail = cur.fetchall()
+
+                for item in detail:
+                    cur.execute("""
+                        UPDATE book_info 
+                        SET stock_level = stock_level + %s, sales = sales - %s 
+                        WHERE book_id = %s AND store_id = %s
+                    """, (item[1], item[1], item[0], store_id))
+
+                if current_status == "paid_but_not_delivered":
+                    cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, buyer_id))
+
+                conn.commit()
+                return 200, "ok"
+
+        except psycopg2.Error as e: return 528, "{}".format(str(e))
+        except BaseException as e: return 530, "{}".format(str(e))
 
 # import fe.access.book
 # if  __name__=='__main__':
