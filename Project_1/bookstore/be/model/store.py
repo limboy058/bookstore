@@ -102,8 +102,7 @@ class Store:
             host="localhost",
             database="609A",
             user=self.user_name,
-            password=self.user_password,
-            autocommit=False#关闭自动提交
+            password=self.user_password
         )
 
 
