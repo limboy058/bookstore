@@ -11,7 +11,6 @@ Project_1/bookstore/be/__pycache__/__init__.cpython-312.pyc
 Project_1/bookstore/be/__pycache__/serve.cpython-312.pyc
 Project_1/bookstore/.coverage
 .vscode/settings.json
-.gitignore
 Project_1/bookstore/be/model/__pycache__/__init__.cpython-311.pyc
 Project_1/bookstore/be/model/__pycache__/buyer.cpython-311.pyc
 Project_1/bookstore/be/model/__pycache__/buyer.cpython-312.pyc
@@ -69,7 +68,6 @@ Project_1/bookstore/fe/test/__pycache__/test_search_book.cpython-311-pytest-8.1.
 Project_1/bookstore/fe/test/__pycache__/test_search_order.cpython-311-pytest-8.1.1.pyc
 Project_1/bookstore/fe/test/__pycache__/test_send_order.cpython-311-pytest-8.1.1.pyc
 Project_1/bookstore/app.log
-.gitignore
 Project_1/bookstore/fe/bench/workload copy.log
 Project_1/bookstore/fe/bench/workload.log
 Project_1/bookstore/fe/test/__pycache__/test_aregister.cpython-311-pytest-8.1.1.pyc
@@ -133,3 +131,5 @@ Project_1/bookstore/be/data/img/1030810.png
 Project_1/bookstore/be/data/img/1033337.png
 Project_1/bookstore/be/data/img/1033347.png
 Project_1/bookstore/be/data/img/1036490.png
+Project_1/bookstore/__pycache__/test_gin_index_on_tags.cpython-311-pytest-8.1.1.pyc
+Project_1/bookstore/__pycache__/test_order_detail.cpython-311-pytest-8.1.1.pyc
