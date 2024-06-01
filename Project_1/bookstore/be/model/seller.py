@@ -292,15 +292,19 @@ class Seller(db_conn.DBConn):
                     WHERE order_id = %s
                 """, (order_id,))
 
-                cur.execute("select book_id, count from order_detail WHERE order_id = %s", (order_id,))
-                detail = cur.fetchall()
-
-                for item in detail:
+                cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
+                res = cur.fetchone()
+                detail=res[0].split('\n')
+                for tmp in detail:
+                    tmp1=tmp.split(' ')
+                    if(len(tmp1)<2):
+                        break
+                    book_id,count=tmp1
                     cur.execute("""
                         UPDATE book_info 
                         SET stock_level = stock_level + %s, sales = sales - %s 
                         WHERE book_id = %s AND store_id = %s
-                    """, (item[1], item[1], item[0], store_id))
+                    """, (count, count, book_id, store_id))
 
                 if current_status == "paid_but_not_delivered":
                     cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, buyer_id))
