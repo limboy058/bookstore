@@ -12,7 +12,6 @@ class Store:
         #self.bookdatabase=os.path.join(db_path, "book.db")
         self.user_name="mamba"
         self.user_password="out"
-        self.client = pymongo.MongoClient()
         #self.conn = psycopg2.connect(host="localhost",database="609A", user=self.user_name, password=self.user_password)
         
     def clear_tables(self):
@@ -22,6 +21,7 @@ class Store:
         cur.execute("drop table if exists \"user\";")
         cur.execute("drop table if exists \"dead_user\";")
         cur.execute("drop table if exists \"new_order\";")
+        cur.execute("drop table if exists \"old_order\";")
         cur.execute("drop table if exists \"order_detail\";")
         cur.execute("drop table if exists \"book_info\";")
         conn.commit()
@@ -35,6 +35,7 @@ class Store:
         cur.execute("delete from \"user\";")
         cur.execute("delete from \"dead_user\";")
         cur.execute("delete from \"new_order\";")
+        cur.execute("delete from \"old_order\";")
         cur.execute("delete from \"order_detail\";")
         cur.execute("delete from \"book_info\";")
         conn.commit()
@@ -92,15 +93,17 @@ class Store:
         #     "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
         # +")")
 
-
+        cur.close()
         conn.commit()
+        conn.close()
 
     def get_db_conn(self):
         return psycopg2.connect(
             host="localhost",
             database="609A",
             user=self.user_name,
-            password=self.user_password
+            password=self.user_password,
+            autocommit=False#关闭自动提交
         )
 
 
