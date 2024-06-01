@@ -69,6 +69,20 @@ def seller_add_book():
     return jsonify({"message": message}), code
 
 
+@bp_seller.route("/del_book", methods=["POST"])
+def del_book():
+    user_id: str = request.json.get("user_id")
+    store_id: str = request.json.get("store_id")
+    book_id: str = request.json.get("book_id")
+    s = seller.Seller()
+    code, message = s.del_book(
+        user_id,
+        store_id,
+        book_id,
+        )
+    return jsonify({"message": message}), code
+
+
 @bp_seller.route("/add_stock_level", methods=["POST"])
 def add_stock_level():
     user_id: str = request.json.get("user_id")
@@ -97,3 +111,11 @@ def search_order():
     s = seller.Seller()
     code, message, order_id_list = s.search_order(seller_id, store_id)
     return jsonify({"message": message, "order_id_list": order_id_list}), code
+
+@bp_seller.route("/cancel", methods=["POST"])
+def cancel():
+    store_id = request.json.get("store_id")
+    order_id = request.json.get("order_id")
+    b = seller.Seller()
+    code, message = b.cancel(store_id, order_id)
+    return jsonify({"message": message}), code

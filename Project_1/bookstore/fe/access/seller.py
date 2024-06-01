@@ -40,6 +40,17 @@ class Seller:
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
+    
+    def del_book(self, store_id: str, book_id: str) -> int:
+        json = {
+            "user_id": self.seller_id,
+            "store_id": store_id,
+            "book_id": book_id,
+        }
+        url = urljoin(self.url_prefix, "del_book")
+        headers = {"token": self.token}
+        r = requests.post(url, headers=headers, json=json)
+        return r.status_code
 
     def add_stock_level(self, seller_id: str, store_id: str, book_id: str,
                         add_stock_num: int) -> int:
@@ -75,3 +86,13 @@ class Seller:
         r = requests.post(url, headers=headers, json=json)
         response_json = r.json()
         return r.status_code, response_json.get("order_id_list")
+    
+    def cancel(self, store_id: str, order_id: str) -> int:
+        json = {
+            "store_id": store_id,
+            "order_id": order_id,
+        }
+        url = urljoin(self.url_prefix, "cancel")
+        headers = {"token": self.token}
+        r = requests.post(url, headers=headers, json=json)
+        return r.status_code
