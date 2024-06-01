@@ -84,13 +84,13 @@ class Store:
         +")")
 
         cur.execute("create table new_order("+
-            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint, primary key(order_id)"        
+            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint,order_detail Text, primary key(order_id)"        
         +")")
 
 
-        cur.execute("create table order_detail("+
-            "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
-        +")")
+        # cur.execute("create table order_detail("+
+        #     "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
+        # +")")
 
 
         conn.commit()

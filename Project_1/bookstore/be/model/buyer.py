@@ -52,13 +52,14 @@ class Buyer(db_conn.DBConn):
                                 break
                     if not judge:
                         return error.error_non_exist_book_id(book_id) + (order_id, )
-
+                order_detail=""
                 for book_id, count in id_and_count:
                     cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s",[count,count,store_id,book_id])
-                    cur.execute("insert into order_detail values(%s,%s,%s)",[uid,book_id,count])
-                query="insert into new_order values(%s,%s,%s,%s,%s,%s)"
+                    order_detail+=book_id+" "+str(count)+"\n"
+                    #cur.execute("insert into order_detail values(%s,%s,%s)",[uid,book_id,count])
+                query="insert into new_order values(%s,%s,%s,%s,%s,%s,%s)"
                 order_id = uid
-                cur.execute(query,[order_id,store_id,user_id,'unpaid',datetime.datetime.now(),sum_price])
+                cur.execute(query,[order_id,store_id,user_id,'unpaid',datetime.datetime.now(),sum_price,order_detail])
                 conn.commit()
             
         except psycopg2.Error as e:  return 528, "{}".format(str(e)), ""
@@ -143,15 +144,19 @@ class Buyer(db_conn.DBConn):
                     WHERE order_id = %s
                 """, (order_id,))
 
-                cur.execute("select book_id, count from order_detail WHERE order_id = %s", (order_id,))
-                detail = cur.fetchall()
-
-                for item in detail:
+                cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
+                res = cur.fetchone()
+                detail=res[0].split('\n')
+                for tmp in detail:
+                    tmp1=tmp.split(' ')
+                    if(len(tmp1)<2):
+                        break
+                    book_id,count=tmp1
                     cur.execute("""
                         UPDATE book_info 
                         SET stock_level = stock_level + %s, sales = sales - %s 
                         WHERE book_id = %s AND store_id = %s
-                    """, (item[1], item[1], item[0], store_id))
+                    """, (count, count, book_id, store_id))
 
                 if current_status == "paid_but_not_delivered":
                     cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
@@ -220,10 +225,10 @@ class Buyer(db_conn.DBConn):
         except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
 
-# if __name__=="__main__":
-#     buyer=Buyer()
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
+if __name__=="__main__":
+    buyer=Buyer()
+    ret=buyer.cancel("test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8","test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8_test_cancel_store_id_dde4a788-2039-11ef-8c74-d4548b9011a8_dee48285-2039-11ef-98c1-d4548b9011a8")
+    print(ret)
 #     cur.execute("delete from order_detail")
 #     cur.execute("delete from \"user\"")
 #     cur.execute("delete from store")
