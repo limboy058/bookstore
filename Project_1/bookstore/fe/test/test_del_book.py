@@ -1,4 +1,6 @@
 import pytest
+import sys
+sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from be.model import db_conn
 from fe import conf
 from fe.access.new_seller import register_new_seller
@@ -36,6 +38,14 @@ class TestDelBook:
             
 
     def test_db_clean_ok(self):
+        for b in self.books:
+            code = self.seller.add_book(self.store_id, 0, b)
+            assert code == 200
+
+        for b in self.books:
+            code = self.seller.del_book(self.store_id, b.id)
+            assert code == 200
+
         conn=self.dbconn.get_conn()
         cursor=conn.cursor()
         for b in self.books:
@@ -51,11 +61,23 @@ class TestDelBook:
         conn.close()
 
     def test_path_clean_ok(self):
+        for b in self.books:
+            code = self.seller.add_book(self.store_id, 0, b)
+            assert code == 200
+        for b in self.books:
+            code = self.seller.del_book(self.store_id, b.id)
+            assert code == 200
+
+        current_file_path = os.path.abspath(__file__)
+        current_directory = os.path.dirname(current_file_path)
+        fe_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+        bkstore_directory = os.path.abspath(os.path.join(fe_directory, os.pardir))
+        data_path=os.path.abspath(bkstore_directory+'/be/data')
         file_paths = [
-        './be/data/auth_intro/{id}.txt',
-        './be/data/book_intro/{id}.txt',
-        './be/data/content/{id}.txt',
-        './be/data/img/{id}.png'
+            data_path+'/auth_intro/{id}.txt',
+            data_path+'/book_intro/{id}.txt',
+            data_path+'/content/{id}.txt',
+            data_path+'/img/{id}.png'
         ]
 
         
@@ -98,3 +120,10 @@ class TestDelBook:
             self.seller.seller_id = self.seller.seller_id + "_x"
             code = self.seller.del_book(self.store_id, b.id)
             assert code != 200
+
+# if __name__=="__main__":
+#     test=TestDelBook()
+#     test.pre_run_initialization()
+#    # test.test_cancel_paid_order_refund_ok()
+#     test.test_db_clean_ok()
+#     test.test_path_clean_ok()

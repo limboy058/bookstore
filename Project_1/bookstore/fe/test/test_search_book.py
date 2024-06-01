@@ -1,7 +1,8 @@
 import time
 import sys
 import json
-sys.path.append("D:/dbproject/Project_1/bookstore")
+# sys.path.append("D:/dbproject/Project_1/bookstore")
+import os
 import pytest
 import random
 from fe.access.auth import Auth
@@ -36,6 +37,7 @@ class TestSearchBook:
             code = self.seller.add_book(self.store_id, cnt, self.books[i])
             assert code == 200
             cnt += 1
+
 
     def test_search_book_id(self):
         for b in self.books:
@@ -279,3 +281,28 @@ class TestSearchBook:
                 las_price = res['sales']
 
 
+
+
+    def test_search_book_detail(self):
+        current_file_path = os.path.abspath(__file__)
+        current_directory = os.path.dirname(current_file_path)
+        fe_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+        bkstore_directory = os.path.abspath(os.path.join(fe_directory, os.pardir))
+        data_path=os.path.abspath(bkstore_directory+'/be/data')
+        file_paths = [
+            data_path+'/auth_intro/{id}.txt',
+            data_path+'/book_intro/{id}.txt',
+            data_path+'/content/{id}.txt',
+            data_path+'/img/{id}.png'
+        ]
+        
+        for b in self.books:
+            if (b.id == None):
+                continue
+            book_id = b.id
+            for path in file_paths:
+                file_path = path.format(id=book_id)
+                assert os.path.exists(file_path)
+
+
+            
