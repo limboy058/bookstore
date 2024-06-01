@@ -1,6 +1,8 @@
 import uuid
 
 import pytest
+import sys
+sys.path.append("D:\\code\\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 
 from fe.access import auth
 from fe import conf
@@ -53,3 +55,9 @@ class TestPassword:
         code, new_token = self.auth.login(self.user_id, self.new_password,
                                           self.terminal)
         assert code != 200
+
+# if __name__=="__main__":
+#     test=TestPassword()
+#     test.pre_run_initialization()
+#    # test.test_cancel_paid_order_refund_ok()
+#     test.test_ok()

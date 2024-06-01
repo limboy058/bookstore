@@ -4,7 +4,7 @@ sys.path.append('D:/dbproject/Project_1/bookstore')
 from fe import conf
 from fe.access import book
 from fe.access.new_seller import register_new_seller
-
+import hashlib
 
 class GenBook:
 
@@ -12,6 +12,7 @@ class GenBook:
         self.user_id = user_id
         self.store_id = store_id
         self.password = self.user_id
+        
         self.seller = register_new_seller(self.user_id, self.password)
         code = self.seller.create_store(store_id)
         assert code == 200
