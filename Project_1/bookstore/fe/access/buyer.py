@@ -2,13 +2,14 @@ import requests
 import simplejson
 from urllib.parse import urljoin
 from fe.access.auth import Auth
-
+import hashlib
 
 class Buyer:
 
     def __init__(self, url_prefix, user_id, password):
         self.url_prefix = urljoin(url_prefix, "buyer/")
         self.user_id = user_id
+        # hashed_password = hashlib.sha256(password.encode()).hexdigest()
         self.password = password
         self.token = ""
         self.terminal = "my terminal"
@@ -16,6 +17,8 @@ class Buyer:
         code, self.token = self.auth.login(self.user_id, self.password,
                                            self.terminal)
         assert code == 200
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        self.password = hashed_password
 
     def new_order(self, store_id: str,
                   book_id_and_count: [(str, int)]) -> (int, str):
