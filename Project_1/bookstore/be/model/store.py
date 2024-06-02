@@ -35,7 +35,6 @@ class Store:
         cur.execute("delete from \"user\";")
         cur.execute("delete from \"dead_user\";")
         cur.execute("delete from \"new_order\";")
-        cur.execute("delete from \"order_detail\";")
         cur.execute("delete from \"book_info\";")
         conn.commit()
         cur.close()

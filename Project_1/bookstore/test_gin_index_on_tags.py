@@ -1,6 +1,4 @@
 import pymongo
-import sys
-sys.path.append("D:\dbproject\Project_1\\bookstore")
 import uuid
 import json
 import logging
