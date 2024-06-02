@@ -4,6 +4,7 @@ import sqlite3 as sqlite
 import threading
 import pymongo
 import psycopg2
+import shutil  
 class Store:
     database: str
 
@@ -38,6 +39,12 @@ class Store:
         #cur.execute("delete from \"old_order\";")
         #cur.execute("delete from \"order_detail\";")
         cur.execute("delete from \"book_info\";")
+        current_file_path = os.path.abspath(__file__)
+        current_directory = os.path.dirname(current_file_path)
+        parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+        data_path=os.path.abspath(parent_directory+'/data')
+        shutil.rmtree(data_path)  
+        os.mkdir(data_path)  
         conn.commit()
         cur.close()
         conn.close()
