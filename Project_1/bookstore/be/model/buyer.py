@@ -87,9 +87,10 @@ class Buyer(db_conn.DBConn):
                     return error.error_authorization_fail()
                 if(res[0]<total_price):
                     return error.error_not_sufficient_funds(order_id)
-                cur.execute("update \"user\" set balance=balance-%s where user_id=%s",[total_price,user_id])
-                    
-                cur.execute("update new_order set status=%s where order_id=%s",["paid_but_not_delivered",order_id])
+                cur.execute("update \"user\" set balance=balance-%s where user_id=%s and balance>=%s",[total_price,user_id,total_price])
+                if cur.rowcount == 0:  #受影响行数
+                        return error.error_not_sufficient_funds(order_id)
+                cur.execute("update new_order set status=%s where order_id=%s and status=%s",["paid_but_not_delivered",order_id,'unpaid'])
                 conn.commit()
         except psycopg2.Error as e:  return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
@@ -107,7 +108,9 @@ class Buyer(db_conn.DBConn):
                     return error.error_authorization_fail()
                 elif res[1]<-add_value:
                     return error.error_non_enough_fund(user_id)
-                cur.execute("update \"user\" set balance=balance+%s where user_id=%s",[add_value,user_id])
+                cur.execute("update \"user\" set balance=balance+%s where user_id=%s and balance>=%s",[add_value,user_id,-add_value])
+                if cur.rowcount == 0:  #受影响行数
+                    return error.error_non_enough_fund(user_id)
                 conn.commit()
         except psycopg2.Error as e:  return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
@@ -141,9 +144,10 @@ class Buyer(db_conn.DBConn):
                 cur.execute("""
                     UPDATE new_order
                     SET status = 'canceled'
-                    WHERE order_id = %s
-                """, (order_id,))
-
+                    WHERE order_id = %s and status in (%s,%s)
+                """, (order_id,unprossing_status[0],unprossing_status[1]))
+                if cur.rowcount == 0:
+                        return error.error_invalid_order_id(order_id)
                 cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
                 res = cur.fetchone()
                 detail=res[0].split('\n')
@@ -215,9 +219,10 @@ class Buyer(db_conn.DBConn):
                 cur.execute("""
                     UPDATE new_order
                     SET status = 'received'
-                    WHERE order_id = %s
+                    WHERE order_id = %s and status= 'delivered_but_not_received'
                 """, (order_id,))
-                
+                if cur.rowcount == 0:  #受影响行数
+                        return error.error_invalid_order_id(order_id)
                 cur.execute('UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, seller_id))
                 conn.commit()
                 return 200, "ok"
@@ -225,10 +230,10 @@ class Buyer(db_conn.DBConn):
         except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
 
-if __name__=="__main__":
-    buyer=Buyer()
-    ret=buyer.cancel("test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8","test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8_test_cancel_store_id_dde4a788-2039-11ef-8c74-d4548b9011a8_dee48285-2039-11ef-98c1-d4548b9011a8")
-    print(ret)
+# if __name__=="__main__":
+#     buyer=Buyer()
+#     ret=buyer.cancel("test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8","test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8_test_cancel_store_id_dde4a788-2039-11ef-8c74-d4548b9011a8_dee48285-2039-11ef-98c1-d4548b9011a8")
+#     print(ret)
 #     cur.execute("delete from order_detail")
 #     cur.execute("delete from \"user\"")
 #     cur.execute("delete from store")

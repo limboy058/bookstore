@@ -230,7 +230,7 @@ class Seller(db_conn.DBConn):
                 cur.execute("""
                     UPDATE new_order
                     SET status = 'delivered_but_not_received'
-                    WHERE order_id = %s
+                    WHERE order_id = %s and status='paid_but_not_delivered'
                 """, (order_id,))
                 conn.commit()
                 return 200, "ok"
@@ -289,9 +289,10 @@ class Seller(db_conn.DBConn):
                 cur.execute("""
                     UPDATE new_order
                     SET status = 'canceled'
-                    WHERE order_id = %s
-                """, (order_id,))
-
+                    WHERE order_id = %s and status in (%s,%s)
+                """, (order_id,unprossing_status[0],unprossing_status[1]))
+                if cur.rowcount == 0:
+                        return error.error_invalid_order_id(order_id)
                 cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
                 res = cur.fetchone()
                 detail=res[0].split('\n')
