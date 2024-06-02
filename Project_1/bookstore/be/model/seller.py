@@ -360,6 +360,9 @@ class Seller(db_conn.DBConn):
                     if current_status == "paid_but_not_delivered":
                         cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, buyer_id))
 
+                    cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
+                    cur.execute('delete from new_order where order_id=%s',(order_id,))
+                    
                     conn.commit()
                     return 200, "ok"
 

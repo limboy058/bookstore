@@ -25,15 +25,6 @@ class Scanner(db_conn.DBConn):
                         conn.autocommit = False
 
                         cur_time = datetime.datetime.now()
-                        # cur.execute('''update new_order 
-                        #             set status=%s 
-                        #             where status=%s and time>=%s and time <%s 
-                        #             returning order_id,store_id,order_detail
-                        #             ''',
-                        #             ('canceled','unpaid',
-                        #              cur_time-datetime.timedelta(seconds=self.live_time+self.scan_interval),
-                        #              cur_time-datetime.timedelta(seconds=self.live_time-self.scan_interval),))
-                        #              #cur_time,))
 
                         cur.execute('''
                                     insert into old_order 
