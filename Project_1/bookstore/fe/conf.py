@@ -9,3 +9,4 @@ Default_Stock_Level = 1000000
 Default_User_Funds = 100000000
 Data_Batch_Size = 100
 Use_Large_DB = True
+Retry_time=10
