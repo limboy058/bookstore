@@ -146,62 +146,62 @@ class Buyer(db_conn.DBConn):
         attempt=0
         while(True):
             try:
-								with self.get_conn() as conn:
-										cur=conn.cursor()
-										unprossing_status = ["unpaid", "paid_but_not_delivered"]
+                with self.get_conn() as conn:
+                        cur=conn.cursor()
+                        unprossing_status = ["unpaid", "paid_but_not_delivered"]
 
 
-										cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
-										order = cur.fetchone()
-										if not order:
-												cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
-												order = cur.fetchone()
-												if not order:
-														return error.error_non_exist_order_id(order_id)
-												else:
-														return error.error_invalid_order_id(order_id)
+                        cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                        order = cur.fetchone()
+                        if not order:
+                                cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
+                                order = cur.fetchone()
+                                if not order:
+                                        return error.error_non_exist_order_id(order_id)
+                                else:
+                                        return error.error_invalid_order_id(order_id)
 
-										buyer_id=order[0]
-										current_status = order[1]
-										total_price = order[2]
-										store_id = order[3]
+                        buyer_id=order[0]
+                        current_status = order[1]
+                        total_price = order[2]
+                        store_id = order[3]
 
 
-										if current_status not in unprossing_status:
-												return error.error_invalid_order_id(order_id)
+                        if current_status not in unprossing_status:
+                                return error.error_invalid_order_id(order_id)
 
-										if buyer_id != user_id:
-												return error.error_order_user_id(order_id, user_id)
+                        if buyer_id != user_id:
+                                return error.error_order_user_id(order_id, user_id)
 
-										cur.execute("""
-												UPDATE new_order
-												SET status = 'canceled'
-												WHERE order_id = %s and status in (%s,%s)
-										""", (order_id,unprossing_status[0],unprossing_status[1]))
-										if cur.rowcount == 0:
-														return error.error_invalid_order_id(order_id)
-										cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
-										res = cur.fetchone()
-										detail=res[0].split('\n')
-										for tmp in detail:
-												tmp1=tmp.split(' ')
-												if(len(tmp1)<2):
-														break
-												book_id,count=tmp1
-												cur.execute("""
-														UPDATE book_info 
-														SET stock_level = stock_level + %s, sales = sales - %s 
-														WHERE book_id = %s AND store_id = %s
-												""", (count, count, book_id, store_id))
+                        cur.execute("""
+                                UPDATE new_order
+                                SET status = 'canceled'
+                                WHERE order_id = %s and status in (%s,%s)
+                        """, (order_id,unprossing_status[0],unprossing_status[1]))
+                        if cur.rowcount == 0:
+                                        return error.error_invalid_order_id(order_id)
+                        cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
+                        res = cur.fetchone()
+                        detail=res[0].split('\n')
+                        for tmp in detail:
+                                tmp1=tmp.split(' ')
+                                if(len(tmp1)<2):
+                                        break
+                                book_id,count=tmp1
+                                cur.execute("""
+                                        UPDATE book_info 
+                                        SET stock_level = stock_level + %s, sales = sales - %s 
+                                        WHERE book_id = %s AND store_id = %s
+                                """, (count, count, book_id, store_id))
 
-										if current_status == "paid_but_not_delivered":
-												cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
+                        if current_status == "paid_but_not_delivered":
+                                cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
 
-										cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
-										cur.execute('delete from new_order where order_id=%s',(order_id,))
+                        cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
+                        cur.execute('delete from new_order where order_id=%s',(order_id,))
 
-										conn.commit()
-										return 200, "ok"
+                        conn.commit()
+                        return 200, "ok"
 
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:
