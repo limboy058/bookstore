@@ -47,7 +47,7 @@ class BookDB:
 
     def clean_book_db(self):
         conn = sqlite.connect(self.book_db)
-        conn.execute("delete from book where id is NULL or price=NULL or title is NULL or pub_year is NULL")
+        conn.execute("delete from book where id is NULL or price is NULL or title is NULL or pub_year<'0000' or pub_year>'9999'")
         conn.commit()
         conn.close()
         
