@@ -28,20 +28,25 @@ class Scanner(db_conn.DBConn):
                         cur.execute('''update new_order 
                                     set status=%s 
                                     where status=%s and time>=%s and time <%s 
-                                    returning order_id,store_id
+                                    returning order_id,store_id,order_detail
                                     ''',
                                     ('canceled','unpaid',
                                      cur_time-datetime.timedelta(seconds=self.live_time+self.scan_interval),
-                                     cur_time+datetime.timedelta(seconds=self.live_time+self.scan_interval),))
+                                     cur_time-datetime.timedelta(seconds=self.live_time-self.scan_interval),))
+                                     #cur_time,))
                         ret=cur.fetchall()
                         cnt=cur.rowcount
                         for item in ret:
-                            cur.execute('''update book_info 
-                                        set stock_level=stock_level+count,sales=sales-count 
-                                        from order_detail
-                                        where store_id=%s and book_info.book_id=order_detail.book_id and order_id=%s
-                                        '''
-                                        ,(item[1],item[0]))
+                            for bc in item[2].split('\n'):
+                                if bc=='':continue
+                                b_c=bc.split(' ')
+
+                                cur.execute('''
+                                            update book_info 
+                                            set stock_level=stock_level+%s,sales=sales-%s 
+                                            where book_id=%s and store_id=%s
+                                            '''
+                                            ,(int(b_c[1]),int(b_c[1]),b_c[0],item[1]))
 
                         conn.commit()
                         yield 200, cnt
