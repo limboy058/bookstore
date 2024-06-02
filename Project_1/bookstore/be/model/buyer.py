@@ -1,5 +1,5 @@
 import sys
-sys.path.append("D:\\dbproject\\Project_1\\bookstore")
+sys.path.append(r"D:\DS_bookstore\Project_1\bookstore")
 import uuid
 import json
 import logging
@@ -127,7 +127,12 @@ class Buyer(db_conn.DBConn):
                 cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
                 order = cur.fetchone()
                 if not order:
-                    return error.error_non_exist_order_id(order_id)
+                    cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
+                    order = cur.fetchone()
+                    if not order:
+                        return error.error_non_exist_order_id(order_id)
+                    else:
+                        return error.error_invalid_order_id(order_id)
 
                 buyer_id=order[0]
                 current_status = order[1]
@@ -165,6 +170,9 @@ class Buyer(db_conn.DBConn):
                 if current_status == "paid_but_not_delivered":
                     cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
 
+                cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
+                cur.execute('delete from new_order where order_id=%s',(order_id,))
+
                 conn.commit()
                 return 200, "ok"
 
@@ -183,6 +191,13 @@ class Buyer(db_conn.DBConn):
                 cur.execute("SELECT order_id FROM new_order WHERE buyer_id = %s", (user_id,))
                 orders = cur.fetchall()
                 result = [order[0] for order in orders]
+
+                #也在已完成的订单中查找
+                cur.execute("SELECT order_id FROM old_order WHERE buyer_id = %s", (user_id,))
+                orders = cur.fetchall()
+                for od in orders:
+                    result.append(od[0])
+
                 return 200, "ok", result
 
         except psycopg2.Error as e:  return 528, "{}".format(str(e)), ""
@@ -224,11 +239,20 @@ class Buyer(db_conn.DBConn):
                 if cur.rowcount == 0:  #受影响行数
                         return error.error_invalid_order_id(order_id)
                 cur.execute('UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, seller_id))
+
+                cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
+                cur.execute('delete from new_order where order_id=%s',(order_id,))
+
                 conn.commit()
                 return 200, "ok"
 
         except psycopg2.Error as e: return 528, "{}".format(str(e))
         except BaseException as e:  return 530, "{}".format(str(e))
+
+if __name__=="__main__":
+    b=Buyer()
+    print(b.cancel('uid1','oid2'))
+
 
 # if __name__=="__main__":
 #     buyer=Buyer()

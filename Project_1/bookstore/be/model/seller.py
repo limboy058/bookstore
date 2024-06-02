@@ -256,6 +256,12 @@ class Seller(db_conn.DBConn):
                 cur.execute("SELECT order_id FROM new_order WHERE store_id = %s", (store_id,))
                 orders = cur.fetchall()
                 result = [order[0] for order in orders]
+                
+                #也在已完成的订单中查找
+                cur.execute("SELECT order_id FROM old_order WHERE store_id = %s", (store_id,))
+                orders = cur.fetchall()
+                for od in orders:
+                    result.append(od[0])
 
                 return 200, "ok", result
 
@@ -272,7 +278,13 @@ class Seller(db_conn.DBConn):
                 order = cur.fetchone()
 
                 if not order:
-                    return error.error_non_exist_order_id(order_id)
+                    cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
+                    order = cur.fetchone()
+                    if not order:
+                        return error.error_non_exist_order_id(order_id)
+                    else:
+                        return error.error_invalid_order_id(order_id)
+
                     
 
                 buyer_id=order[0]

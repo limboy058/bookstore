@@ -245,14 +245,22 @@ class User(db_conn.DBConn):
         try:
             with self.get_conn() as conn:
                 cur=conn.cursor()
-
+                res=0
                 cur.execute("SELECT total_price, status FROM new_order WHERE order_id = %s", (order_id,))
                 order = cur.fetchone()
                 if order is None:
-                    ret = error.error_non_exist_order_id(order_id)
-                    return ret[0], ret[1], ""
-                cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
-                res = cur.fetchone()
+                    cur.execute("SELECT total_price, status FROM old_order WHERE order_id = %s", (order_id,))
+                    order = cur.fetchone()
+                    if order is None:
+                        ret = error.error_non_exist_order_id(order_id)
+                        return ret[0], ret[1], ""
+                    else:
+                        cur.execute("select order_detail from old_order WHERE order_id = %s", (order_id,))
+                        res = cur.fetchone()
+                else:
+                    cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
+                    res = cur.fetchone()
+                    
                 detail=res[0].split('\n')
                 detail_dict=dict()
                 for tmp in detail:
