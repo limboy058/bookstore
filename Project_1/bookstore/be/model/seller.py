@@ -136,10 +136,10 @@ class Seller(db_conn.DBConn):
                         ret = cur.fetchone()
                         if ret != None:
                             return error.error_authorization_fail()
-                            
+
+                        
                         if not self.book_id_exist(store_id, book_id, cur):
                             return error.error_non_exist_book_id(book_id)
-                        
                         cur.execute(
                         'select stock_level from book_info where book_id=%s and store_id=%s',
                         (
@@ -155,8 +155,9 @@ class Seller(db_conn.DBConn):
                             book_id,
                             store_id,
                         ))
-                    
-                    
+
+                        conn.commit()
+
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:
                     attempt+=1
