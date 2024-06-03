@@ -111,7 +111,7 @@ class Seller(db_conn.DBConn):
                 return 530, "{}".format(str(e))
             return 200, "ok"
     
-    def del_book(
+    def empty_book(
         self,
         user_id: str,
         store_id: str,
@@ -139,15 +139,6 @@ class Seller(db_conn.DBConn):
 
                         
                         if not self.book_id_exist(store_id, book_id, cur):
-                            return error.error_non_exist_book_id(book_id)
-                        cur.execute(
-                        'select stock_level from book_info where book_id=%s and store_id=%s',
-                        (
-                            book_id,
-                            store_id,
-                        ))
-                        book_exist = cur.fetchone()
-                        if not book_exist:
                             return error.error_non_exist_book_id(book_id)
                         cur.execute(
                         'update book_info set stock_level = 0 where book_id=%s and store_id=%s',
