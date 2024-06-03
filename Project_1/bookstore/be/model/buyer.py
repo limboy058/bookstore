@@ -146,62 +146,62 @@ class Buyer(db_conn.DBConn):
         attempt=0
         while(True):
             try:
-								with self.get_conn() as conn:
-										cur=conn.cursor()
-										unprossing_status = ["unpaid", "paid_but_not_delivered"]
+                with self.get_conn() as conn:
+                    cur=conn.cursor()
+                    unprossing_status = ["unpaid", "paid_but_not_delivered"]
 
 
-										cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
-										order = cur.fetchone()
-										if not order:
-												cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
-												order = cur.fetchone()
-												if not order:
-														return error.error_non_exist_order_id(order_id)
-												else:
-														return error.error_invalid_order_id(order_id)
+                    cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                    order = cur.fetchone()
+                    if not order:
+                            cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
+                            order = cur.fetchone()
+                            if not order:
+                                    return error.error_non_exist_order_id(order_id)
+                            else:
+                                    return error.error_invalid_order_id(order_id)
 
-										buyer_id=order[0]
-										current_status = order[1]
-										total_price = order[2]
-										store_id = order[3]
+                    buyer_id=order[0]
+                    current_status = order[1]
+                    total_price = order[2]
+                    store_id = order[3]
 
 
-										if current_status not in unprossing_status:
-												return error.error_invalid_order_id(order_id)
+                    if current_status not in unprossing_status:
+                            return error.error_invalid_order_id(order_id)
 
-										if buyer_id != user_id:
-												return error.error_order_user_id(order_id, user_id)
+                    if buyer_id != user_id:
+                            return error.error_order_user_id(order_id, user_id)
 
-										cur.execute("""
-												UPDATE new_order
-												SET status = 'canceled'
-												WHERE order_id = %s and status in (%s,%s)
-										""", (order_id,unprossing_status[0],unprossing_status[1]))
-										if cur.rowcount == 0:
-														return error.error_invalid_order_id(order_id)
-										cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
-										res = cur.fetchone()
-										detail=res[0].split('\n')
-										for tmp in detail:
-												tmp1=tmp.split(' ')
-												if(len(tmp1)<2):
-														break
-												book_id,count=tmp1
-												cur.execute("""
-														UPDATE book_info 
-														SET stock_level = stock_level + %s, sales = sales - %s 
-														WHERE book_id = %s AND store_id = %s
-												""", (count, count, book_id, store_id))
+                    cur.execute("""
+                            UPDATE new_order
+                            SET status = 'canceled'
+                            WHERE order_id = %s and status in (%s,%s)
+                    """, (order_id,unprossing_status[0],unprossing_status[1]))
+                    if cur.rowcount == 0:
+                                    return error.error_invalid_order_id(order_id)
+                    cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
+                    res = cur.fetchone()
+                    detail=res[0].split('\n')
+                    for tmp in detail:
+                            tmp1=tmp.split(' ')
+                            if(len(tmp1)<2):
+                                    break
+                            book_id,count=tmp1
+                            cur.execute("""
+                                    UPDATE book_info 
+                                    SET stock_level = stock_level + %s, sales = sales - %s 
+                                    WHERE book_id = %s AND store_id = %s
+                            """, (count, count, book_id, store_id))
 
-										if current_status == "paid_but_not_delivered":
-												cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
+                    if current_status == "paid_but_not_delivered":
+                            cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, user_id))
 
-										cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
-										cur.execute('delete from new_order where order_id=%s',(order_id,))
+                    cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
+                    cur.execute('delete from new_order where order_id=%s',(order_id,))
 
-										conn.commit()
-										return 200, "ok"
+                    conn.commit()
+                    return 200, "ok"
 
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:
@@ -219,7 +219,7 @@ class Buyer(db_conn.DBConn):
             try:
                 with self.get_conn() as conn:
                     cur=conn.cursor()
-                    cur.execute('SELECT user_id FROM "user" WHERE user_id = %s', (user_id,))
+                    cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (user_id,))
                     if not cur.fetchone():
                         return error.error_non_exist_user_id(user_id)+ ("",)
 
@@ -232,7 +232,6 @@ class Buyer(db_conn.DBConn):
                     orders = cur.fetchall()
                     for od in orders:
                         result.append(od[0])
-
                     return 200, "ok", result
 
             except psycopg2.Error as e:
@@ -240,8 +239,7 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else:
-                    return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
             except BaseException as e:  return 530, "{}".format(str(e)), ""
 
         
@@ -295,62 +293,5 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else:
-                    return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
             except BaseException as e:  return 530, "{}".format(str(e))
-
-if __name__=="__main__":
-    b=Buyer()
-    print(b.cancel('uid1','oid2'))
-
-
-# if __name__=="__main__":
-#     buyer=Buyer()
-#     ret=buyer.cancel("test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8","test_cancel_buyer_id_dde4a789-2039-11ef-86ce-d4548b9011a8_test_cancel_store_id_dde4a788-2039-11ef-8c74-d4548b9011a8_dee48285-2039-11ef-98c1-d4548b9011a8")
-#     print(ret)
-#     cur.execute("delete from order_detail")
-#     cur.execute("delete from \"user\"")
-#     cur.execute("delete from store")
-#     cur.execute("delete from new_order")
-#     cur.execute("delete from book_info")
-#     cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
-#     cur.execute("insert into \"user\" values('buyer','abc',0,'a','a')")
-    
-#     cur.execute("insert into store values('store','seller')")
-#     cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
-#     conn.commit()
-
-#     res=buyer.add_funds("buyer","abc",1000)
-#     print(res)
-#     res=buyer.new_order('buyer','store',[('mamba out!',5)])
-#     print(res)
-#     order_id=res[2]
-#     cur.execute("select * from order_detail")
-#     res=cur.fetchone()
-#     print(res)
-    
-#     res=buyer.cancel('buyer',order_id)
-#     print(res)
-
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
-#     cur.execute("select stock_level from book_info where book_id=%s",["mamba out!",])
-#     print(cur.fetchone()[0])
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
-#     cur.execute("select * from new_order")
-#     res=cur.fetchone()
-#     print(res)
-#     order_id=res[0]
-#     res=buyer.cancel('buyer',order_id)
-#     print(res)
-#     conn.commit()
-
-    
-
-#     conn=buyer.get_conn()
-#     cur=conn.cursor()
-#     cur.execute('select balance from "user" where user_id = %s',('buyer',))
-#     res=cur.fetchall()
-#     print(res)
-#     conn.commit()
