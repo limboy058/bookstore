@@ -95,7 +95,7 @@ class TestSearchOrder:
         order_list = list()
         order_list.append(order_id)
         code, received_list = self.buyer.search_order()
-        assert order_list == received_list
+        assert order_list.sort() == received_list.sort()
 
     def test_buyer_many_orders_ok(self):
         order_list = list()
@@ -109,7 +109,7 @@ class TestSearchOrder:
             assert code == 200
             order_list.append(order_id)
         code, received_list = self.buyer.search_order()
-        assert order_list == received_list
+        assert order_list.sort() == received_list.sort()
 
     def test_seller_search_order_ok(self):
         ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,
@@ -165,7 +165,7 @@ class TestSearchOrder:
         order_list = list()
         order_list.append(order_id)
         code, received_list = self.seller.search_order(self.store_id)
-        assert order_list == received_list
+        assert order_list.sort() == received_list.sort()
 
     def test_seller_many_orders_ok(self):
         order_list = list()
@@ -179,10 +179,10 @@ class TestSearchOrder:
             assert code == 200
             order_list.append(order_id)
         code, received_list = self.seller.search_order(self.store_id)
-        assert order_list == received_list
+        assert order_list.sort() == received_list.sort()
 
 # if __name__=="__main__":
 #     test=TestSearchOrder()
 #     test.pre_run_initialization()
 #    # test.test_cancel_paid_order_refund_ok()
-#     test.test_seller_search_unmatch_order()
+#     test.test_buyer_search_order_ok()

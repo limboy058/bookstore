@@ -42,6 +42,7 @@ class TestScanner:
         chk = False
         for i in range(self.live_time // self.scan_interval + 3):
             try:
+                time.sleep(self.scan_interval)#需要等待到订单回收期
                 s = next(g)
                 print(s)
                 if s[1] != 0:
