@@ -45,13 +45,13 @@ class Seller:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
     
-    def del_book(self, store_id: str, book_id: str) -> int:
+    def empty_book(self, store_id: str, book_id: str) -> int:
         json = {
             "user_id": self.seller_id,
             "store_id": store_id,
             "book_id": book_id,
         }
-        url = urljoin(self.url_prefix, "del_book")
+        url = urljoin(self.url_prefix, "empty_book")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code

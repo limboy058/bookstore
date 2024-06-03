@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append("D:\\dbproject\\Project_1\\bookstore")
+sys.path.append(r"D:\DS_bookstore\Project_1\bookstore")
 import random
 
 import uuid
@@ -11,6 +11,7 @@ import datetime
 import psycopg2
 from be.model import db_conn
 from be.model import error
+from be.conf import Order_amount_limit,Order_book_type_limit,Add_amount_limit
 from fe.conf import Retry_time
 
 class Buyer(db_conn.DBConn):
@@ -33,7 +34,11 @@ class Buyer(db_conn.DBConn):
                     res=cur.fetchone()
                     if res[0]==0:
                         return error.error_non_exist_store_id(store_id) + (order_id, )
-
+                    
+                    #订单书本类型数目超限
+                    if len(id_and_count)>Order_book_type_limit:
+                        return error.error_order_book_type_ex(order_id)+ (order_id, )
+                    
                     uid = "{}_{}_{}".format(user_id, store_id, str(uuid.uuid1()))
                     sum_price = 0
 
@@ -56,6 +61,12 @@ class Buyer(db_conn.DBConn):
                                     break
                         if not judge:
                             return error.error_non_exist_book_id(book_id) + (order_id, )
+                        
+                    #订单金额超限
+                    if sum_price>Order_amount_limit:
+                         return error.error_order_amount_ex(order_id)+ (order_id, )
+                    
+                    
                     order_detail=""
                     for book_id, count in id_and_count:
                         cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s",[count,count,store_id,book_id])
@@ -127,6 +138,10 @@ class Buyer(db_conn.DBConn):
                         return error.error_authorization_fail()
                     elif res[1]<-add_value:
                         return error.error_non_enough_fund(user_id)
+                    
+                    elif add_value>Add_amount_limit:#用户添加金额超限
+                        return error.error_add_amount_ex()
+                    
                     cur.execute("update \"user\" set balance=balance+%s where user_id=%s and balance>=%s",[add_value,user_id,-add_value])
                     if cur.rowcount == 0:  #受影响行数
                         return error.error_non_enough_fund(user_id)
@@ -202,6 +217,7 @@ class Buyer(db_conn.DBConn):
 
                     conn.commit()
                     return 200, "ok"
+
 
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:

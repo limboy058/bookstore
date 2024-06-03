@@ -14,9 +14,9 @@ class TestDelBook:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         # do before test
-        self.seller_id = "test_del_books_seller_id_{}".format(str(
+        self.seller_id = "test_empty_books_seller_id_{}".format(str(
             uuid.uuid1()))
-        self.store_id = "test_del_books_store_id_{}".format(str(uuid.uuid1()))
+        self.store_id = "test_empty_books_store_id_{}".format(str(uuid.uuid1()))
         self.password = self.seller_id
         self.seller = register_new_seller(self.seller_id, self.password)
         self.dbconn = db_conn.DBConn()
@@ -33,7 +33,7 @@ class TestDelBook:
             assert code == 200
 
         for b in self.books:
-            code = self.seller.del_book(self.store_id, b.id)
+            code = self.seller.empty_book(self.store_id, b.id)
             assert code == 200
             
 
@@ -43,7 +43,7 @@ class TestDelBook:
             assert code == 200
 
         for b in self.books:
-            code = self.seller.del_book(self.store_id, b.id)
+            code = self.seller.empty_book(self.store_id, b.id)
             assert code == 200
 
         conn=self.dbconn.get_conn()
@@ -67,13 +67,15 @@ class TestDelBook:
             assert code == 200
 
         for b in self.books:
-            code = self.seller.del_book(self.store_id + "x", b.id)
+            code = self.seller.empty_book(self.store_id + "x", b.id)
             assert code != 200
+
 
     def test_error_non_exist_book(self):
         for b in self.books:
-            code = self.seller.del_book(self.store_id, b.id)
+            code = self.seller.empty_book(self.store_id, b.id)
             assert code != 200
+
 
     def test_error_non_exist_book_id(self):
         for b in self.books:
@@ -81,8 +83,9 @@ class TestDelBook:
             assert code == 200
 
         for b in self.books:
-            code = self.seller.del_book(self.store_id, b.id+ "x")
+            code = self.seller.empty_book(self.store_id, b.id+ "x")
             assert code != 200
+
 
     def test_error_non_exist_user_id(self):
         for b in self.books:        
@@ -91,7 +94,7 @@ class TestDelBook:
 
         for b in self.books:
             self.seller.seller_id = self.seller.seller_id + "_x"
-            code = self.seller.del_book(self.store_id, b.id)
+            code = self.seller.empty_book(self.store_id, b.id)
             assert code != 200
 
 # if __name__=="__main__":
