@@ -32,7 +32,7 @@ class TestSearchBook:
         self.books = book_db.get_book_info(0, self.test_books_num)
         cnt = 0
         for i in range(0, len(self.books)):
-            self.books[i].title = 'test name ' + str(i) + ' hey'
+            self.books[i].title = str(i)+'test name ' +' hey'
             self.books[i].picture = None
             code = self.seller.add_book(self.store_id, cnt, self.books[i])
             assert code == 200

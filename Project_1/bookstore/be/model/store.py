@@ -65,7 +65,7 @@ class Store:
             "pub_year varchar(255),pages int,currency_unit varchar(255),"+         
             "binding varchar(255),isbn bigint,author_intro varchar(255),"+     
             "book_intro varchar(255),content varchar(255),picture varchar(255),"+ 
-            "title_idx tsvector,"+
+            #"title_idx tsvector,"+
             " primary key(store_id,book_id)"+    
         ")")
         #对有排序需求和范围查询需求的字段做b+tree索引，只等值连接的字段做哈希索引
@@ -73,8 +73,7 @@ class Store:
         cur.execute("create index book_info_price_idx on book_info (price)")
         cur.execute("create index book_info_stock_level_idx on book_info (stock_level)")
         cur.execute("create index book_info_sales_idx on book_info (sales)")
-        cur.execute("create index book_info_title_idx on book_info using GIN(title_idx)")
-        cur.execute("create index book_info_tags_idx on book_info using GIN(tags)")
+        cur.execute("create index book_info_tags_idx on book_info using GIN(tags) with (fastupdate = true)")
         cur.execute("create index book_info_author_idx on book_info using hash(author)")
         cur.execute("create index book_info_publisher_idx on book_info using hash(publisher)")
         cur.execute("create index book_info_original_title_idx on book_info using hash(original_title)")
@@ -82,6 +81,7 @@ class Store:
         cur.execute("create index book_info_pub_year_idx on book_info (pub_year)")
         cur.execute("create index book_info_binding_idx on book_info using hash(binding)")
         cur.execute("create index book_info_isbn_idx on book_info (isbn)")
+        cur.execute("create index book_info_title_idx on book_info (title)")
 
         cur.execute("create table dead_user("+
             "user_id varchar(255),primary key(user_id)"        
@@ -94,10 +94,16 @@ class Store:
         cur.execute("create table new_order("+
             "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint,order_detail Text, primary key(order_id)"        
         +")")
+        cur.execute("create index new_order_store_id_idx on new_order using hash(store_id)")
+        cur.execute("create index new_order_buyer_id_idx on new_order using hash(buyer_id)")
+        cur.execute("create index new_order_time_id_idx on new_order (time)")
 
         cur.execute("create table old_order("+
             "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint,order_detail Text, primary key(order_id)"        
         +")")
+        cur.execute("create index old_order_store_id_idx on new_order using hash(store_id)")
+        cur.execute("create index old_order_buyer_id_idx on new_order using hash(buyer_id)")
+        cur.execute("create index old_order_time_id_idx on new_order (time)")
 
         # cur.execute("create table order_detail("+
         #     "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        

@@ -3,7 +3,6 @@ import uuid
 import json
 import logging
 import time
-import pymongo.errors
 import psycopg2
 import random
 import pandas as pd

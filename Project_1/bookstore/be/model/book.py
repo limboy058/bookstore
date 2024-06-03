@@ -42,7 +42,7 @@ class searchBook(db_conn.DBConn):
         try:
             if (foozytitle != None):
                 conditions+=" title like %s and"
-                fill.append("%"+foozytitle+"%")
+                fill.append(foozytitle+"%")
             if (reqtags != None):
                 conditions+= " tags @> %s and"
                 fill.append(reqtags)
