@@ -69,13 +69,13 @@ def seller_add_book():
     return jsonify({"message": message}), code
 
 
-@bp_seller.route("/del_book", methods=["POST"])
-def del_book():
+@bp_seller.route("/empty_book", methods=["POST"])
+def empty_book():
     user_id: str = request.json.get("user_id")
     store_id: str = request.json.get("store_id")
     book_id: str = request.json.get("book_id")
     s = seller.Seller()
-    code, message = s.del_book(
+    code, message = s.empty_book(
         user_id,
         store_id,
         book_id,
