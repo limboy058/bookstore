@@ -128,27 +128,21 @@ class Seller(db_conn.DBConn):
                         
                     if not self.book_id_exist(store_id, book_id, cur):
                         return error.error_non_exist_book_id(book_id)
-                    
                     cur.execute(
-                    'select author_intro, book_intro, content, picture  from book_info where book_id=%s and store_id=%s',
+                    'select stock_level from book_info where book_id=%s and store_id=%s',
                     (
                         book_id,
                         store_id,
                     ))
-                    file_paths = cur.fetchone()
-                    if file_paths is None:
+                    book_exist = cur.fetchone()
+                    if not book_exist:
                         return error.error_non_exist_book_id(book_id)
-
                     cur.execute(
-                    'delete from book_info where book_id=%s and store_id=%s',
+                    'update book_info set stock_level = 0 where book_id=%s and store_id=%s',
                     (
                         book_id,
                         store_id,
                     ))
-
-                    for path in file_paths:
-                        if path and os.path.exists(path):
-                            os.remove(path)
                     
                     conn.commit()
         except psycopg2.Error as e:
@@ -324,7 +318,10 @@ class Seller(db_conn.DBConn):
         
 
 # import datetime
+# from be.model.store import clean_db
+
 # if __name__=="__main__":
+#     clean_db()
 #     seller=Seller()
 #     conn=seller.get_conn()
 #     cur=conn.cursor()
@@ -336,7 +333,7 @@ class Seller(db_conn.DBConn):
 #     order_id = 'order66666'
 #     cur.execute(query,[order_id,'store','buyer','unpaid',datetime.datetime.now(),25000])
 #     conn.commit()
-#     res=seller.search_order('buyer','store')
+#     res=seller.del_book('seller','store','mamba out!')
 #     print(res)
 
 #     conn=seller.get_conn()

@@ -50,42 +50,15 @@ class TestDelBook:
         cursor=conn.cursor()
         for b in self.books:
             cursor.execute(
-            'select title  from book_info where book_id=%s and store_id=%s',
+            'select stock_level  from book_info where book_id=%s and store_id=%s',
             (
                 b.id,
                 self.store_id,
             ))
-            title = cursor.fetchone()
-            assert not title
+            num = cursor.fetchone()
+            assert num[0] == 0
         cursor.close()
         conn.close()
-
-    def test_path_clean_ok(self):
-        for b in self.books:
-            code = self.seller.add_book(self.store_id, 0, b)
-            assert code == 200
-        for b in self.books:
-            code = self.seller.del_book(self.store_id, b.id)
-            assert code == 200
-
-        current_file_path = os.path.abspath(__file__)
-        current_directory = os.path.dirname(current_file_path)
-        fe_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
-        bkstore_directory = os.path.abspath(os.path.join(fe_directory, os.pardir))
-        data_path=os.path.abspath(bkstore_directory+'/be/data')
-        file_paths = [
-            data_path+'/auth_intro/{id}.txt',
-            data_path+'/book_intro/{id}.txt',
-            data_path+'/content/{id}.txt',
-            data_path+'/img/{id}.png'
-        ]
-
-        
-        for b in self.books:
-            book_id = b.id
-            for path in file_paths:
-                file_path = path.format(id=book_id)
-                assert not os.path.exists(file_path)
     
 
     def test_error_non_exist_store_id(self):
