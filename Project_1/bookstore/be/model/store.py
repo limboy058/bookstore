@@ -4,6 +4,7 @@ import sqlite3 as sqlite
 import threading
 import pymongo
 import psycopg2
+import shutil  
 class Store:
     database: str
 
@@ -12,7 +13,6 @@ class Store:
         #self.bookdatabase=os.path.join(db_path, "book.db")
         self.user_name="mamba"
         self.user_password="out"
-        self.client = pymongo.MongoClient()
         #self.conn = psycopg2.connect(host="localhost",database="609A", user=self.user_name, password=self.user_password)
         
     def clear_tables(self):
@@ -22,6 +22,7 @@ class Store:
         cur.execute("drop table if exists \"user\";")
         cur.execute("drop table if exists \"dead_user\";")
         cur.execute("drop table if exists \"new_order\";")
+        cur.execute("drop table if exists \"old_order\";")
         cur.execute("drop table if exists \"order_detail\";")
         cur.execute("drop table if exists \"book_info\";")
         conn.commit()
@@ -35,8 +36,15 @@ class Store:
         cur.execute("delete from \"user\";")
         cur.execute("delete from \"dead_user\";")
         cur.execute("delete from \"new_order\";")
-        cur.execute("delete from \"order_detail\";")
+        cur.execute("delete from \"old_order\";")
+        #cur.execute("delete from \"order_detail\";")
         cur.execute("delete from \"book_info\";")
+        current_file_path = os.path.abspath(__file__)
+        current_directory = os.path.dirname(current_file_path)
+        parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+        data_path=os.path.abspath(parent_directory+'/data')
+        shutil.rmtree(data_path)  
+        os.mkdir(data_path)  
         conn.commit()
         cur.close()
         conn.close()
@@ -84,16 +92,20 @@ class Store:
         +")")
 
         cur.execute("create table new_order("+
-            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint, primary key(order_id)"        
+            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint,order_detail Text, primary key(order_id)"        
         +")")
 
-
-        cur.execute("create table order_detail("+
-            "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
+        cur.execute("create table old_order("+
+            "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint,order_detail Text, primary key(order_id)"        
         +")")
 
+        # cur.execute("create table order_detail("+
+        #     "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        
+        # +")")
 
+        cur.close()
         conn.commit()
+        conn.close()
 
     def get_db_conn(self):
         return psycopg2.connect(
@@ -145,13 +157,13 @@ def clean_db():
     database_instance.clean_tables()
 
 
-# if __name__=="__main__":
-#     clear_db()
-#     build_db()
-#     conn=get_db_conn()
-#     cur=conn.cursor()
-#     cur.execute("insert into dead_user values ('abc')")
-#     cur.execute("select * from dead_user")
-#     res=cur.fetchall()
-#     for i in res:
-#         print(i,len(i[0]))
+if __name__=="__main__":
+    clear_db()
+    build_db()
+    conn=get_db_conn()
+    cur=conn.cursor()
+    cur.execute("insert into dead_user values ('abc')")
+    cur.execute("select * from dead_user")
+    res=cur.fetchall()
+    for i in res:
+        print(i,len(i[0]))
