@@ -1,3 +1,5 @@
+from be.conf import *
+
 error_code = {
     401: "authorization fail.",
     511: "non exist user id {}",
@@ -20,7 +22,24 @@ error_code = {
     532: "unmatched order {} and store {}",
     529: "unmatched order {} and user {}",
     531: "unmatched store {} and user {}",
+    541: "order {} amount exceeds limit ({}})",
+    542: "order {} book types exceed limit ({})",
+    543: "add amount exceeds limit ({})",
+    544: "store {} book types exceed limit ({})"
 }
+
+def error_order_amount_ex(order_id):
+    return 541, error_code[541].format(order_id,Order_amount_limit)
+
+def error_order_book_type_ex(order_id):
+    return 542, error_code[542].format(order_id,Order_book_type_limit)
+
+def error_add_amount_ex():
+    return 543, error_code[543].format(Add_amount_limit)
+
+def error_store_book_type_ex(store_id):
+    return 544, error_code[544].format(store_id,Store_book_type_limit)
+
 
 
 def error_unfished_buyer_orders():

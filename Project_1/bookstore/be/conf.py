@@ -1,0 +1,4 @@
+Store_book_type_limit=100
+Add_amount_limit=10000000000
+Order_amount_limit=100000000
+Order_book_type_limit=100

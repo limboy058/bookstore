@@ -5,6 +5,8 @@ from fe.access.new_seller import register_new_seller
 from fe.access import book
 import uuid
 
+from be.conf import Store_book_type_limit
+
 
 class TestAddBook:
 
@@ -51,3 +53,13 @@ class TestAddBook:
             self.seller.seller_id = self.seller.seller_id + "_x"
             code = self.seller.add_book(self.store_id, 0, b)
             assert code != 200
+
+    def test_store_type_ex(self):
+        b = self.books[0]
+        for bid in range(0, Store_book_type_limit):
+            b.id = str(bid)
+            code = self.seller.add_book(self.store_id, 0, b)
+            assert code == 200
+        b.id = str(Store_book_type_limit+1)
+        code = self.seller.add_book(self.store_id, 0, b)
+        assert code == 544

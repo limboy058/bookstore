@@ -2,9 +2,10 @@ import json
 import os,base64
 import random
 import time
+import sys
+sys.path.append(r"D:\DS_bookstore\Project_1\bookstore")
 from fe.conf import Retry_time
-# import sys
-# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
+from be.conf import Store_book_type_limit
 
 
 from be.model import error
@@ -48,6 +49,12 @@ class Seller(db_conn.DBConn):
                             return error.error_authorization_fail()
                         if self.book_id_exist(store_id, book_id, cur):
                             return error.error_exist_book_id(book_id)
+                        
+                        #书籍超出Store_type_limit
+                        cur.execute('select count(1) from book_info where store_id=%s',(store_id,))
+                        ret=cur.fetchone()
+                        if ret[0]>=Store_book_type_limit:
+                            return error.error_store_book_type_ex(store_id)
                         
                         #加载路径
                         current_file_path = os.path.abspath(__file__)
