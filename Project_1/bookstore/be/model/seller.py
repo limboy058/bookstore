@@ -156,6 +156,7 @@ class Seller(db_conn.DBConn):
                             store_id,
                         ))
 
+
                         conn.commit()
 
             except psycopg2.Error as e:
