@@ -68,13 +68,14 @@ class Seller(db_conn.DBConn):
                     #加载json中的资源並存儲
                     data = json.loads(book_json)
                     image_data=base64.b64decode(data['pictures'])
-                    with open(data_path+'/img/'+data['id']+'.png', 'wb') as image_file:
+                    name=store_id+'_'+data['id']
+                    with open(data_path+'/img/'+name+'.png', 'wb') as image_file:
                         image_file.write(image_data)
-                    with open(data_path+'/auth_intro/'+data['id']+'.txt', 'w',encoding='utf-8') as ai_file:
+                    with open(data_path+'/auth_intro/'+name+'.txt', 'w',encoding='utf-8') as ai_file:
                         ai_file.write(data['author_intro'])
-                    with open(data_path+'/book_intro/'+data['id']+'.txt', 'w',encoding='utf-8') as bi_file:
+                    with open(data_path+'/book_intro/'+name+'.txt', 'w',encoding='utf-8') as bi_file:
                         bi_file.write(data['book_intro'])
-                    with open(data_path+'/content/'+data['id']+'.txt', 'w',encoding='utf-8') as ct_file:
+                    with open(data_path+'/content/'+name+'.txt', 'w',encoding='utf-8') as ct_file:
                         ct_file.write(data['content'])
 
                     cur.execute('''

@@ -88,7 +88,7 @@ class Store:
         +")")
 
         cur.execute("create table \"user\"("+
-            "user_id varchar(255),password varchar(255),balance bigint,token varchar(1023),terminal varchar(1023), primary key(user_id)"        
+            "user_id varchar(255),password varchar(255),balance bigint,token varchar(1023),terminal varchar(255), primary key(user_id)"        
         +")")
 
         cur.execute("create table new_order("+
