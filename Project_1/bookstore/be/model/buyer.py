@@ -110,11 +110,9 @@ class Buyer(db_conn.DBConn):
                     if(res[0]<total_price):
                         return error.error_not_sufficient_funds(order_id)
                     cur.execute("update \"user\" set balance=balance-%s where user_id=%s and balance>=%s",[total_price,user_id,total_price])
-                    if cur.rowcount == 0:
-                            return error.error_not_sufficient_funds(order_id)
+                    if cur.rowcount == 0: return error.error_not_sufficient_funds(order_id)
                     cur.execute("update new_order set status=%s where order_id=%s and status=%s",["paid_but_not_delivered",order_id,'unpaid'])
-                    if cur.rowcount == 0:
-                            return error.error_invalid_order_id(order_id)
+                    if cur.rowcount == 0: return error.error_invalid_order_id(order_id)
                     conn.commit()
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:
@@ -144,8 +142,7 @@ class Buyer(db_conn.DBConn):
                         return error.error_add_amount_ex()
                     
                     cur.execute("update \"user\" set balance=balance+%s where user_id=%s and balance>=%s",[add_value,user_id,-add_value])
-                    if cur.rowcount == 0:  #受影响行数
-                        return error.error_non_enough_fund(user_id)
+                    if cur.rowcount == 0: return error.error_non_enough_fund(user_id)
                     conn.commit()
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:
@@ -193,8 +190,7 @@ class Buyer(db_conn.DBConn):
                             SET status = 'canceled'
                             WHERE order_id = %s and status =%s
                     """, (order_id,current_status))
-                    if cur.rowcount == 0:
-                        return error.error_invalid_order_id(order_id)
+                    if cur.rowcount == 0: return error.error_invalid_order_id(order_id)
 
                     for tmp in detail:
                             tmp1=tmp.split(' ')
@@ -227,34 +223,27 @@ class Buyer(db_conn.DBConn):
 
     
     def search_order(self, user_id):
-        attempt=0
-        while(True):
-            try:
-                with self.get_conn() as conn:
-                    cur=conn.cursor()
-                    cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (user_id,))
-                    if not cur.fetchone():
-                        return error.error_non_exist_user_id(user_id)+ ("",)
+        try:
+            with self.get_conn() as conn:
+                cur=conn.cursor()
+                cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (user_id,))
+                if not cur.fetchone():
+                    return error.error_non_exist_user_id(user_id)+ ("",)
 
-                    cur.execute("SELECT order_id FROM new_order WHERE buyer_id = %s", (user_id,))
-                    orders = cur.fetchall()
-                    result = [order[0] for order in orders]
+                cur.execute("SELECT order_id FROM new_order WHERE buyer_id = %s", (user_id,))
+                orders = cur.fetchall()
+                result = [order[0] for order in orders]
 
-                    #也在已完成的订单中查找
-                    cur.execute("SELECT order_id FROM old_order WHERE buyer_id = %s", (user_id,))
-                    orders = cur.fetchall()
-                    for od in orders:
-                        result.append(od[0])
-                    conn.commit()
-                    return 200, "ok", result
+                #也在已完成的订单中查找
+                cur.execute("SELECT order_id FROM old_order WHERE buyer_id = %s", (user_id,))
+                orders = cur.fetchall()
+                for od in orders:
+                    result.append(od[0])
+                conn.commit()
+                return 200, "ok", result
 
-            except psycopg2.Error as e:
-                if e.pgcode=="40001" and attempt<Retry_time:
-                    attempt+=1
-                    time.sleep(random.random()*attempt)
-                    continue
-                else: return 528, "{}".format(str(e.pgerror)), ""
-            except BaseException as e:  return 530, "{}".format(str(e)), ""
+        except psycopg2.Error as e: return 528, "{}".format(str(e.pgerror)), ""
+        except BaseException as e:  return 530, "{}".format(str(e)), ""
 
         
 
