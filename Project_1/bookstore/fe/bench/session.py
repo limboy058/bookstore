@@ -143,7 +143,7 @@ class Session(threading.Thread):
                     self.time_sendOrder, self.time_receiveOrder)
 
     def gen_hot_test_procedure(self):
-        for i in range(0, self.workload.procedure_per_session):
+        for i in range(0, int(self.workload.procedure_per_session/10)+5):
             new_order = self.workload.get_hot_order()
             self.new_order_request.append(new_order)
 

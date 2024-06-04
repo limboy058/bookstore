@@ -1,6 +1,6 @@
 import pytest
 import sys
-sys.path.append(r"D:\DS_bookstore\Project_1\bookstore")
+sys.path.append("D:\dbproject\Project_1\\bookstore")
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer
 import uuid
@@ -56,11 +56,11 @@ class TestNewOrder:
         assert code != 200
 
     def test_order_book_type_ex(self):
-        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,low_stock_level=False, high_stock_level=True)
+        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False,low_stock_level=False, high_stock_level=True,max_book_count=4)
         assert ok
         b_c = []
         for bc in buy_book_id_list:
-            for i in range(bc[1]):
+            for i in range(0,50):
                 b_c.append((bc[0], 1))
         code, _ = self.buyer.new_order(self.store_id, b_c)
         assert code == 542

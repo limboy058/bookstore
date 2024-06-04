@@ -101,9 +101,8 @@ class Store:
         cur.execute("create table old_order("+
             "order_id varchar(255),store_id varchar(255),buyer_id varchar(255),status varchar(255),time timestamp,total_price bigint,order_detail Text, primary key(order_id)"        
         +")")
-        cur.execute("create index old_order_store_id_idx on new_order using hash(store_id)")
-        cur.execute("create index old_order_buyer_id_idx on new_order using hash(buyer_id)")
-        cur.execute("create index old_order_time_id_idx on new_order (time)")
+        cur.execute("create index old_order_store_id_idx on old_order using hash(store_id)")
+        cur.execute("create index old_order_buyer_id_idx on old_order using hash(buyer_id)")
 
         # cur.execute("create table order_detail("+
         #     "order_id varchar(255),book_id varchar(255), count int,primary key(order_id,book_id)"        

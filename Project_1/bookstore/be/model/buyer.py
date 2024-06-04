@@ -30,9 +30,9 @@ class Buyer(db_conn.DBConn):
                     if not self.user_id_exist(user_id,cur):
                         return error.error_non_exist_user_id(user_id) + (order_id, )
                     
-                    cur.execute("select count(1) from store where store_id=%s",[store_id,])
+                    cur.execute("select 1 from store where store_id=%s",[store_id,])
                     res=cur.fetchone()
-                    if res[0]==0:
+                    if res is None:
                         return error.error_non_exist_store_id(store_id) + (order_id, )
                     
                     #订单书本类型数目超限
@@ -69,9 +69,10 @@ class Buyer(db_conn.DBConn):
                     
                     order_detail=""
                     for book_id, count in id_and_count:
-                        cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s",[count,count,store_id,book_id])
+                        cur.execute("update book_info set stock_level=stock_level-%s, sales=sales+%s where store_id=%s and book_id=%s and stock_level>=%s",[count,count,store_id,book_id,count])
+                        if cur.rowcount == 0:
+                            return error.error_stock_level_low(book_id) + (order_id, )
                         order_detail+=book_id+" "+str(count)+"\n"
-                        #cur.execute("insert into order_detail values(%s,%s,%s)",[uid,book_id,count])
                     query="insert into new_order values(%s,%s,%s,%s,%s,%s,%s)"
                     order_id = uid
                     cur.execute(query,[order_id,store_id,user_id,'unpaid',datetime.datetime.now(),sum_price,order_detail])
@@ -81,8 +82,7 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else:
-                    return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror)), ""
             except BaseException as e:  return 530, "{}".format(str(e)), ""
             return 200, "ok", order_id
 
@@ -110,17 +110,18 @@ class Buyer(db_conn.DBConn):
                     if(res[0]<total_price):
                         return error.error_not_sufficient_funds(order_id)
                     cur.execute("update \"user\" set balance=balance-%s where user_id=%s and balance>=%s",[total_price,user_id,total_price])
-                    if cur.rowcount == 0:  #受影响行数
+                    if cur.rowcount == 0:
                             return error.error_not_sufficient_funds(order_id)
                     cur.execute("update new_order set status=%s where order_id=%s and status=%s",["paid_but_not_delivered",order_id,'unpaid'])
+                    if cur.rowcount == 0:
+                            return error.error_invalid_order_id(order_id)
                     conn.commit()
             except psycopg2.Error as e:
                 if e.pgcode=="40001" and attempt<Retry_time:
                         attempt+=1
                         time.sleep(random.random()*attempt)
                         continue
-                else:
-                    return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror))
             except BaseException as e:  return 530, "{}".format(str(e))
             return 200, "ok"
 
@@ -151,8 +152,7 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else:
-                    return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror))
             except BaseException as e:  return 530, "{}".format(str(e))
             return 200, "ok"
 
@@ -166,10 +166,10 @@ class Buyer(db_conn.DBConn):
                     unprossing_status = ["unpaid", "paid_but_not_delivered"]
 
 
-                    cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                    cur.execute("select buyer_id, status, total_price, store_id, order_detail from new_order WHERE order_id = %s", (order_id,))
                     order = cur.fetchone()
                     if not order:
-                            cur.execute("select buyer_id, status, total_price, store_id from old_order WHERE order_id = %s", (order_id,))
+                            cur.execute("select 1 from old_order WHERE order_id = %s", (order_id,))
                             order = cur.fetchone()
                             if not order:
                                     return error.error_non_exist_order_id(order_id)
@@ -180,7 +180,7 @@ class Buyer(db_conn.DBConn):
                     current_status = order[1]
                     total_price = order[2]
                     store_id = order[3]
-
+                    detail=order[4].split('\n')
 
                     if current_status not in unprossing_status:
                             return error.error_invalid_order_id(order_id)
@@ -191,13 +191,11 @@ class Buyer(db_conn.DBConn):
                     cur.execute("""
                             UPDATE new_order
                             SET status = 'canceled'
-                            WHERE order_id = %s and status in (%s,%s)
-                    """, (order_id,unprossing_status[0],unprossing_status[1]))
+                            WHERE order_id = %s and status =%s
+                    """, (order_id,current_status))
                     if cur.rowcount == 0:
-                                    return error.error_invalid_order_id(order_id)
-                    cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
-                    res = cur.fetchone()
-                    detail=res[0].split('\n')
+                        return error.error_invalid_order_id(order_id)
+
                     for tmp in detail:
                             tmp1=tmp.split(' ')
                             if(len(tmp1)<2):
@@ -224,8 +222,7 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else:
-                    return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror))
             except BaseException as e: return 530, "{}".format(str(e))
 
     
@@ -248,6 +245,7 @@ class Buyer(db_conn.DBConn):
                     orders = cur.fetchall()
                     for od in orders:
                         result.append(od[0])
+                    conn.commit()
                     return 200, "ok", result
 
             except psycopg2.Error as e:
@@ -255,7 +253,7 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else: return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror)), ""
             except BaseException as e:  return 530, "{}".format(str(e)), ""
 
         
@@ -266,7 +264,7 @@ class Buyer(db_conn.DBConn):
             try:
                 with self.get_conn() as conn:
                     cur=conn.cursor()
-                    cur.execute('SELECT user_id FROM "user" WHERE user_id = %s', (user_id,))
+                    cur.execute('SELECT 1 FROM "user" WHERE user_id = %s', (user_id,))
                     if not cur.fetchone():
                         return error.error_non_exist_user_id(user_id)
 
@@ -309,5 +307,5 @@ class Buyer(db_conn.DBConn):
                     attempt+=1
                     time.sleep(random.random()*attempt)
                     continue
-                else: return 528, "{}".format(str(e.pgerror+" "+e.pgcode)), ""
+                else: return 528, "{}".format(str(e.pgerror))
             except BaseException as e:  return 530, "{}".format(str(e))
