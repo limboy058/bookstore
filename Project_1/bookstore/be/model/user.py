@@ -187,8 +187,8 @@ class User(db_conn.DBConn):
                             return error.error_unfished_seller_orders()
                         
                     cur.execute('''
-                                UPDATE book_info
-                                SET stock_level = 0
+                                UPDATE book_info 
+                                SET stock_level = 0 
                                 WHERE store_id IN (SELECT store_id FROM store WHERE user_id = %s)
                                 ''',(user_id,))
 
@@ -226,21 +226,6 @@ class User(db_conn.DBConn):
         return 200, "ok"
 
 
-
-# if __name__=='__main__':
-#     u=User()
-
-#     print(u.register('uid1','psd1'))
-#     print(u.register('uid1','psd1'))
-#     print(u.login('uid1','psd1','tml1'))
-#     print(u.login('uid1','ps1','tml1'))
-#     print(u.change_password('uid1','psd1','ps1'))
-#     print(u.login('uid1','psd1','tml1'))
-#     print(u.login('uid1','ps1','tml1'))
-#     print(u.unregister('uid1','psd1'))
-#     print(u.unregister('uid1','ps1'))
-
-
     def search_order_detail(self, order_id):
         try:
             with self.get_conn() as conn:
@@ -269,43 +254,10 @@ class User(db_conn.DBConn):
                         break
                     book_id,count=tmp1
                     detail_dict[book_id]=count
-                
-                
-                
                 order_detail_list = (detail_dict, order[0], order[1])
+                conn.commit()
                 return 200, "ok", order_detail_list
 
-        except psycopg2.Error as e:return 528, "{}".format(str(e))
-        except BaseException as e: return 530, "{}".format(str(e))
-
-# import datetime
-# if __name__=="__main__":
-#     user=User()
-
-#     conn=user.get_conn()
-#     cur=conn.cursor()
-#     cur.execute("insert into \"user\" values('seller','abc',0,'a','a')")
-#     cur.execute("insert into \"user\" values('buyer','abc',1000,'a','a')")
-#     cur.execute("insert into store values('store','seller')")
-#     cur.execute("insert into order_detail values('order66666','mamba out!',24)")
-#     cur.execute("insert into book_info (book_id,store_id,stock_level,sales,price) values ('mamba out!','store',10,0,50)")
-#     query="insert into new_order values(%s,%s,%s,%s,%s,%s)"
-#     order_id = 'order66666'
-#     cur.execute(query,[order_id,'store','buyer','unpaid',datetime.datetime.now(),25000])
-#     conn.commit()
-
-#     conn=user.get_conn()
-#     cur=conn.cursor()
-#     cur.execute("select * from new_order")
-#     res=cur.fetchall()
-#     print(res)
-#     conn.commit()
-
-#     conn=user.get_conn()
-#     cur=conn.cursor()
-#     order_id='order66666'
-#     res=user.search_order_detail(order_id)
-#     print(res)
-#     conn.commit()
-
+        except psycopg2.Error as e:return 528, "{}".format(str(e)),""
+        except BaseException as e: return 530, "{}".format(str(e)),""
 

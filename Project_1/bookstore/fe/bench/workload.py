@@ -174,6 +174,7 @@ class Workload:
                         break
                     for bk in books:
                         code = seller.add_book(store_id, self.stock_level, bk)
+                        if(code!=200):print(code)
                         assert code == 200
                         self.book_ids[store_id].append(bk.id)
                     row_no = row_no + len(books)
@@ -199,7 +200,7 @@ class Workload:
         self.hot_book_id = bk_info.id
         seller.add_book(store_id, 1000, bk_info)
         self.tot_fund = 0
-        for k in range(1, self.buyer_num + 1):
+        for k in range(1,self.buyer_num+ 1):
             user_id, password = self.to_buyer_id_and_password(k)
             buyer = register_new_buyer(user_id, password)
             buyer.add_funds(self.user_funds)
