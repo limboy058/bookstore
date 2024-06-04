@@ -290,10 +290,10 @@ class TestSearchBook:
         bkstore_directory = os.path.abspath(os.path.join(fe_directory, os.pardir))
         data_path=os.path.abspath(bkstore_directory+'/be/data')
         file_paths = [
-            data_path+'/auth_intro/{id}.txt',
-            data_path+'/book_intro/{id}.txt',
-            data_path+'/content/{id}.txt',
-            data_path+'/img/{id}.png'
+            data_path+'/auth_intro/{name}.txt',
+            data_path+'/book_intro/{name}.txt',
+            data_path+'/content/{name}.txt',
+            data_path+'/img/{name}.png'
         ]
         
         for b in self.books:
@@ -301,7 +301,7 @@ class TestSearchBook:
                 continue
             book_id = b.id
             for path in file_paths:
-                file_path = path.format(id=book_id)
+                file_path = path.format(name=self.store_id+'_'+book_id)
                 assert os.path.exists(file_path)
 
 
