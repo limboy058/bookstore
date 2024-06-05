@@ -11,12 +11,13 @@ class DBConn:
         res = None
         cur.execute("select count(1) from \"user\" where user_id=%s",[user_id])
         res=cur.fetchone()
-        if res[0]==0:
-            cur.execute("select count(1) from dead_user where user_id=%s",[user_id])
-            res=cur.fetchone()
-            return res[0]!=0
-        else:
-            return True
+        return res[0]!=0
+        # if res[0]==0:
+        #     cur.execute("select count(1) from dead_user where user_id=%s",[user_id])
+        #     res=cur.fetchone()
+        #     return res[0]!=0
+        # else:
+        #     return True
 
     def book_id_exist(self, store_id, book_id, cur):
         res = None

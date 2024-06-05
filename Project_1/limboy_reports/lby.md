@@ -1,6 +1,6 @@
 # 华东师范大学数据科学与工程学院实验报告
 
-| 课程名称：数据管理系统              | 年级：2022级                           | 实践日期：2024.4 |
+| 课程名称：数据管理系统              | 年级：2022级                           | 实践日期：2024.6 |
 | ----------------------------------- | -------------------------------------- | ---------------- |
 | 实践名称：Project2_1    bookstore_2 | 组别:     三（谢瑞阳、徐翔宇、田亦海） |                  |
 
@@ -52,7 +52,7 @@
 
 执行如下sql
 
-```sql
+```postgresql
 create user mamba with password 'out';
 create database "609A" owner mamba;
 ```
@@ -61,7 +61,7 @@ create database "609A" owner mamba;
 
 ③设置隔离性
 
-**待补充!!!!!!**
+#todo **待补充!!!!!!**
 
 
 
@@ -188,165 +188,701 @@ Order_book_type_limit=100
 
 ## Ⅱ  数据库schema
 
+### （1）  ER图
+
+#todo
 
 
 
+### （2）表结构
+
+<img src="lby.assets/image-20240604221549728.png" alt="image-20240604221549728" style="zoom: 60%;" />
 
 (此图片使用navicat生成)
 
 
 
-### 表(文档)介绍及字段含义
+#### 表(文档)介绍及字段含义
 
-#### user表
+##### user表
 
 存储了用户的信息:
 
-`user_id`   (string, )是用户的唯一id, 并建立唯一索引加速查询 
+`user_id`   (varchar255, )是用户的唯一id,   **主键**
 
-`password`   (string, 用于用户登录验证)
+`password`   (varchar255, 用于用户登录验证，存储用户密码的密文
 
-`balance`   (int, 为该用户的余额, 主要用于钱款交易)
+（前端用户输入明文，使用SHA256进行加密，在网络上传递密文，数据库校验密文)
 
-`token`   (string , 根据时间,设备等信息生成,  用于一段时间用户内登录的状态持续有效)
+`balance`   (int8, 为该用户的余额，相当于实际余额*100 , 主要用于钱款交易)
 
-`terminal`   (string , 用户登录的终端id )
+`token`   (varchar1023 ,  根据时间,设备等信息生成,  用于一段时间用户内登录的状态持续有效)
 
-`store_id`   (array,  其中每个对象是string, 存储该用户的商店的id)   并建立数组索引加速查询
-
-在我们设计的版本中,商店并没有被独立出一个表, 商店的全部信息只有一个id, 商店附属于用户存在.
+`terminal`   (varchar255 , 用户登录的终端id )
 
 
 
-#### new_order表
+##### new_order表
 
 存储订单信息:
 
-`order_id` (string)为订单id,不会重复, 并建立唯一索引
+`order_id` (varchar255)为订单id,不会重复,    **主键**
 
-`store_id` (string) 为用户从这家商店购物的商店id, 并建立索引
+`store_id` (varchar255) 为用户从这家商店购物的商店id,   并建立**哈希索引**
 
-`seller_id` (string) 为该商店的老板的user_id, 并建立索引 (当然,这实际上是一个略微冗余的信息,用于加速查询)
+`buyer_id` (varchar255)存储下单用户的id ,    并建立**哈希索引**
 
-`user_id` (string)存储下单用户的id ,并建立索引
+`status` (varchar255)为订单状态, 比如"unpaid","canceled"等
 
-`status` (string)为订单状态, 比如"unpaid","canceled"等
+`time`  (timestamp(6))为订单时间, 实际上存储了精确到秒的小数点后六位的时间信息   ,并建立**b+树索引**便于查询.
 
-`order_time` (int)为订单时间, 实际上存储了精确到秒的时间戳,并建立索引便于查询.
+`total_price` (int8)为这笔订单订单的总价钱
 
-`total_price` (int)为这笔订单订单的总价钱
+`order_detail` (TEXT)   存储了订单的具体信息,实际上是压缩的文本
 
-`detail` (array) 为一个数组,存储了订单的具体信息,实际上是二维数组,
+eg: id为 bid1 的书10本, id为 bid2 的书5本 将被存储为`bid1 10\nbid2 5`
 
-eg:`[ ['bookid1',10], ['bookid2',5] ] `表示  id为 bookid1的书10本, id为 bookid2 的书5本
+` 空格`分割id和count，`\n`分割不同种类的书
 
 
 
-#### store表
+##### store表
 
-存储商店信息 (实际上是`store_id---book`的二元组)
+存储商店信息：
 
-在这里, 为了便于查询每个商品,实际上就是某本书, 
+`store_id`（varchar255）商店id  **主键**
 
-这个表的存储对象实际上可以说是book,    store_id只不过是book的一个属性
+`user_id`（varchar255） 存储商店主人的id  **哈希索引**
 
 
 
-`store_id`   (string)是商店的唯一id(这个商店里有多少书,商店id就会被存多少次)
+可以很方便的扩展这个表的属性，来增加例如商店名称、商店图片、商店等级、商店交易数等信息。
 
-`book_id`  (string) 是书的id,可能会重复, 相当于不同商店上架了同一本书, 但每个商店内book_id不会重复
 
-换句话说, store_id和book_id二元组才可以唯一确定某件商品
 
-因此建立store_id+book_id的多级索引，该多级索引同时也是唯一索引，在一些功能中（例如new order）可以通过该多级索引唯一快速查找信息。只使用store_id进行搜索的语句也可以使用该多级索引。
+##### book_info表
 
-`book_info` (object) 是一个子文档:
+这个表的存储对象是book,    
 
-​		存储了`tag` (array[string]),  `picture` (二进制文件Base64) , `id`(string), `title` (string) , `author` (string) ,`publisher` (string), `original_title`(string)是可能有的原本标题(比如外国书籍), `translator`(string) , `pub_year`(string) , `pages`(int), `price` (int), `currency_unit` (string)表示价格单位(目前均为'元'), `binding` (string)表示装订信息(精装或平装), `isbn`(string) , `author_intro`(string)为作者介绍是一段文字, `book_intro`(string)是书籍简介,`content`(string)为目录信息,.
+(store_id，book_id)是**联合主键**
 
-​		其中,在标题上建立了文本索引.  作者,价格,出版社,装订,isbn,出版年份,翻译者上建立了普通索引.
+`book_id`  (varcahr255) 是书的id,   并建立**b+树索引**，book_id可能重复, 相当于不同商店上架了同一本书, 但每个商店内book_id不会重复
 
-`stock_level` (int)是书籍的库存,建立索引
+`store_id`   (varchar255)是商店的唯一id ，无需创建索引，可以使用主键索引
 
-`sales` (int) 是书籍的售出数量 
+`price` （int4） 存储书籍的实际金额*100的整数值， 并建立**b+树索引**
 
+`stock_level` (int4) 书本剩余库存 ，并建立**b+树索引**，
 
+`sales` (int4)  书本售出数量， 并建立**b+树索引**，
 
-#### 其他表
+`title` (TEXT)  书标题， 并建立**b+树索引**，
 
-##### dead_user
+`author`(varchar255)  作者名字， 并建立**哈希索引**，
 
-在用户注销时我们会从user文档中删除这条数据, 而仅将用户id放入dead_user中,这个文档仅仅存储了注销的id
+`tags`(TEXT) 标签，设置**倒排索引**， 设置原因可以参考PART Ⅲ 测试，设置索引的sql如下
 
-这是为了防止被注销的id被其他用户重新注册, 甚至可能获取到该id之前拥有的商店和订单信息
+```postgresql
+create index book_info_tags_idx on book_info using GIN(tags) with (fastupdate = true)
+```
 
-##### book与book_lx
+`publisher`(varchar255) 出版社，设置**哈希索引**，
 
-相当原先的book.db数据,其中的对象与book_info涉及的一致.这仅仅是用于生成测试数据
+`original_title`(varchar255) 原标题（主要用于外文书籍），设置 **哈希索引**，
 
+`translator`(varchar255) ，翻译者，设置 **哈希索引**，
 
+`pub_year`(varchar255)  出版年份，设置**b+树索引**，
 
+`pages`(int4)   书的页数
 
+`currency_unit`(varchar255)   书价格的单位，eg：元，USD，NTD，GBP
 
-### 设计中的一些考量
+`binding`(varchar255) 书的装订 eg:  精装 平装，设置 **哈希索引**，
 
-#### 与sqlite版本的差异
+`isbn` (int8)     isbn号.设置**b+树索引**，
 
-在先前的sqlite版本中,实现有5张表 (不计算book.db用于生成数据), 分别是user, user_store, new_order, new_order_detail, store. 
+`author_intro`(varchar255)  作者简介txt的相对路径
 
-我们决定删去new_order_detail(仅用于存储某个订单买的 书和数量)和user_store(仅用于存储 user_id到store_id的二元组).
+`book_intro`(varchar255)   书籍简介txt的相对路径
 
-很大程度上,之前sql的实现需要这样设计, 主要因为sql不适合存储列表类的元素,  但人并不是唯一拥有商店,  订单的具体购买书籍的种类也不相同,
+`content`(varchar255)   书籍目录txt的相对路径
 
-而使用mongodb文档数据库我们则没有这样的限制. 可以将user_store直接放入user表, new_order_detail直接放入new_order表中, 减少了不必要的交互和多次查询.
+`picture`(varchar255)    图片文件png的相对路径
 
-仅将表结构重新构建,  便可以在test_bench中表现出增加了**1/5**的吞吐率.
 
-您可以在我们的github仓库releases中下载v-1.0版本和v1.1版本来验证这个效果.
 
-值得注意的是, 由于其是开发中的版本,可能运行中有一些未知错误.
+##### 其他表
 
+###### dead_user
 
+存储已注销的用户id
 
-#### 冗余字段或特殊字段的用处
 
-##### new_order文档中, 字段seller_id与store_id
 
-可以仅存储其一,然后通过user文档来得到另一个值. 不过其各有用处,
 
-比如订单被收货时,需要读取seller_id来为卖家加钱;   当用户注销时,需要检查其涉及到的订单(卖家或者买家的形式)是否都已经完成或取消
 
-store_id用于订单被取消时,迅速找到需要增加回库存的书店;  以及用户查询自己在某家店的历史订单
+###### old_order
 
-均存储这两个值,可以减少程序在某些情况下的与数据库的交互次数,
+存储已完成的订单
 
-且关于订单的交互很可能是书店数据库吞吐率的瓶颈点,所以我们决定保留两个字段来简化查询流程.
+表结构与new_order相同,  但未创建time属性上的索引
 
-##### total_price
 
-在原先的sqlite实现中,每次要支付或者退款时, 订单的价钱需要从订单detail中逐个计算出,  求出总和.
 
-这完全是不必要的重复查询,我们只需要在用户下单时,  在修改商店内每本书的库存时顺便返回这本书的价格,计算出这笔订单的总价格,  并存储该字段在new_order文档中即可,无需每次需要钱款交付时重新统计.
 
-##### 索引设计
 
-我们在所有的id类的字段上都设置了索引, 因为这些字段几乎不会被更改且经常用于查询.
 
-(user文档中的store_id为数组索引)
 
-在new_order中的order_time也设计了索引, 因为我们实现的自动取消需要扫描一段历史时间内的订单
+### （3）设计考量
 
-关于store文档中的book_info子文档上的索引,我们也根据书本查询的实际需要,在某些字段上设计了索引.具体可以参考功能部分中的书本查询功能的索引介绍.
+#### 1.  从ER图到数据库设计
 
+##### 实体
 
+我们的ER图中有四类实体，user、store、book、order
 
+显然，我们可以创建对应的四张表，分别存储各自的属性
 
+##### 关系：
 
+user--store为1--m（一个用户拥有多个商店），存储user_id于store中
 
+store--book为1--m（一个商店拥有多本书），存储store_id于book中
 
-## Ⅲ  功能&亮点
+user--order为1--m（一个用户拥有多个订单），存储user_id于order中
 
+store--order为1--m（一个商店有多个相关的订单），存储store_id于order中
 
+
+
+book--order为n--m (一本书可以被多个订单买，一个订单可以买多本书)，
+
+理论上，应该新建一个关系表存储这个关系。
+
+但实际设计时，我们权衡后，仅记录book--order的n--1关系信息 ，因为由一个订单id查询订单买的商品，这是最主要的操作。由一本书查询所有相关的订单，这是个较为少见的操作。
+
+只记录n--1的信息好处是降低了新建订单操作的复杂性，压缩order_detail为单值属性还可以进一步大大减少操作数据库次数。
+
+这样做的缺点是会让我们损失（或者说很难查询）一些信息，比如假设有一个需求是商店老板想分析自己的商品都被销售到了什么地区，那么就需要查询book所关联的order的地址来统计。我们没有提供这个功能。
+
+总之，我们把book--order的关系的`n--1信息`作为单值属性（其形式大概为`book1,10本;book2,5本;book3,15本`）存储在order表上。
+
+
+
+##### 多值属性
+
+①关于存储多值属性order_detail（其形式大概为`book1,10本;book2,5本;book3,15本`）
+
+我们决定将其压缩为一个TEXT存储在一个属性中，原因如下：
+
+优点：若order_detail单独创建为一个表，那么创建一个购买50种书的订单需要插入此表50次，严重降低了数据库性能，且创建订单的操作要求很高的吞吐率。优点是降低插表次数，提高性能
+
+缺点：取消订单时，需要在python程序中解析这个字段，进而将书本库存一一返回，降低了取消订单的效率
+
+考虑到取消订单的操作远少于创建订单的操作，因此压缩为单值属性是值得的。
+
+②tag 
+
+索引？
+
+#todo
+
+
+
+#### 2.   其他表设计
+
+##### dead_uesr
+
+在用户注销时我们会从user 表中删除这条数据, 而仅将用户id放入dead_user中,dead_user仅仅存储了注销的id
+
+这是为了防止被注销的id被其他用户重新注册, 甚至获取到该id之前拥有的商店和订单信息
+
+
+
+
+
+##### old_order和new_order
+
+new_order表需要保证可以容许较大吞吐量,查询原因也需要建立索引.但现在的版本中存储了很多过去已经received或canceled的订单,这影响了新订单的插入速度,且这些旧订单不可能被更改,仅仅可以提供给用户来查询
+
+因此,我们把已经完成的订单转存于old_order中,并设计相似的查询接口.
+
+这样可以保证用户下单时,插入new_order的速度.
+
+详见 PART Ⅲ 效率测试与设计考量
+
+
+
+
+
+#### 3.   字段大小设计
+
+##### ①设置为varchar(255)
+
+查阅网络资料,得知postgreSQL中varchar大小的设置与性能关系并不大
+
+[PostgreSQL: Re: performance cost for varchar(20), varchar(255), and text](https://www.postgresql.org/message-id/486FA10E.3040004@Sheeky.Biz)
+
+甚至varchar的性能与text近似
+
+
+
+因此对于大小<255的字符串,我们直接设置其为varchar(255).
+
+(使用这个数字只是惯例, 在MySQL中varchar类型会有一个长度位存长度大小 ,当定义varchar长度小于等于255时，长度标识位仅需要一个字节)
+
+对于长度>255的字符串,我们设置其为varchar(1023)
+
+
+
+##### ②balance和total_price设置为int8
+
+我们把金额乘以100，以整数方式存储在数据库中，这样性能最佳。
+
+由于卖家会从卖出的书得到余额，为了防止用户余额超出int4范围，我们选择了int8
+
+（实际上，这几乎没有可能发生，但假设真的有一个垄断级别的商店呢？）
+
+订单总金额total_price同理。
+
+
+
+
+
+
+
+#### 4.  索引设计
+
+我们在所有的id类的字段上都设置了哈希索引, 因为这些字段几乎不会被更改且经常用于精确匹配的查询/连接
+
+在new_order中的order_time设置了b+树索引, 因为我们的自动取消需要扫描一段历史时间内的订单
+
+在book_info上，也根据范围查询或者精确查询的需要选择了b+树索引和哈希索引，tag字段使用了倒排索引（todo：xry可能需要进一步说明？）
+
+
+
+
+
+#### 5.  冗余等其他设计
+
+①new_order中字段total_price
+
+这是一个冗余信息，可以提高性能
+
+在普通的实现中,每次要支付或者退款时, 订单的价钱需要从订单detail中逐个计算出,  求出总和.
+
+这是不必要的重复查询,我们只需要在用户下单时,  在修改商店内每本书的库存时顺便返回这本书的价格,计算出这笔订单的总价格,  并存储该字段在new_order表中即可,无需每次需要钱款交付时重新统计.
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Ⅲ  效率测试与设计考量
+
+
+
+### 1.多表连接使用inner join还是where的效率测试
+
+（by田亦海）
+
+虽然使用inner join和where可以达到一样的效果,但我们比较好奇其效率是否会有差别
+
+> 参考lab6 pg 查询优化与执行计划初探,
+>
+> 使用explain语句测试,
+>
+> 数据与索引格式与lab6相同.
+>
+> ```SQL
+> create table S (Sno int , Sname char(6), City char(4), primary key(Sno));
+> create table P (Pno int , Pname char(6), weight int, primary key(Pno));
+> create table J (Jno int , Jname char(6), City char(4), primary key(Jno));
+> create table SPJ ( SPJ_ID int, Sno int, Pno int, Jno int, QTY int, 
+>                 primary key(SPJ_ID), foreign key(Sno) references S(Sno),
+>                 foreign key(Pno) references P(Pno), foreign key(Jno) references J(Jno));
+> ```
+
+s表数据1000条,p表数据50条,j表数据5000条,spj表数据100000条.
+
+索引仅建在各表的主键
+
+<img src="lby.assets/image-20240601232648060.png" alt="image-20240601232648060" style="zoom:60%;" />
+
+在这里,我们只讨论inner join on和where的效率区别,
+
+因为outer join和where 返回的数据并不一样,在实际使用时按需选择即可
+
+
+
+##### ①普通不使用索引的连接
+
+<img src="lby.assets/image-20240602000845557.png" alt="image-20240602000845557" style="zoom: 48%;" />
+
+多次尝试均为此结果, 证明,使用join和where连接实际上效率是一致的(查询计划也完全相同)
+
+
+
+##### ②增加where过滤条件,使用部分索引
+
+<img src="lby.assets/image-20240602001206080.png" alt="image-20240602001206080" style="zoom:48%;" />
+
+同样,查询计划完全相同
+
+
+
+##### ③A join B与B join A
+
+<img src="lby.assets/image-20240602001450589.png" alt="image-20240602001450589" style="zoom:48%;" />
+
+查询计划完全相同,
+
+这表明A join B还是B join A都会被数据库优化以最高效率执行,我们无需关心
+
+<img src="lby.assets/image-20240602002811072.png" alt="image-20240602002811072" style="zoom:50%;" />
+
+在使用较为复杂的查询时,虽然随着where语句和on的筛选条件的改变,可能改变表的大小和连接方式
+
+(比如使用`on spj.sno<s.sno`会变成嵌套扫描连接)
+
+但在不改变其他语句的情况下,A join B或是B join A仍然会以同样的最佳查询计划执行.
+
+会被数据库优化.
+
+
+
+##### ④ 关于数据特征导致的查询变化
+
+<img src="lby.assets/image-20240602002950306.png" alt="image-20240602002950306" style="zoom:50%;" />
+
+where中使用spj.sno<100还是s.sno<100会改变查询计划,
+
+这其实很显然,因为在s.sno上有索引可以用来扫描.
+
+spj.sno<100还是s.sno<100会返回一样的结果(因为`join on spj.sno=s.sno`),似乎在有索引的表s上筛选条件之后再连接会效果更好
+
+但其实因为在sno表上筛选会大大降低哈希连接时spj表的大小(从100000降至9972),这个效果可以使连接操作耗时更短.
+
+这有一定启发性,说明在涉及到连接操作时,进行筛选,可能应该更优先需要在最大的表上筛掉一些值,从而降低连接的耗时, 即使是其他表上存在索引可以用于筛选!
+
+(当然,是否可以这么做非常关系到数据的分布实际情况)
+
+
+
+##### 总结
+
+我们的实验证明, inner join和where的效率是一样的(见①和②)
+
+且A join B还是B join A没有区别(见③)
+
+连接时,如果存在一个表很大，可能优先考虑是否能将其筛选条件直接应用在大表上,即使小表上存在索引(见④)
+
+此外,因为where属于隐连接,还是推荐使用join来写sql.
+
+
+
+
+
+### 8.将已经完成的订单定期转存到old_order
+
+（by田亦海）
+
+new_order表需要保证可以容许较大吞吐量,查询原因也需要建立索引.但现在的版本中存储了很多过去已经received或canceled的订单,这影响了新订单的插入速度,且这些旧订单不可能被更改,仅仅可以提供给用户来查询
+
+因此,我们把已经完成的订单转存于old_order中,并设计相似的接口.
+
+这样可以保证用户激情下单时,插入new_order的速度.
+
+
+
+
+
+具体来说,我们在订单被卖家或者买家canceled或者被received时,将订单从new_order表中delete并插入old_order.
+
+```python
+cur.execute('insert into old_order select * from new_order where order_id=%s',(order_id,))
+cur.execute('delete from new_order where order_id=%s',(order_id,))
+```
+
+并在search_order等一些操作中加入对old_older的考虑.
+
+```python
+#也在已完成的订单中查找
+cur.execute("SELECT order_id FROM old_order WHERE buyer_id = %s", (user_id,))
+orders = cur.fetchall()
+for od in orders:
+    result.append(od[0])
+```
+
+
+
+这样做的优点是减少了new_order表中的订单数，提高了许多操作的性能（比如新建订单、用户注销(需要检查是否有未完成的订单)、订单定时取消的扫描操作）
+
+但也存在一点问题，从new_order表中删除引入了额外的复杂度，比如需要修改b+树索引
+
+不过，即使从new_order中将表移出会造成额外的资源消耗，好处也是大于坏处的。
+
+
+
+更好的设计可以是延时到每天定时凌晨四点将new_order中的订单转存到old_order，status其实就相当于“软删除” 的标志位。
+
+
+
+
+
+
+
+### 10.  安全限制:金额上限
+
+（by田亦海）
+
+为了尽量保证我们的程序不需要处理十分"例外"的情况,并防止数据库中某些数值溢出, 我们对于一些操作设置了安全上限,
+
+并在test中有对应的测试.
+
+这些参数我写在了*bookstore\be\conf.py*中,  在其他代码中调用*conf.py*的值,
+
+若需修改仅修改conf即可
+
+```python
+Store_book_type_limit=100
+Add_amount_limit=10000000000
+Order_amount_limit=100000000
+Order_book_type_limit=100
+```
+
+
+
+##### ①单个订单选择的书本类别的数量上限
+
+*bookstore\be\model\buyer.py*
+
+```python
+#订单书本类型数目超限
+if len(id_and_count)>Order_book_type_limit:
+	return error.error_order_book_type_ex(order_id)+ (order_id, )
+```
+
+
+
+##### ②单个订单总金额上限
+
+*bookstore\be\model\buyer.py*
+
+```python
+#订单金额超限
+if sum_price>Order_amount_limit:
+	return error.error_order_amount_ex(order_id)+ (order_id, )
+```
+
+
+
+##### ③商店书类别总量上限
+
+*bookstore\be\model\seller.py*
+
+```python
+#书籍超出Store_type_limit
+cur.execute('select count(1) from book_info where store_id=%s',(store_id,))
+ret=cur.fetchone()
+if ret[0]>=Store_book_type_limit:
+	return error.error_store_book_type_ex(store_id)
+```
+
+PS:我们把Store_book_type_limit设置为100,是因为对应测试会持续在一个商店中插入超过Store_book_type_limit的书,  并检测的确返回了`error_store_book_type_ex`错误,  因此设置limit较低可以尽量减少这个测试的时间
+
+实际使用时,可以将Store_book_type_limit设置为1000或更高, 意为一个店中最多有1000种书.
+
+
+
+#####  ④用户单次充值上限
+
+*bookstore\be\model\buyer.py*
+
+```python
+elif add_value>Add_amount_limit:#用户添加金额超限
+	return error.error_add_amount_ex()
+```
+
+
+
+业务级别的项目需要对于这样的上限做更完备的考虑.
+
+
+
+
+
+
+
+### 15.大文本/图片存nosql数据库, sql数据库和文件系统的效率对比
+
+(by田亦海)
+
+测试了大文件的存储效率
+
+测试代码位于*Project_1\test_where_picture.py*, 与*bookstore*文件夹处于同一目录下
+
+图片数据比较具有代表性,我们测试了图片存储的方法.
+
+对比了三种:存储于mongodb, postgres, 文件系统
+
+结果如图:
+
+<img src="lby.assets/image-20240603203856290.png" alt="image-20240603203856290" style="zoom: 67%;" />
+
+结论为存储在本地效率最佳
+
+
+
+具体测试方法:
+
+
+
+#### 1)表结构设置
+
+##### ①图片存储于mongodb时,
+
+mongodb中应该有img"表",   属性为bid(string),pic(base64)
+
+并在bid上建立索引
+
+<img src="lby.assets/image-20240603205518485.png" alt="image-20240603205518485" style="zoom: 50%;" />
+
+postgres中有test_img_1表, 属性为bid(varchar),  info(varchar)
+
+(此表模拟存储book信息,info属性为book表中存储的一些相关信息如标题,作者等)
+
+
+
+<img src="lby.assets/image-20240603205454393.png" alt="image-20240603205454393" style="zoom: 50%;" />
+
+
+
+
+
+##### ②图片存储于postgres时,
+
+应该只使用一张test_img_2表, 属性为bid(varchar),  info(varchar), pic(TEXT)  存储base64编码.
+
+<img src="lby.assets/image-20240603205732809.png" alt="image-20240603205732809" style="zoom:50%;" />
+
+
+
+##### ③图片存储于本地时,
+
+本地存储图片于文件夹中,此外使用一张test_img_3 ,属性为bid(varchar),  info(varchar) 模拟book信息
+
+(类似test_img_1)
+
+<img src="lby.assets/image-20240603210024177.png" alt="image-20240603210024177" style="zoom:50%;" />
+
+
+
+#### 2)插入10000书籍测试
+
+##### ①mongodb
+
+一本书插入的逻辑为:  先插入pg中test_img_1信息,  再插入mongodb中img
+
+重复10000次,记录总用时
+
+<img src="lby.assets/image-20240603210340619.png" alt="image-20240603210340619" style="zoom:67%;" />
+
+##### ②pg
+
+一本书插入的逻辑为:  将bid,info,img一并插入到test_img_2中
+
+<img src="lby.assets/image-20240603210454861.png" alt="image-20240603210454861" style="zoom:67%;" />
+
+
+
+##### ③文件系统
+
+一本书插入的逻辑为:  将bid,info,插入到test_img_3中, 将图片保存在文件夹中
+
+<img src="lby.assets/image-20240603210522815.png" alt="image-20240603210522815" style="zoom:67%;" />
+
+
+
+#### 3)读取10000本测试
+
+详见代码
+
+##### ①mongodb
+
+读取一本书:  先读取pg中test_img_1,再读取mongo中对应img
+
+##### ②pg
+
+读取一本书:  读取pg中test_img_2,即可全部读出
+
+##### ③文件系统
+
+读取一本书:  先读取pg中test_img_3,再读取本地文件
+
+
+
+
+
+#### 4)结果分析
+
+<img src="lby.assets/image-20240603210924662.png" alt="image-20240603210924662" style="zoom:67%;" />
+
+结果证明,图片保存在本地的速度略快于保存在mongodb中的速度.
+
+保存在pg中的速度非常慢
+
+
+
+读出图片时,保存在pg中快于保存在mongodb中,
+
+这是因为保存在pg中仅仅需要读取一次即可读出全部数据.
+
+而保存在mongodb时,  需要读取pg数据再读取mongodb数据,读取两次
+
+但保存在文件系统中依旧最快.只需要在pg中读取少量数据一次.
+
+
+
+综上,我们将img(书封面), book_intro(书籍简介), auth_intro(作者简介), content(书籍目录)这四类比较大的文件保存在了本地.目录结构如下:
+
+<img src="lby.assets/image-20240603212718222.png" alt="image-20240603212718222" style="zoom: 67%;" />
+
+*bookstore\be\data\auth_intro*文件夹  存储作者简介 ,文件名为*store_id_book_id.txt*
+
+*bookstore\be\data\book_intro*文件夹  存储书籍简介 ,文件名为*store_id_book_id.txt*
+
+*bookstore\be\data\content*文件夹  存储目录 ,文件名为*store_id_book_id.txt*
+
+eg:
+
+<img src="lby.assets/image-20240605013654580.png" alt="image-20240605013654580" style="zoom: 60%;" />
+
+*bookstore\be\data\img*文件夹  存储作者简介 ,文件名为*store_id_book_id.png*
+
+eg:
+
+<img src="lby.assets/image-20240605013855007.png" alt="image-20240605013855007" style="zoom: 55%;" />
+
+
+
+
+
+
+
+
+
+## Ⅳ  功能&亮点
+
+#todo这部分我还没开始写
 
 ### 0 包装数据库连接的类
 
@@ -444,8 +980,6 @@ class DBConn:
 
 用户可以使用id,password注册.
 
-**(注意在user相关的内容中,有较多些实现代码以及对应test借用了已有的实现)**
-
 #### 后端接口
 
 ```python
@@ -475,31 +1009,45 @@ class User(db_conn.DBConn):
 ##### 注册函数
 
 ```python
-    def register(self, user_id: str, password: str):
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            ret = self.conn['user'].find_one({'user_id':user_id},session=session)
-            if ret is not None:
-                return error.error_exist_user_id(user_id)
-            ret = self.conn['dead_user'].find_one({'user_id':user_id},session=session)
-            if ret is not None:
-                return error.error_exist_user_id(user_id)
-            terminal = "terminal_{}".format(str(time.time()))
-            token = jwt_encode(user_id, terminal)
-            ret=self.conn['user'].insert_one({'user_id':user_id,'password':password,'balance':0,'token':token,'terminal':terminal},session=session)
-            if not ret.acknowledged:  return 528, "{}".format(str(ret))
-        except BaseException as e:return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+def register(self, user_id: str, password: str):
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
+
+                cur.execute('select user_id from "user" where user_id=%s',
+                            (user_id,))
+                ret = cur.fetchone()
+                if ret is not None:
+                    return error.error_exist_user_id(user_id)
+
+                cur.execute(
+                    'select user_id from dead_user where user_id=%s' ,
+                    (user_id,))
+                ret = cur.fetchone()
+                if ret is not None:
+                    return error.error_exist_user_id(user_id)
+
+                terminal = "terminal_{}".format(str(time.time()))
+                token = jwt_encode(user_id, terminal)
+                cur.execute(
+                    'insert into "user" (user_id, password, balance, token, terminal) VALUES (%s, %s, %s, %s, %s)'
+                    ,(user_id, password, 0, token, terminal,))
+                conn.commit()
+    except psycopg2.Error as e:
+        return 528, "{}".format(str(e))
+    except BaseException as e:
+        return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
-首先开始事务 , 尝试在user表和dead_user表中寻找此用户想要注册的id,如果找到了则返回该id已存在的错误.
+with获取连接 
+
+尝试在user表和dead_user表中寻找此用户想要注册的id,如果找到了则返回该id已存在的错误.
 
 此处,dead_user中的id是已经注销的用户曾经使用的id
 
-然后生成terminal和token,将结果插入数据库,根据插入的结果进行异常处理
+然后生成terminal和token,将结果插入数据库,代表用户注册成功
 
 ##### 关于token
 
@@ -546,17 +1094,18 @@ def jwt_decode(encoded_token, user_id: str) -> str:
 
 #### 数据库操作
 
-```python
-ret = self.conn['user'].find_one({'user_id':user_id},session=session)
-ret = self.conn['dead_user'].find_one({'user_id':user_id},session=session)
-            ret=self.conn['user'].insert_one({'user_id':user_id,'password':password,'balance':0,'token':token,'terminal':terminal},session=session)
+```sql
+select user_id from "user" where user_id=%s
+select user_id from dead_user where user_id=%s
+            
+insert into "user" (user_id, password, balance, token, terminal) VALUES (%s, %s, %s, %s, %s)
 ```
 
 在user和dead_user中查询id, 用于检查id唯一性
 
 在user中插入一条用户的数据.id,password, balance即余额, token以及terminal.
 
-此处的事务处理可以保证操作的原子性，防止了一些攻击或意外（例如两个请求同时请求注册相同的id，如果未加事务处理则可能会发生同时注册成功导致未知错误发生（user_id为唯一值）
+psycopg2自动进行事务处理，这可以保证操作的原子性，防止了一些攻击或意外，在with语句块结束后自动提交，函数结束时被动释放获取的pg连接。
 
 #### 代码测试
 
@@ -630,22 +1179,28 @@ def logout():
 #### 后端逻辑
 
 ```python
-    def login(self, user_id: str, password: str, terminal: str) -> (int, str, str):
-        session=self.client.start_session()
-        session.start_transaction()
-        token = ""
-        try:
-            code, message = self.check_password(user_id, password,session=session)
-            if code != 200:
-                return code, message, ""
+def login(self, user_id: str, password: str,
+          terminal: str) -> (int, str, str):
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
 
-            token = jwt_encode(user_id, terminal)
-            self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':token,'terminal':terminal}},session=session)
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e)),""
-        except BaseException as e:return 530, "{}".format(str(e)), ""
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok", token
+                code, message = self.check_password(user_id, password, cur)
+                if code != 200:
+                    return code, message, ""
+
+                token = jwt_encode(user_id, terminal)
+                cur.execute(
+                    'update "user" set token=%s ,terminal=%s where user_id=%s'
+                    , (token, terminal, user_id,))
+
+                conn.commit()
+    except psycopg2.Error as e:
+        return 528, "{}".format(str(e)), ""
+    except BaseException as e:
+        return 530, "{}".format(str(e)), ""
+    return 200, "ok", token
 ```
 
 根据传入参数,先check密码正确, 然后更新user表的token和session
@@ -653,47 +1208,52 @@ def logout():
 check函数如下:
 
 ```python
-    def check_password(self,user_id: str,password: str,session=None) -> (int, str):
-        ret = self.conn['user'].find_one({'user_id': user_id}, {
-                '_id': 0,
-                'password': 1
-            },
-            session=session)
-        
-        if ret is None:
-            return error.error_authorization_fail()
+def check_password(self, user_id: str, password: str, cur) -> (int, str):
 
-        if password != ret['password']:
-            return error.error_authorization_fail()
+    cur.execute('select password from "user" where user_id=%s' , (user_id,))
+    ret = cur.fetchone()
 
-        return 200, "ok"
+    if ret is None:
+        return error.error_authorization_fail()
+
+    if password != ret[0]:
+        return error.error_authorization_fail()
+
+    return 200, "ok"
 ```
 
 logout则类似login
 
 ```python
-    def logout(self, user_id: str, token: str) -> bool:
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            code, message = self.check_token(user_id, token,session=session)
-            if code != 200:
-                return code, message
-            terminal = "terminal_{}".format(str(time.time()))
-            dummy_token = jwt_encode(user_id, terminal)
-            ret=self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':dummy_token,'terminal':terminal}},session=session)
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
-        except BaseException as e:return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+def logout(self, user_id: str, token: str) -> bool:
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
+
+                code, message = self.check_token(user_id, token, cur)
+                if code != 200:
+                    return code, message
+
+                terminal = "terminal_{}".format(str(time.time()))
+                dummy_token = jwt_encode(user_id, terminal)
+                cur.execute(
+                    'update "user" set token=%s ,terminal=%s where user_id=%s'
+                    , (dummy_token, terminal, user_id,))
+                conn.commit()
+    except psycopg2.Error as e:
+        return 528, "{}".format(str(e))
+    except BaseException as e:
+        return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
 #### 数据库操作
 
-```python
-ret = self.conn['user'].find_one({'user_id': user_id}, {'_id': 0,'password': 1},session=session)
-self.conn['user'].update_one({'user_id':user_id},{'$set':{'token':token,'terminal':terminal}},session=session)
+```sql
+select password from "user" where user_id=%s
+
+update "user" set token=%s ,terminal=%s where user_id=%s
 ```
 
 查询user表得到密码, 更新token和terminal
@@ -762,23 +1322,28 @@ def change_password():
 #### 后端逻辑
 
 ```python
-    def change_password(
-        self, user_id: str, old_password: str, new_password: str
-    ) -> bool:
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            code, message = self.check_password(user_id, old_password,session=session)
-            if code != 200:
-                return code, message
-            terminal = "terminal_{}".format(str(time.time()))
-            token = jwt_encode(user_id, terminal)
-            self.conn['user'].update_one({'user_id':user_id},{'$set':{'password':new_password,'token':token,'terminal':terminal}},session=session)
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
-        except BaseException as e:return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+def change_password(self, user_id: str, old_password: str,
+                    new_password: str) -> bool:
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
+
+                code, message = self.check_password(user_id,
+                                            old_password,
+                                            cur)
+                if code != 200:
+                    return code, message
+
+                terminal = "terminal_{}".format(str(time.time()))
+                token = jwt_encode(user_id, terminal)
+                cur.execute('update "user" set password=%s ,token=%s,terminal=%s where user_id=%s',(new_password,token,terminal,user_id,))
+                conn.commit()
+    except psycopg2.Error as e:
+        return 528, "{}".format(str(e))
+    except BaseException as e:
+        return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
 只需要检查password,然后update新的password即可
@@ -787,47 +1352,53 @@ def change_password():
 
 与login时跟数据库的交互一致
 
+```sql
+update "user" set password=%s ,token=%s,terminal=%s where user_id=%s
+```
+
+
+
 #### 代码测试
 
 ```python
-    def test_ok(self):
-        code = self.auth.password(self.user_id, self.old_password, self.new_password)
-        assert code == 200
+def test_ok(self):
+    code = self.auth.password(self.user_id, self.old_password, self.new_password)
+    assert code == 200
 
-        code, new_token = self.auth.login(
-            self.user_id, self.old_password, self.terminal
-        )
-        assert code != 200
+    code, new_token = self.auth.login(
+        self.user_id, self.old_password, self.terminal
+    )
+    assert code != 200
 
-        code, new_token = self.auth.login(
-            self.user_id, self.new_password, self.terminal
-        )
-        assert code == 200
+    code, new_token = self.auth.login(
+        self.user_id, self.new_password, self.terminal
+    )
+    assert code == 200
 
-        code = self.auth.logout(self.user_id, new_token)
-        assert code == 200
+    code = self.auth.logout(self.user_id, new_token)
+    assert code == 200
 
-    def test_error_password(self):
-        code = self.auth.password(
-            self.user_id, self.old_password + "_x", self.new_password
-        )
-        assert code != 200
+def test_error_password(self):
+    code = self.auth.password(
+        self.user_id, self.old_password + "_x", self.new_password
+    )
+    assert code != 200
 
-        code, new_token = self.auth.login(
-            self.user_id, self.new_password, self.terminal
-        )
-        assert code != 200
+    code, new_token = self.auth.login(
+        self.user_id, self.new_password, self.terminal
+    )
+    assert code != 200
 
-    def test_error_user_id(self):
-        code = self.auth.password(
-            self.user_id + "_x", self.old_password, self.new_password
-        )
-        assert code != 200
+def test_error_user_id(self):
+    code = self.auth.password(
+        self.user_id + "_x", self.old_password, self.new_password
+    )
+    assert code != 200
 
-        code, new_token = self.auth.login(
-            self.user_id, self.new_password, self.terminal
-        )
-        assert code != 200
+    code, new_token = self.auth.login(
+        self.user_id, self.new_password, self.terminal
+    )
+    assert code != 200
 ```
 
 
@@ -853,118 +1424,132 @@ def unregister():
 #### 后端逻辑
 
 ```python
-    def unregister(self, user_id: str, password: str) -> (int, str):
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            code, message = self.check_password(user_id, password,session=session)
-            if code != 200:
-                return code, message
-              
-            cursor = self.conn['new_order'].find({'$or':[{'seller_id': user_id},{'user_id': user_id}]},session=session)
-            for item in cursor:
-                if item['status'] !='received' and item['status'] != 'canceled':
-                    if item['user_id']==user_id:
-                        return error.error_unfished_buyer_orders()
-                    if item['seller_id']==user_id:
-                        return error.error_unfished_seller_orders()
-                
-            ret=self.conn['user'].find_one({'user_id': user_id},{'store_id':1},session=session)
-            if len(ret) ==2:
-                store_list=list(ret['store_id'])
-                if len(store_list)!=0:          
-                    ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}},session=session) #修改书库存
+def unregister(self, user_id: str, password: str) -> (int, str):
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
 
-            ret = self.conn['user'].delete_one({'user_id': user_id},session=session)
-            self.conn['dead_user'].insert_one({'user_id': user_id},session=session)
-        except pymongo.errors.PyMongoError as e:return 528, "{}".format(str(e))
-        except BaseException as e:return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+                code, message = self.check_password(user_id, password, cur)
+                if code != 200:
+                    return code, message
+
+                cur.execute('''
+                            select new_order.buyer_id, store.user_id 
+                            from new_order 
+                            inner join store on new_order.store_id=store.store_id 
+                            where (buyer_id =%s or user_id=%s ) and (status !='recieved' and status !='canceled') 
+                            ''',(user_id,user_id,))
+                ret=cur.fetchone()
+                if ret is not None:
+                    if ret[0]==user_id:
+                        return error.error_unfished_buyer_orders()
+                    elif ret[1]==user_id:
+                        return error.error_unfished_seller_orders()
+
+                cur.execute('''
+                            UPDATE book_info 
+                            SET stock_level = 0 
+                            WHERE store_id IN (SELECT store_id FROM store WHERE user_id = %s)
+                            ''',(user_id,))
+
+                cur.execute('delete from "user" where user_id=%s',(user_id,))
+                cur.execute('INSERT INTO dead_user (user_id) VALUES (%s)',(user_id,))
+
+                conn.commit()
+    except psycopg2.Error as e:
+        return 528, "{}".format(str(e))
+    except BaseException as e:
+        return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
 首先,我们需要检查密码正确性,
 
+
+
 然后搜索数据库new_order表,检查是否有该用户作为user_id(即买家)或者seller_id(卖家)的订单,且该订单未完成
 
-即该订单状态不为'recieved'且不为'canceled'
+(即该订单状态不为'recieved'且不为'canceled')
 
 相应的,作为卖家或者买家订单未完成, 则会返回对应的不同错误码和信息
 
-检查订单后,将此用户下所有商店的所有库存书籍的库存设置为0.
+
+
+将此用户下所有商店的所有库存书籍的库存设置为0.
+
+
 
 最后从user表中删除该用户, 将用户id加入dead_user表中
 
 #### 数据库操作
 
-```python
-ret = self.conn['user'].find_one({'user_id': user_id}, {'_id': 0,'password': 1},session=session) # 检查密码正确
+```sql
+# 查询user_id作为new_order表中   buyer或者store的user 存在的未完成订单, 用到了inner join
+select new_order.buyer_id, store.user_id 
+from new_order 
+inner join store on new_order.store_id=store.store_id 
+where (buyer_id =%s or user_id=%s ) and (status !='recieved' and status !='canceled')
 
-# 查询user_id作为new_order表中seller或者user存在的订单, 用到了or查询
-cursor = self.conn['new_order'].find({'$or':[{'seller_id': user_id},{'user_id': user_id}]},session=session)
-            for item in cursor:# 进行逐一判断
-
-#查询出该用户拥有的所有商店id,如果此字段为空即不会返回
-ret=self.conn['user'].find_one({'user_id': user_id},{'store_id':1},session=session)
-    
-#查询store表, 将store_id在store_list中的书籍的库存设置为0
-ret = self.conn['store'].update_many({'store_id': {'$in':store_list}},{'$set':{'stock_level':0}},session=session) #修改书库存
+# 将该用户下的所有书店的库存清空，用到了IN子查询
+UPDATE book_info 
+SET stock_level = 0 
+WHERE store_id IN (SELECT store_id FROM store WHERE user_id = %s)
 
 #从user表中删除此用户,并将user_id插入dead_user表
-ret = self.conn['user'].delete_one({'user_id': user_id},session=session)
-self.conn['dead_user'].insert_one({'user_id': user_id},session=session)
+delete from "user" where user_id=%s
+INSERT INTO dead_user (user_id) VALUES (%s)
 ```
 
 #### 代码测试
 
 ```python
-    #测试unreg功能正常
-    def test_unregister_ok(self):
-        code = self.auth.register(self.user_id, self.password)
-        assert code == 200
+#测试unreg功能正常
+def test_unregister_ok(self):
+    code = self.auth.register(self.user_id, self.password)
+    assert code == 200
 
-        code = self.auth.unregister(self.user_id, self.password)
-        assert code == 200
-    
-    #测试unreg但是传入了错误的id或者密码
-    def test_unregister_error_authorization(self):
-        code = self.auth.register(self.user_id, self.password)
-        assert code == 200
+    code = self.auth.unregister(self.user_id, self.password)
+    assert code == 200
 
-        code = self.auth.unregister(self.user_id + "_x", self.password)
-        assert code != 200
+#测试unreg但是传入了错误的id或者密码
+def test_unregister_error_authorization(self):
+    code = self.auth.register(self.user_id, self.password)
+    assert code == 200
 
-        code = self.auth.unregister(self.user_id, self.password + "_x")
-        assert code != 200
-        
-    #测试unreg,尝试注销持有未完成订单的卖家和买家,并在取消订单后再次测试注销功能
-    def test_unregister_with_buyer_or_seller_order(self):
+    code = self.auth.unregister(self.user_id + "_x", self.password)
+    assert code != 200
 
-        buyer = register_new_buyer(self.user_id+'b', self.user_id+'b')
-        gen_book = GenBook(self.user_id+'s', self.store_id)
+    code = self.auth.unregister(self.user_id, self.password + "_x")
+    assert code != 200
 
-        ok, buy_book_id_list = gen_book.gen(non_exist_book_id=False,
-                                                 low_stock_level=False)
-        assert ok
-    
-        code, order_id = buyer.new_order(self.store_id, buy_book_id_list)
-        assert code == 200
+#测试unreg,尝试注销持有未完成订单的卖家和买家,并在取消订单后再次测试注销功能
+def test_unregister_with_buyer_or_seller_order(self):
 
-        code = self.auth.unregister(self.user_id+'b', self.user_id+'b')
-        assert code == 526
+    buyer = register_new_buyer(self.user_id+'b', self.user_id+'b')
+    gen_book = GenBook(self.user_id+'s', self.store_id)
 
-        code = self.auth.unregister(self.user_id+'s', self.user_id+'s')
-        assert code == 527
+    ok, buy_book_id_list = gen_book.gen(non_exist_book_id=False,
+                                             low_stock_level=False)
+    assert ok
 
-        code = buyer.cancel(order_id)
-        assert code == 200
+    code, order_id = buyer.new_order(self.store_id, buy_book_id_list)
+    assert code == 200
 
-        code = self.auth.unregister(self.user_id+'b', self.user_id+'b')
-        assert code == 200
+    code = self.auth.unregister(self.user_id+'b', self.user_id+'b')
+    assert code == 526
 
-        code = self.auth.unregister(self.user_id+'s',self.user_id+'s')
-        assert code == 200
+    code = self.auth.unregister(self.user_id+'s', self.user_id+'s')
+    assert code == 527
+
+    code = buyer.cancel(order_id)
+    assert code == 200
+
+    code = self.auth.unregister(self.user_id+'b', self.user_id+'b')
+    assert code == 200
+
+    code = self.auth.unregister(self.user_id+'s',self.user_id+'s')
+    assert code == 200
 ```
 
 #### 亮点
@@ -994,37 +1579,41 @@ def seller_create_store():
 #### 后端逻辑
 
 ```python
-    def create_store(self, user_id: str, store_id: str) -> (int, str):
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            if not self.user_id_exist(user_id,session=session):
-                return error.error_non_exist_user_id(user_id)
-            if self.store_id_exist(store_id,session=session):
-                return error.error_exist_store_id(store_id)
-            ret = self.conn['user'].update_one({'user_id':user_id},{'$push':{'store_id':store_id}},session=session)
-            if not ret.acknowledged:  return 528, "{}".format(str(ret))
-        except BaseException as e:
-            return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+def create_store(self, user_id: str, store_id: str) -> (int, str):
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
+                if not self.user_id_exist(user_id, cur):
+                    return error.error_non_exist_user_id(user_id)
+                if self.store_id_exist(store_id, cur):
+                    return error.error_exist_store_id(store_id)
+                cur.execute(
+                    'insert into store (store_id,user_id)values(%s,%s)', (
+                        store_id,
+                        user_id,
+                    ))
+                conn.commit()
+    except psycopg2.Error as e: return 528, "{}".format(str(e.pgerror))
+    except BaseException as e:
+        return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
 检查用户id存在, 检查store_id是否已经存在,
 
-然后更新user表,在该用户下的store_id字段push一个store_id
+然后更新store表,插入数据
 
 #### 数据库操作
 
-```python
+```sql
 #检查用户id存在
-res=self.conn['user'].find_one({'user_id': user_id},session=session)
-#检查storeid存在
-res=self.conn['user'].find_one({'store_id':store_id},session=session)
+select count(1) from "user" where user_id=%s
 
-#在user表的对应user的store_id字段中push一个store_id,使用了数组push操作
-ret = self.conn['user'].update_one({'user_id':user_id},{'$push':{'store_id':store_id}},session=session)
+#检查storeid存在
+select count(1) from store where store_id= %s 
+
+insert into store (store_id,user_id)values(%s,%s)
 ```
 
 #### 代码测试
@@ -1046,13 +1635,7 @@ ret = self.conn['user'].update_one({'user_id':user_id},{'$push':{'store_id':stor
 
 测试了正常创建以及创建已有store
 
-#### 亮点
 
-我们将store存储在了用户下,这可能是一个独特的点.
-
-因为store的全部信息只有一个id,   且嵌入可以减少查询次数.
-
-在store_id上建立了多键(数组)索引.可以加快查询
 
 
 
@@ -1082,51 +1665,124 @@ def seller_add_book():
 #### 后端逻辑
 
 ```python
-    def add_book(
-        self,
-        user_id: str,
-        store_id: str,
-        book_id: str,
-        book_json: str,
-        stock_level: int,
-    ):
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            if not self.user_id_exist(user_id,session=session):
-                return error.error_non_exist_user_id(user_id)
-            if not self.store_id_exist(store_id,session=session):
-                return error.error_non_exist_store_id(store_id)
-            if self.conn['user'].find_one({'store_id':store_id},session=session)['user_id']!=user_id:
-                return error.error_authorization_fail()
-            if self.book_id_exist(store_id, book_id,session=session):
-                return error.error_exist_book_id(book_id)
+def add_book(
+    self,
+    user_id: str,
+    store_id: str,
+    book_id: str,
+    book_json: str,
+    stock_level: int,
+):
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
+                if not self.user_id_exist(user_id, cur):
+                    return error.error_non_exist_user_id(user_id)
+                if not self.store_id_exist(store_id, cur):
+                    return error.error_non_exist_store_id(store_id)
+                cur.execute(
+                    'select 1 from store where store_id=%s and user_id=%s',
+                    (
+                        store_id,
+                        user_id,
+                    ))
+                ret = cur.fetchone()
+                if ret is None:
+                    return error.error_authorization_fail()
+                if self.book_id_exist(store_id, book_id, cur):
+                    return error.error_exist_book_id(book_id)
 
-            ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':json.loads(book_json),'stock_level':stock_level,'sales':0},session=session)
-            if not ret.acknowledged:
-                return 528, "{}".format(str(ret))
-        except BaseException as e:
-            return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+                #书籍超出Store_type_limit
+                cur.execute('select count(1) from book_info where store_id=%s',(store_id,))
+                ret=cur.fetchone()
+                if ret[0]>=Store_book_type_limit:
+                    return error.error_store_book_type_ex(store_id)
+
+                #加载路径
+                current_file_path = os.path.abspath(__file__)
+                current_directory = os.path.dirname(current_file_path)
+                parent_directory = os.path.abspath(os.path.join(current_directory, os.pardir))
+                data_path=os.path.abspath(parent_directory+'/data')
+                #保证路径存在
+                os.makedirs(data_path, exist_ok=True)
+                os.makedirs(data_path+'/img', exist_ok=True)
+                os.makedirs(data_path+'/book_intro', exist_ok=True)
+                os.makedirs(data_path+'/auth_intro', exist_ok=True)
+                os.makedirs(data_path+'/content', exist_ok=True)
+                #加载json中的资源並存儲
+                data = json.loads(book_json)
+                image_data=base64.b64decode(data['pictures'])
+                name=store_id+'_'+data['id']
+                with open(data_path+'/img/'+name+'.png', 'wb') as image_file:
+                    image_file.write(image_data)
+                with open(data_path+'/auth_intro/'+name+'.txt', 'w',encoding='utf-8') as ai_file:
+                    ai_file.write(data['author_intro'])
+                with open(data_path+'/book_intro/'+name+'.txt', 'w',encoding='utf-8') as bi_file:
+                    bi_file.write(data['book_intro'])
+                with open(data_path+'/content/'+name+'.txt', 'w',encoding='utf-8') as ct_file:
+                    ct_file.write(data['content'])
+
+                cur.execute('''
+                            insert into book_info 
+                            (book_id,store_id,price,stock_level,sales,title,author,publisher,original_title,
+                            translator,pub_year,pages,currency_unit,binding,isbn,author_intro,book_intro,content,picture,tags)
+                            values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                            ''' , (
+                    book_id,
+                    store_id,
+                    data['price'],
+                    stock_level,
+                    0,
+                    data['title'],
+                    data['author'],
+                    data['publisher'],
+                    data['original_title'],
+                    data['translator'],
+                    data['pub_year'],
+                    data['pages'],
+                    data['currency_unit'],
+                    data['binding'],
+                    data['isbn'],
+                    './be/data/auth_intro/'+data['id']+'.txt',
+                    './be/data/book_intro/'+data['id']+'.txt',
+                    './be/data/content/'+data['id']+'.txt',
+                    './be/data/img/'+data['id']+'.png',
+                    data['tags']
+                ))
+                conn.commit()
+    except psycopg2.Error as e: return 528, "{}".format(str(e.pgerror))
+    except BaseException as e: return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
-首先检查user_id存在,检查store_id存在, 检查store_id的主人是user_id
+首先检查user_id存在,检查store_id存在, 检查store_id的主人是user_id,检查store中是否有此书book_id
 
-在store表中插入一条数据,代表一本书.
+检查店内的书籍是否超过限制（eg.1000种）
+
+加载路径，并确保路径存在，
+
+然后加载json中的book_info，将大文件存储到本地，以store_id_book_id.txt(png)命名
+
+在store表中插入一条数据,代表一本书,涉及book_id,store_id,title,author,price,stock_level等。
+
+四种大文件在表中存储了相对路径
+
+
 
 #### 数据库操作
 
-```python
+```sql
 #检查用户id存在
-res=self.conn['user'].find_one({'user_id': user_id},session=session)
+select count(1) from "user" where user_id=%s
 #检查storeid存在
-res=self.conn['user'].find_one({'store_id':store_id},session=session)
-#检查store_id归属
-self.conn['user'].find_one({'store_id':store_id},session=session)['user_id']!=user_id
+select count(1) from store where store_id= %s 
+#检查store_id归属，重复查询store_id有点性能消耗，但可以给用户报错不同类型
+select 1 from store where store_id=%s and user_id=%s
 #插入store表中这本书
-ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book_info':json.loads(book_json),'stock_level':stock_level,'sales':0},session=session)
+insert into book_info 
+(book_id,store_id,price,stock_level,sales,title,author,publisher,original_title,
+translator,pub_year,pages,currency_unit,binding,isbn,author_intro,book_intro,content,picture,tags) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
 ```
 
 #### 代码测试
@@ -1158,11 +1814,25 @@ ret = self.conn['store'].insert_one({'store_id':store_id,'book_id':book_id,'book
             self.seller.seller_id = self.seller.seller_id + "_x"
             code = self.seller.add_book(self.store_id, 0, b)
             assert code != 200
+            
+    def test_store_type_ex(self):#这个测试是测试插入书店过多书的报错
+        b = self.books[0]
+        for bid in range(0, Store_book_type_limit):
+            b.id = str(bid)
+            code = self.seller.add_book(self.store_id, 0, b)
+            assert code == 200
+        b.id = str(Store_book_type_limit+1)
+        code = self.seller.add_book(self.store_id, 0, b)
+        assert code == 544
 ```
 
 根据不同的错误进行了检查
 
+#### 优点
 
+①本地文件存储书籍信息的方式是最为高效的（参考PART 3效率测试与设计考量），在数据库内存储了相对路径可供查询
+
+②限制了书店不能有太多书，更安全
 
 
 
@@ -1188,26 +1858,28 @@ def add_stock_level():
 #### 后端逻辑
 
 ```python
-    def add_stock_level(
-        self, user_id: str, store_id: str, book_id: str, add_stock_level: int
-    ):
-        session=self.client.start_session()
-        session.start_transaction()
-        try:
-            if not self.user_id_exist(user_id,session=session):
-                return error.error_non_exist_user_id(user_id)
-            if not self.store_id_exist(store_id,session=session):
-                return error.error_non_exist_store_id(store_id)
-            if not self.book_id_exist(store_id, book_id,session=session):
-                return error.error_non_exist_book_id(book_id)
-            ret = self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':-add_stock_level}},{'$inc': {'stock_level': add_stock_level}},session=session)
-            if ret is None:
-                return error.error_out_of_stock(book_id)
-        except BaseException as e:
-            return 530, "{}".format(str(e))
-        session.commit_transaction()
-        session.end_session()
-        return 200, "ok"
+def add_stock_level(self, user_id: str, store_id: str, book_id: str,
+                        add_stock_level: int):
+    try:
+        with self.get_conn() as conn:
+            with conn.cursor() as cur:
+                conn.autocommit = False
+                if not self.user_id_exist(user_id, cur):
+                    return error.error_non_exist_user_id(user_id)
+                if not self.store_id_exist(store_id, cur):
+                    return error.error_non_exist_store_id(store_id)
+                if not self.book_id_exist(store_id, book_id, cur):
+                    return error.error_non_exist_book_id(book_id)
+                cur.execute(
+                    'update book_info set stock_level=stock_level+%s where book_id=%s and store_id=%s and stock_level>=%s',
+                    (add_stock_level, book_id, store_id, -add_stock_level))
+                if cur.rowcount == 0:  #受影响行数
+                    return error.error_out_of_stock(book_id)
+                conn.commit()
+    except psycopg2.Error as e: return 528, "{}".format(str(e.pgerror))
+    except BaseException as e:
+        return 530, "{}".format(str(e))
+    return 200, "ok"
 ```
 
 分别检查id存在性,
@@ -1216,14 +1888,14 @@ def add_stock_level():
 
 #### 数据库操作
 
-```python
+```sql
 #检查user,store,book存在
 
 #增加书籍
-            ret = self.conn['store'].find_one_and_update({'store_id':store_id,'book_id':book_id,'stock_level':{'$gte':-add_stock_level}},{'$inc': {'stock_level': add_stock_level}},session=session)
+update book_info set stock_level=stock_level+%s where book_id=%s and store_id=%s and stock_level>=%s
 ```
 
-这里有gte条件的原因是卖家减少书籍数量不能减少为负数,我们也设计了对应的的测试
+这里有gte条件的原因是，卖家减少书籍数量不能减少至负数,我们也设计了对应的测试。
 
 #### 代码测试
 
@@ -1231,42 +1903,49 @@ def add_stock_level():
     def test_error_user_id(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(
-                self.user_id + "_x", self.store_id, book_id, 10
-            )
+            code = self.seller.add_stock_level(self.user_id + "_x",
+                                               self.store_id, book_id, 10)
             assert code != 200
 
     def test_error_store_id(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(
-                self.user_id, self.store_id + "_x", book_id, 10
-            )
+            code = self.seller.add_stock_level(self.user_id,
+                                               self.store_id + "_x", book_id,
+                                               10)
             assert code != 200
 
     def test_error_book_id(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(
-                self.user_id, self.store_id, book_id + "_x", 10
-            )
+            code = self.seller.add_stock_level(self.user_id, self.store_id,
+                                               book_id + "_x", 10)
             assert code != 200
 
     def test_ok(self):
         for b in self.books:
             book_id = b.id
-            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, 10)
+            code = self.seller.add_stock_level(self.user_id, self.store_id,
+                                               book_id, 10)
             assert code == 200
 
     def test_error_book_stock(self):
         for b in self.books:
             book_id = b.id
-            cursor=self.dbconn.conn['store'].find_one({'store_id':self.store_id,'book_id':book_id})
-            code = self.seller.add_stock_level(self.user_id, self.store_id, book_id, -(cursor['stock_level']+1))#-(cursor['stock_level']+1)
+            conn=self.dbconn.get_conn()
+            cur=conn.cursor()
+            cur.execute("select stock_level from book_info where store_id=%s and book_id=%s",[self.store_id,book_id])
+            res=cur.fetchone()
+            assert(res is not None)
+            stock_level=res[0]
+            conn.close()
+            code = self.seller.add_stock_level(
+                self.user_id, self.store_id, book_id,
+                -(stock_level + 1))  #-(cursor['stock_level']+1)
             assert code != 200
 ```
 
-分别检查了三种id错误情况, 正常执行结果, 下架了多余原本数量的书籍的错误情况.
+分别检查了三种id错误情况, 正常执行结果, 下架了多于原本数量的书籍的错误情况.
 
 #### 亮点
 
@@ -1279,6 +1958,8 @@ def add_stock_level():
 ### 8 书本查询功能
 
 功能参考当当网、中图网的高级搜索页面以及豆瓣的图书搜索页面：
+
+#图片炸了，需要改todo
 
 ![image-20240428195641470](report.assets/image-20240428195641470.png)
 
@@ -1512,108 +2193,96 @@ class Scanner(db_conn.DBConn):
         db_conn.DBConn.__init__(self)
         self.live_time=live_time
         self.scan_interval=scan_interval
+        
+    def keep_running(self, keep=False):# 当keep参数为True时,扫描器会永久运行
+        t = 0
+        
+        try:
+            with self.get_conn() as conn:
+                while t < 10:
+                    with conn.cursor() as cur:
+                        conn.autocommit = False
+						#获取当前时间
+                        cur_time = datetime.datetime.now()
+						#将超时的未支付订单直接插入old_order，并设置状态为canceled，并返回某些字段
+                        cur.execute('''
+                                    insert into old_order 
+                                    select order_id,store_id,buyer_id,'canceled',time,total_price,order_detail 
+                                    from new_order where status=%s and time>=%s and time <%s 
+                                    returning order_id,store_id,order_detail
+                                    ''',
+                                    ('unpaid',
+                                     cur_time-datetime.timedelta(seconds=self.live_time+self.scan_interval),
+                                     cur_time-datetime.timedelta(seconds=self.live_time-self.scan_interval),))
+                        ret=cur.fetchall()
+                        cnt=cur.rowcount
+						#从new_order表中删除应该被取消掉的订单
+                        cur.execute('''
+                                    delete from new_order where status=%s and time>=%s and time <%s 
+                                    ''',
+                                    ('unpaid',
+                                     cur_time-datetime.timedelta(seconds=self.live_time+self.scan_interval),
+                                     cur_time-datetime.timedelta(seconds=self.live_time-self.scan_interval),))
 
-    def keep_running(self,keep=False):# 当keep参数为True时,扫描器会永久运行
-        t=0
-        while t<10:
-            session=self.client.start_session()
-            session.start_transaction()
-            try:
-                # ret=self.conn['new_order'].find()
-                # for item in ret:
-                #     print('此订单时间为',datetime.datetime.fromtimestamp(item['order_time']),'状态为',item['status'])
-                cur_time=int(time.time())
-                #获取当前时间,取整数,即精确到秒
-                cursor=self.conn['new_order'].find(
-                    {
-                        'order_time': {
-                            '$gte': cur_time - self.live_time - self.scan_interval,
-                            '$lt': cur_time - self.live_time + self.scan_interval
-                        },
-                        'status': 'unpaid'
-                    },
-                    {'order_id':1,'store_id':1,'detail':1},
-                    session=session
-                )#查询时间在这段区间内且状态为unpaid的订单
-                for i in cursor:
-                    detail=list(i['detail'])
-                    store_id=i['store_id']
-                    for j in detail:
-                        self.conn['store'].update_many({'store_id':store_id,'book_id':j[0]},{'$inc':{'stock_level':j[1],'sales':-j[1]}},session=session)#将书籍库存加回
-                ret = self.conn['new_order'].update_many(
-                    {
-                        'order_time': {
-                            '$gte': cur_time - self.live_time - self.scan_interval,
-                            '$lt': cur_time - self.live_time + self.scan_interval
-                        },
-                        'status': 'unpaid'
-                    },
-                    {
-                        '$set': {
-                            'status': 'canceled'
-                        }
-                    },
-                    session=session
-                )#更改在这段区间内且状态为unpaid的订单状态为canceled
-                yield 200,ret.modified_count #以迭代器的形式返回此次查询的结果
-                #return
-            except pymongo.errors.PyMongoError as e:
-                yield 528, "{}".format(str(e))
-                return
-            except Exception as e:
-                yield 530, "{}".format(str(e))
-                return
-            session.commit_transaction()
-            session.end_session()
-            time.sleep(self.scan_interval) #睡眠一定时间
-            if not keep: #如果keep参数为false,则t会增加.t>10会退出.
-                t+=1
+                        
+                        
+                        for item in ret:
+                            for bc in item[2].split('\n'):
+                                if bc=='':continue
+                                b_c=bc.split(' ')
+								#解析order_detail，返还库存
+                                cur.execute('''
+                                            update book_info 
+                                            set stock_level=stock_level+%s,sales=sales-%s 
+                                            where book_id=%s and store_id=%s
+                                            '''
+                                            ,(int(b_c[1]),int(b_c[1]),b_c[0],item[1]))
+
+                        conn.commit()
+                        #以迭代器的形式返回此次查询的结果
+                        yield 200, cnt
+                #睡眠一定时间，降低扫描消耗
+                time.sleep(self.scan_interval)
+                if not keep:#如果keep参数为false,则t会增加.t>10会退出.
+                    t += 1
+        except GeneratorExit as e:
+            return
+        except psycopg2.Error as e:
+            yield 528, "{}".format(str(e))
+            return
+        except BaseException as e:
+            yield 530, "{}".format(str(e))
+            return
 ```
 
-可以参考注释代码:
+参考注释代码:
 
-首先扫描一段时间的状态未支付的订单,
+首先扫描一段时间的状态未支付的订单, 直接把订单插入old_order并设置为已取消，并返回某些字段
 
-更改其对应的书籍的库存和销售记录
+从new_order表中删除这些订单
 
-更改这些订单的状态为已取消,
+解析order_detail,更改其对应的书籍的库存和销售记录
 
-返回操作结果(即取消了的数量)
+返回操作结果(即取消掉的数量)
 
 睡眠一段时间
 
 #### 数据库操作
 
-```python
-cursor=self.conn['new_order'].find(
-                    {
-                        'order_time': {
-                            '$gte': cur_time - self.live_time - self.scan_interval,
-                            '$lt': cur_time - self.live_time + self.scan_interval
-                        },
-                        'status': 'unpaid'
-                    },
-                    {'order_id':1,'store_id':1,'detail':1},
-                    session=session
-                )#查询时间在这段区间内且状态为unpaid的订单
+```sql
+#将new_order中的未支付超时订单插入old_order，并返回order_id,store_id,order_detail
+insert into old_order 
+select order_id,store_id,buyer_id,'canceled',time,total_price,order_detail 
+from new_order where status=%s and time>=%s and time <%s 
+returning order_id,store_id,order_detail
 
-self.conn['store'].update_many({'store_id':store_id,'book_id':j[0]},{'$inc':{'stock_level':j[1],'sales':-j[1]}},session=session)#将书籍库存加回
-    
-ret = self.conn['new_order'].update_many(
-                    {
-                        'order_time': {
-                            '$gte': cur_time - self.live_time - self.scan_interval,
-                            '$lt': cur_time - self.live_time + self.scan_interval
-                        },
-                        'status': 'unpaid'
-                    },
-                    {
-                        '$set': {
-                            'status': 'canceled'
-                        }
-                    },
-                    session=session
-                )#更改在这段区间内且状态为unpaid的订单状态为canceled
+#从new_order中删除这些订单
+delete from new_order where status=%s and time>=%s and time <%s 
+ 
+#更新书的库存和卖出信息
+update book_info 
+set stock_level=stock_level+%s,sales=sales-%s 
+where book_id=%s and store_id=%s
 ```
 
 #### 代码测试
@@ -1630,6 +2299,7 @@ ret = self.conn['new_order'].update_many(
         chk = False
         for i in range(self.live_time // self.scan_interval + 3):
             try:
+                time.sleep(self.scan_interval)#需要等待到订单回收期
                 s = next(g)
                 print(s)
                 if s[1] != 0:
@@ -1637,17 +2307,19 @@ ret = self.conn['new_order'].update_many(
             except:
                 assert 0
         assert chk
-        code,lst,_=self.auth.searchbook(0,len(buy_book_id_list),store_id=self.store_id)
+        code, lst, _ = self.auth.searchbook(0,
+                                            len(buy_book_id_list),
+                                            store_id=self.store_id)
         for i in lst:
-                res=json.loads(i)
-                assert(res['sales']==0)
+            res = json.loads(i)
+            assert (res['sales'] == 0)
         code = self.buyer.cancel(order_id)
         assert code == 518
 ```
 
 在这个test中,我设置live_time=10, scan_interval=2
 
-首先生成书并创建订单,然后扫描一段略多于有效期的时间,并检查时候取消成功.
+首先生成书并创建订单,然后扫描一段略多于有效期的时间,并检是否取消成功.
 
 最后检查书籍的销售记录是否已经被还原,以及订单状态是否为已经取消(若已经取消则无法再次取消)
 
@@ -1659,7 +2331,7 @@ ret = self.conn['new_order'].update_many(
 
 扫描数据库的操作会带来一定的性能损耗,
 
-因此如果是大型项目的实现,应该考虑消息队列或其他形式来做.
+因此如果是大型项目的实现,应该考虑消息队列来做.
 
 
 
@@ -2817,15 +3489,13 @@ def gen_hot_test_procedure(self):
 
 
 
-## Ⅳ  其他
-
-### 在github协作
+## Ⅳ  github协作
 
 我们在开发过程中全程使用github来进行协作,
 
 这是我们的github仓库链接:[limboy058/bookstore (github.com)](https://github.com/limboy058/bookstore)
 
-(可能当前是private状态, 待作业提交后会公开)
+(可能当前是private状态, 待作业提交后一段时间会公开)
 
 具体来说:
 
@@ -2837,31 +3507,23 @@ def gen_hot_test_procedure(self):
 
 
 
-##### 进行了187次commit和59次merge(截至目前)
+#### 进行了295次commit和108次merge(截至目前)
 
-<img src="report.assets/image-20240430133643335.png" alt="image-20240430133643335" style="zoom: 50%;" />
-
-<img src="report.assets/image-20240430133658024.png" alt="image-20240430133658024" style="zoom:50%;" />
+#todo picture
 
 
 
-<img src="report.assets/image-20240430133410748.png" alt="image-20240430133410748" style="zoom:50%;" />
-
-
-
-##### 这是具体每个人整改的代码数量
+#### 这是具体每个人整改的代码数量
 
 由于存在一些例如实验报告markdown的整合,所以数值上仅供参考
 
-<img src="report.assets/image-20240430133513466.png" alt="image-20240430133513466" style="zoom: 50%;" />
+#todo picture
 
 
 
-##### 一些分支图
+#### 一些分支图
 
-<img src="report.assets/image-20240430134328290.png" alt="image-20240430134328290" style="zoom:50%;" />
-
-<img src="report.assets/image-20240430134331172.png" alt="image-20240430134331172" style="zoom:50%;" />
+#todo picture
 
 
 
@@ -2873,7 +3535,9 @@ def gen_hot_test_procedure(self):
 
 ## Ⅴ 最终运行结果
 
-#### 代码覆盖率为95%
+#### 代码覆盖率为94%
+
+#todo 需要粘贴最新的结果
 
 绝大多数未覆盖到的代码为一些未知异常（如事务冲突，机器掉电）引发的统一错误处理。
 
