@@ -7,8 +7,6 @@ import datetime
 import pymongo.errors
 import psycopg2
 import random
-from be.model import db_conn
-from be.model import error
 import pandas as pd
 from io import StringIO
 try:
@@ -61,7 +59,7 @@ try:
     start_time=time.time()
     cur.execute("select * from test_tags where tags @> %s",[tagsList[12345][1],])
     end_time=time.time()
-    print(end_time-start_time)
+    print("select on gin index:",end_time-start_time)
     for i in cur.fetchall(): 
         print(i)
 
@@ -90,13 +88,37 @@ try:
     # cur.copy_from(f, 'test_tags_tag', columns=('store_id','tag'))
 
     start_time=time.time()
-    cur.execute("select test_tags_store.store_id from test_tags_tag inner join test_tags_store on test_tags_tag.store_id=test_tags_store.store_id "+
-                "where test_tags_tag.tag in (%s,%s,%s) group by test_tags_store.store_id having count(1)>=3",[tagsList[12345][1][0],tagsList[12345][1][1],tagsList[12345][1][2]])
+    cur.execute("select store_id from test_tags_tag "+
+                "where tag in (%s,%s,%s) group by store_id having count(1)=3",[tagsList[12345][1][0],tagsList[12345][1][1],tagsList[12345][1][2]])
+    res=cur.fetchall()
+    for i in res:
+        cur.execute("select * from test_tags_store where store_id=%s",i)
     end_time=time.time()
+    
+    print("select on normal table:",end_time-start_time)
+
+    start_time=time.time()
+    cur.execute("select test_tags_store.* from test_tags_tag inner join test_tags_store on test_tags_tag.store_id=test_tags_store.store_id where test_tags_tag.tag=%s",[tagsList[12345][1][0],])
+    end_time=time.time()
+    print("simple select on normal table:",end_time-start_time)
     for i in cur.fetchall():
         print(i)
-    print(end_time-start_time)
-
     conn.commit()
 
+    cur=conn.cursor()
+    cur.execute("delete from test_tags where store_id=100000000")
+    start_time=time.time()
+    cur.execute("insert into test_tags values(100000000,%s)",[['abc','cba','acc']])
+    end_time=time.time()
+    print("insert on gin index:",end_time-start_time)
+
+    cur.execute("delete from test_tags_store where store_id=100000000")
+    cur.execute("delete from test_tags_tag where store_id=100000000")
+    start_time=time.time()
+    cur.execute("insert into test_tags_store values(100000000)")
+    cur.execute("insert into test_tags_tag values(100000000,'abc')")
+    cur.execute("insert into test_tags_tag values(100000000,'cba')")
+    cur.execute("insert into test_tags_tag values(100000000,'acc')")
+    end_time=time.time()
+    print("insert on normal table:",end_time-start_time)
 except Exception as e:  print(str(e))

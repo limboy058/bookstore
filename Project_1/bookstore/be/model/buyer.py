@@ -46,7 +46,7 @@ class Buyer(db_conn.DBConn):
                     for i in id_and_count:
                         book_id_lst.append(i[0])
 
-                    cur.execute("select price,stock_level,book_id from book_info where store_id=%s and book_id in %s for update;",[store_id,tuple(book_id_lst)])
+                    cur.execute("select price,stock_level,book_id from book_info where store_id=%s and book_id in %s;",[store_id,tuple(book_id_lst)])
 
                     res=cur.fetchall()
                     for book_id,count in id_and_count:
@@ -103,7 +103,7 @@ class Buyer(db_conn.DBConn):
                     if buyer_id != user_id:
                         return error.error_authorization_fail()
                     
-                    cur.execute("select balance from \"user\" where user_id=%s and password=%s for update",[user_id,password])
+                    cur.execute("select balance from \"user\" where user_id=%s and password=%s",[user_id,password])
                     res=cur.fetchone()
                     if(res==None):
                         return error.error_authorization_fail()
@@ -129,7 +129,7 @@ class Buyer(db_conn.DBConn):
             try:
                 with self.get_conn() as conn:
                     cur=conn.cursor()
-                    cur.execute("select password,balance from \"user\" where user_id=%s for update",[user_id,])
+                    cur.execute("select password,balance from \"user\" where user_id=%s",[user_id,])
                     res=cur.fetchone()
                     if(res==None):
                         return error.error_non_exist_user_id(user_id)
