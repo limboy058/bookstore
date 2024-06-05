@@ -269,7 +269,7 @@ class Seller(db_conn.DBConn):
                     cur=conn.cursor()
                     unprossing_status = ["unpaid", "paid_but_not_delivered"]
                         
-                    cur.execute("select buyer_id, status, total_price, store_id from new_order WHERE order_id = %s", (order_id,))
+                    cur.execute("select buyer_id, status, total_price, store_id, order_detail from new_order WHERE order_id = %s", (order_id,))
                     order = cur.fetchone()
 
                     if not order:
@@ -284,6 +284,7 @@ class Seller(db_conn.DBConn):
                     current_status = order[1]
                     total_price = order[2]
                     store_id_ = order[3]
+                    detail=order[4].split('\n')
 
                     if current_status not in unprossing_status:
                         return error.error_invalid_order_id(order_id)
@@ -298,19 +299,17 @@ class Seller(db_conn.DBConn):
                     """, (order_id,current_status))
                     if cur.rowcount == 0:
                             return error.error_invalid_order_id(order_id)
-                    cur.execute("select order_detail from new_order WHERE order_id = %s", (order_id,))
-                    res = cur.fetchone()
-                    detail=res[0].split('\n')
+                    
                     for tmp in detail:
-                        tmp1=tmp.split(' ')
-                        if(len(tmp1)<2):
-                            break
-                        book_id,count=tmp1
-                        cur.execute("""
-                            UPDATE book_info 
-                            SET stock_level = stock_level + %s, sales = sales - %s 
-                            WHERE book_id = %s AND store_id = %s
-                        """, (count, count, book_id, store_id))
+                            tmp1=tmp.split(' ')
+                            if(len(tmp1)<2):
+                                    break
+                            book_id,count=tmp1
+                            cur.execute("""
+                                    UPDATE book_info 
+                                    SET stock_level = stock_level + %s, sales = sales - %s 
+                                    WHERE book_id = %s AND store_id = %s
+                            """, (count, count, book_id, store_id))
 
                     if current_status == "paid_but_not_delivered":
                         cur.execute(' UPDATE "user" SET balance = balance + %s WHERE user_id = %s', (total_price, buyer_id))

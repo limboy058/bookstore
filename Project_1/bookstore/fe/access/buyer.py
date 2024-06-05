@@ -9,7 +9,6 @@ class Buyer:
     def __init__(self, url_prefix, user_id, password):
         self.url_prefix = urljoin(url_prefix, "buyer/")
         self.user_id = user_id
-        # hashed_password = hashlib.sha256(password.encode()).hexdigest()
         self.password = password
         self.token = ""
         self.terminal = "my terminal"
