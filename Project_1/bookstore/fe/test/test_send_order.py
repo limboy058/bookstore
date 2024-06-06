@@ -1,5 +1,5 @@
 import pytest
-import sys
+# import sys
 # sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from fe.test.gen_book_data import GenBook
 from fe.access.new_buyer import register_new_buyer

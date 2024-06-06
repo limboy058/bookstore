@@ -1,6 +1,6 @@
 import pytest
-import sys
-sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
+# import sys
+# sys.path.append("D:\\code\数据库系统\\AllStuRead-master\\Project_1\\bookstore")
 from fe.access.auth import Auth
 from fe import conf
 from be.model import db_conn

@@ -3,8 +3,6 @@
 import time, datetime
 import psycopg2
 
-import sys
-sys.path.append(r'D:\DS_bookstore\Project_1\bookstore')
 from be.model import db_conn
 
 
