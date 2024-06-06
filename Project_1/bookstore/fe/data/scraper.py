@@ -70,8 +70,6 @@ def get_user_agent():
     return headers
 
 
-import sys
-
 
 class Scraper:
     database: str

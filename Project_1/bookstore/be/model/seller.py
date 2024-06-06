@@ -2,8 +2,6 @@ import json
 import os,base64
 import random
 import time
-import sys
-sys.path.append(r"D:\DS_bookstore\Project_1\bookstore")
 from fe.conf import Retry_time
 from be.conf import Store_book_type_limit
 

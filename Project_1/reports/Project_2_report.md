@@ -148,11 +148,11 @@ alter system set default_transaction_isolation to 'read committed';
 
 卖家设置缺货
 
-新增货修改以上函数相关测试
+**新增货修改以上函数相关测试**
 
-前端密码加密
+**前端密码加密**
 
-本地图片、长文本数据检查。
+**本地图片、长文本数据检查。**
 
 
 
@@ -251,7 +251,9 @@ Order_book_type_limit=100
 
 ### （1）  ER图
 
-![erpic](C:/Users/Alex/Desktop/pngStore/erpic.png)
+<img src="Project_2_report.assets/c30748a6e9636ecfdd78b3ed846641c.png" alt="c30748a6e9636ecfdd78b3ed846641c" style="zoom:67%;" />
+
+
 
 ### （2）表结构
 
@@ -441,7 +443,7 @@ book--order为n--m (一本书可以被多个订单买，一个订单可以买多
 
 考虑到取消订单的操作远少于创建订单的操作，并且我们的书店项目无需支持通过书本查找对应订单的功能。因此压缩为单值属性是值得的。
 
-详见Ⅲ7
+详见PART Ⅲ  7.表结构设计改进
 
 2.tag 
 
@@ -449,7 +451,7 @@ book--order为n--m (一本书可以被多个订单买，一个订单可以买多
 
 对于tag我们的查询需求为，找到拥有所有用户查询的tags的书籍，并返回其具体信息。在使用数组属性存储的条件下，我们的查询速度比使用新表并使用无关子查询进行查询的速度要提升五倍左右。并且在插入时采用数组属性也有更好的表现。因此，我们决定将tag作为数组属性存储。
 
-详见Ⅲ2
+详见Ⅲ2.表结构设计测试
 
 3.title
 
@@ -523,7 +525,7 @@ new_order表需要保证可以容许较大吞吐量,查询原因也需要建立�
 
 在new_order中的order_time设置了b+树索引, 因为我们的自动取消需要扫描一段历史时间内的订单
 
-在book_info上，也根据范围查询或者精确查询的需要选择了b+树索引和哈希索引，tag字段使用了倒排索引（todo：xry可能需要进一步说明？）
+在book_info上，也根据范围查询或者精确查询的需要选择了b+树索引和哈希索引，tag字段使用了倒排索引（在功能亮点：8.书本查询功能介绍中，将进行更详细的说明）
 
 
 
@@ -552,6 +554,8 @@ new_order表需要保证可以容许较大吞吐量,查询原因也需要建立�
 
 
 ## Ⅲ  效率测试与设计考量
+
+我们的测试代码位于*Project_1\test_for_design*文件夹中
 
 
 
@@ -649,6 +653,8 @@ spj.sno<100还是s.sno<100会返回一样的结果(因为`join on spj.sno=s.sno`
 连接时,如果存在一个表很大，可能优先考虑是否能将其筛选条件直接应用在大表上,即使小表上存在索引(见④)
 
 此外,因为where属于隐连接,还是推荐使用join来写sql.
+
+
 
 
 
@@ -863,6 +869,8 @@ class Seller:
 
 
 
+
+
 ### 5.针对高并发函数设计重试机制
 
 ```python
@@ -918,6 +926,10 @@ Use_Large_DB = True
 Retry_time=10	#<---这里
 ```
 
+
+
+
+
 ### 6.表结构设计改进：将已经完成的订单定期转存到old_order
 
 new_order表需要保证可以容许较大吞吐量,查询原因也需要建立索引.但现在的版本中存储了很多过去已经received或canceled的订单,这影响了新订单的插入速度,且这些旧订单不可能被更改,仅仅可以提供给用户来查询
@@ -951,6 +963,10 @@ for od in orders:
 
 更好的设计可以是延时到每天定时凌晨四点将new_order中的订单转存到old_order，status其实就相当于“软删除” 的标志位。
 
+
+
+
+
 ### 7.表结构设计测试：订单order_detail压缩为字符串属性存储或新建新表的效率对比
 
 测试代码：test_order_detail.py
@@ -980,6 +996,10 @@ order_detail=""
 经过测试，第二种存放方式的查询效率是第一种存放方式的查询效率的两倍，这个区别并不太大。但就插入而言，第一种存放方式需要在new_order中插入一条后再在新表中插入等于购买书籍种类的数量条元组，因此其性能不如第二种存放方式。
 
 第一种存放方式的优势为，可以通过在book_id上建立索引来支持 通过书籍id找到购买该书籍的所有订单信息 的功能。二第二种存放方式无法支持这种功能。但我们的项目并不需要支持该功能。即，订单与书籍的多对多关系对于我们的项目只用到了其中订单到书籍的一对多关系。因此，我们采取了第二种存放方式。
+
+
+
+
 
 ### 8.  新功能设计：安全限制上限
 
@@ -1055,6 +1075,10 @@ elif add_value>Add_amount_limit:#用户添加金额超限
 
 业务级别的项目需要对于这样的上限做更完备的考虑.
 
+
+
+
+
 ### 9.索引设计测试：对仅涉及等值查询的字段进行哈希索引和b+树索引的效率对比
 
 测试文件：
@@ -1079,11 +1103,15 @@ test_hash_bplus.py
 
 ![image-20240603004608389](Project_2_report.assets/image-20240603004608389.png)
 
+
+
+
+
 ### 10.表结构设计测试：大文本/图片存nosql数据库, sql数据库和文件系统的效率对比
 
 测试了大文件的存储效率
 
-测试代码位于*Project_1\test_where_picture.py*, 与*bookstore*文件夹处于同一目录下
+测试代码位于*Project_1\test_for_design\test_where_picture.py*,
 
 图片数据比较具有代表性,我们测试了图片存储的方法.
 
@@ -4891,13 +4919,19 @@ def gen_hot_test_procedure(self):
 
 使用check函数检查金额一致性，与性能测试一致，在此不赘述。
 
+
+
+
+
+
+
 ## Ⅳ  github协作
 
 我们在开发过程中全程使用github来进行协作,
 
 这是我们的github仓库链接:[limboy058/bookstore (github.com)](https://github.com/limboy058/bookstore)
 
-(可能当前是private状态, 待作业提交后一段时间会公开)
+(可能当前是private状态, 待作业提交后一段时间可能会公开)
 
 具体来说:
 
@@ -4909,25 +4943,43 @@ def gen_hot_test_procedure(self):
 
 
 
-#### 进行了295次commit和108次merge(截至目前)
+#### 进行了303次commit和111次merge(截至目前)
 
-#todo picture
+##### 总览
+
+<img src="Project_2_report.assets/image-20240606161105756.png" alt="image-20240606161105756" style="zoom: 50%;" />
 
 
 
-#### 这是具体每个人整改的代码数量
+##### commits
 
-由于存在一些例如实验报告markdown的整合,所以数值上仅供参考
+<img src="Project_2_report.assets/image-20240606161306682.png" alt="image-20240606161306682" style="zoom:50%;" />
 
-#todo picture
+
+
+##### pull questions
+
+<img src="Project_2_report.assets/image-20240606160913513.png" alt="image-20240606160913513" style="zoom: 45%;" />
+
+
+
+
+
+#### 这是具体整改的代码数量
+
+由于**存在一些例如实验报告markdown的整合**,所以数值上仅供参考
+
+<img src="Project_2_report.assets/image-20240606155316740.png" alt="image-20240606155316740" style="zoom:50%;" />
+
+<img src="Project_2_report.assets/image-20240606155627856.png" alt="image-20240606155627856" style="zoom:50%;" />
 
 
 
 #### 一些分支图
 
-#todo picture
+<img src="Project_2_report.assets/image-20240606155648107.png" alt="image-20240606155648107" style="zoom:50%;" />
 
-
+<img src="Project_2_report.assets/image-20240606155645573.png" alt="image-20240606155645573" style="zoom:50%;" />
 
 
 
@@ -4942,6 +4994,8 @@ def gen_hot_test_procedure(self):
 绝大多数未覆盖到的代码为一些未知异常（如事务冲突，机器掉电）引发的统一错误处理。
 
 以下为test.sh的详细输出,您也可以尝试运行test.sh来获得结果
+
+#####todo再运行一次
 
 ```
 $ bash script/test.sh

@@ -4,9 +4,6 @@ import logging
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import sys
-
-sys.path.append(r'D:\DS_bookstore\Project_1\bookstore')
 
 from be.model import error
 from be.model import db_conn

@@ -1,6 +1,3 @@
-import sys
-
-sys.path.append(r"D:\DS_bookstore\Project_1\bookstore")
 import random
 
 import uuid
