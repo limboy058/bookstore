@@ -86,14 +86,14 @@ try:
     # data1.to_csv(f, sep='\t', index=False, header=False)
     # f.seek(0)
     # cur.copy_from(f, 'test_tags_tag', columns=('store_id','tag'))
-
+    print(tagsList[12345][1][0],tagsList[12345][1][1],tagsList[12345][1][2])
     start_time=time.time()
-    cur.execute("select store_id from test_tags_tag "+
-                "where tag in (%s,%s,%s) group by store_id having count(1)=3",[tagsList[12345][1][0],tagsList[12345][1][1],tagsList[12345][1][2]])
+    cur.execute("select * from test_tags_store where store_id in ( select store_id from test_tags_tag where tag in (%s,%s,%s) group by store_id having count(1)=3 )",[tagsList[12345][1][0],tagsList[12345][1][1],tagsList[12345][1][2]])#
+    end_time=time.time()
     res=cur.fetchall()
     for i in res:
-        cur.execute("select * from test_tags_store where store_id=%s",i)
-    end_time=time.time()
+        print(i)
+    
     
     print("select on normal table:",end_time-start_time)
 

@@ -34,16 +34,15 @@ class Seller(db_conn.DBConn):
                     conn.autocommit = False
                     if not self.user_id_exist(user_id, cur):
                         return error.error_non_exist_user_id(user_id)
-                    if not self.store_id_exist(store_id, cur):
-                        return error.error_non_exist_store_id(store_id)
                     cur.execute(
-                        'select 1 from store where store_id=%s and user_id=%s',
+                        'select user_id from store where store_id=%s',
                         (
                             store_id,
-                            user_id,
                         ))
                     ret = cur.fetchone()
                     if ret is None:
+                        return error.error_non_exist_store_id(store_id)
+                    if(ret[0]!=user_id):
                         return error.error_authorization_fail()
                     if self.book_id_exist(store_id, book_id, cur):
                         return error.error_exist_book_id(book_id)
