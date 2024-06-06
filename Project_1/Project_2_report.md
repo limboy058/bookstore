@@ -1237,13 +1237,11 @@ eg:
 
 ## Ⅳ  功能&亮点
 
-#todo这部分我还没开始写
-
 ### 0 包装数据库连接的类
 
 #### store.py
 
-用于封装MongoDB连接,进行连接的代码如下：
+用于封装postgres连接,进行连接的代码如下：
 
 ```python
 class Store:
@@ -4725,18 +4723,20 @@ def checkSumMoney(money):
 #### 性能测试结果
 
 ```
-29-10-2024 21:10:07 root:INFO:load data
-29-10-2024 21:10:34 root:INFO:seller data loaded.
-29-10-2024 21:10:35 root:INFO:buyer data loaded.
-29-10-2024 21:10:48 root:INFO:TPS_C=988, NO=OK:96 Thread_num:100 TOTAL:100 LATENCY:0.03018625020980835 , P=OK:94 Thread_num:96 TOTAL:96 LATENCY:0.01627522458632787 , C=OK:30 Thread_num:31 TOTAL:31 LATENCY:0.02146471700360698 , S=OK:63 Thread_num:63 TOTAL:63 LATENCY:0.013920208764454675 , R=OK:52 Thread_num:63 TOTAL:63 LATENCY:0.01530948139372326
-29-10-2024 21:10:48 root:INFO:TPS_C=978, NO=OK:191 Thread_num:100 TOTAL:200 LATENCY:0.030438814163208008 , P=OK:188 Thread_num:95 TOTAL:191 LATENCY:0.016189354252440766 , C=OK:57 Thread_num:30 TOTAL:61 LATENCY:0.021360409064371078 , S=OK:127 Thread_num:64 TOTAL:127 LATENCY:0.0139666035419374 , R=OK:108 Thread_num:64 TOTAL:127 LATENCY:0.015475278764259158
-29-10-2024 21:10:48 root:INFO:TPS_C=968, NO=OK:286 Thread_num:100 TOTAL:300 LATENCY:0.030630178451538086 , P=OK:280 Thread_num:95 TOTAL:286 LATENCY:0.01633389262886314 , C=OK:86 Thread_num:30 TOTAL:91 LATENCY:0.021207612949413257 , S=OK:189 Thread_num:62 TOTAL:189 LATENCY:0.014156719994923425 , R=OK:163 Thread_num:62 TOTAL:189 LATENCY:0.015333819010901072
-29-10-2024 21:10:48 root:INFO:TPS_C=1000, NO=OK:383 Thread_num:100 TOTAL:400 LATENCY:0.030705811977386473 , P=OK:377 Thread_num:97 TOTAL:383 LATENCY:0.016331254346563674 , C=OK:114 Thread_num:32 TOTAL:123 LATENCY:0.020965490883928004 , S=OK:254 Thread_num:65 TOTAL:254 LATENCY:0.014224416627658634 , R=OK:220 Thread_num:65 TOTAL:254 LATENCY:0.015161939493314487
-29-10-2024 21:10:48 root:INFO:TPS_C=1019, NO=OK:483 Thread_num:100 TOTAL:500 LATENCY:0.030874167442321777 , P=OK:476 Thread_num:100 TOTAL:483 LATENCY:0.016342603395197455 , C=OK:144 Thread_num:33 TOTAL:156 LATENCY:0.020918589371901292 , S=OK:320 Thread_num:66 TOTAL:320 LATENCY:0.014284470677375793 , R=OK:278 Thread_num:66 TOTAL:320 LATENCY:0.0148724265396595
+06-03-2024 13:03:55 root:INFO:load data
+06-05-2024 13:05:18 root:INFO:seller data loaded.
+06-05-2024 13:05:20 root:INFO:buyer data loaded.
+06-07-2024 13:07:00 root:INFO:TPS_C=99, NO=OK:100 Thread_num:100 TOTAL:100 LATENCY:0.11042803764343262 , P=OK:100 Thread_num:100 TOTAL:100 LATENCY:0.16381752729415894 , C=OK:33 Thread_num:33 TOTAL:33 LATENCY:0.4224800268809001 , S=OK:67 Thread_num:67 TOTAL:67 LATENCY:0.1389973199189599 , R=OK:67 Thread_num:67 TOTAL:67 LATENCY:0.17381894410546148
+06-07-2024 13:07:02 root:INFO:TPS_C=100, NO=OK:200 Thread_num:100 TOTAL:200 LATENCY:0.1281508505344391 , P=OK:200 Thread_num:100 TOTAL:200 LATENCY:0.1561751651763916 , C=OK:66 Thread_num:33 TOTAL:66 LATENCY:0.3821654428135265 , S=OK:134 Thread_num:67 TOTAL:134 LATENCY:0.13803538813519833 , R=OK:134 Thread_num:67 TOTAL:134 LATENCY:0.19505602744088243
+06-07-2024 13:07:05 root:INFO:TPS_C=102, NO=OK:300 Thread_num:100 TOTAL:300 LATENCY:0.14657383839289348 , P=OK:300 Thread_num:100 TOTAL:300 LATENCY:0.17002438147862753 , C=OK:99 Thread_num:33 TOTAL:99 LATENCY:0.3404335084587637 , S=OK:201 Thread_num:67 TOTAL:201 LATENCY:0.13942299434794717 , R=OK:201 Thread_num:67 TOTAL:201 LATENCY:0.18237746295644275
+06-07-2024 13:07:06 root:INFO:TPS_C=98, NO=OK:400 Thread_num:100 TOTAL:400 LATENCY:0.14190217912197112 , P=OK:400 Thread_num:100 TOTAL:400 LATENCY:0.17195502996444703 , C=OK:132 Thread_num:33 TOTAL:132 LATENCY:0.39156557755036786 , S=OK:268 Thread_num:67 TOTAL:268 LATENCY:0.13918575155201243 , R=OK:268 Thread_num:67 TOTAL:268 LATENCY:0.17537212727674797
+06-07-2024 13:07:09 root:INFO:TPS_C=97, NO=OK:500 Thread_num:100 TOTAL:500 LATENCY:0.13813079357147218 , P=OK:500 Thread_num:100 TOTAL:500 LATENCY:0.17156523036956786 , C=OK:165 Thread_num:33 TOTAL:165 LATENCY:0.3764591809475061 , S=OK:335 Thread_num:67 TOTAL:335 LATENCY:0.13856501081096592 , R=OK:335 Thread_num:67 TOTAL:335 LATENCY:0.20613662164602706
 
 ```
 
-通过临时添加测试代码证实未完成的请求原因确实是由于事务冲突所致，如下：
+可以看到，现在的性能测试中所有请求均被完成，
+
+在函数未增加重试机制时，可能会出现有请求无法被完成的情况，通过增加临时调试代码得到如下信息：
 
 ```
 02-05-2024 17:05:46 root:INFO:load data
@@ -4817,9 +4817,7 @@ DETAIL:  Reason code: Canceled on identification as a pivot, during conflict in 
 HINT:  该事务如果重试，有可能成功.
 ```
 
-图中说明一些支付请求由于事务间的并发冲突而无法完成。但在这种冲突发生的情况下依然能够通过正确性测试，验证了项目的完备性。
-
-
+图中说明一些请求由于事务间的并发冲突而无法完成。我们使用重试机制解决了该问题。
 
 ### 20 热门书籍并发购买测试
 
@@ -4834,32 +4832,35 @@ HINT:  该事务如果重试，有可能成功.
 workload:
 
 ```py
-def gen_database_hot_one_test(self):
+ def gen_database_hot_one_test(self):
         clean_db()
         logging.info("load data")
         user_id, password = self.to_seller_id_and_password(1)
         seller = register_new_seller(user_id, password)
-        self.famous_seller=seller
-        store_id="the_most_famous_store"
-        self.hot_store_id=store_id
+        self.famous_seller = seller
+        store_id = "the_most_famous_store"
+        self.hot_store_id = store_id
         seller.create_store(store_id)
-        bk_info=self.book_db.get_book_info(0,2)[0]
-        self.hot_book_id=bk_info.id
-        seller.add_book(store_id,1000,bk_info)
-        self.tot_fund=0
-        for k in range(1, self.buyer_num + 1):
+        bk_info = self.book_db.get_book_info(0, 2)[0]
+        self.hot_book_id = bk_info.id
+        seller.add_book(store_id, 1000, bk_info)
+        self.tot_fund = 0
+        for k in range(1,self.buyer_num+ 1):
             user_id, password = self.to_buyer_id_and_password(k)
             buyer = register_new_buyer(user_id, password)
             buyer.add_funds(self.user_funds)
-            self.tot_fund+=self.user_funds
+            self.tot_fund += self.user_funds
             self.buyer_ids.append(user_id)
+
     def get_hot_order(self):
         n = random.randint(1, self.buyer_num)
         buyer_id, buyer_password = self.to_buyer_id_and_password(n)
-        b = Buyer(url_prefix=conf.URL, user_id=buyer_id, password=buyer_password)
-        lst=[]
-        lst.append((self.hot_book_id,100))
-        new_ord=NewOrder(b,self.hot_store_id,lst,self.famous_seller)
+        b = Buyer(url_prefix=conf.URL,
+                  user_id=buyer_id,
+                  password=buyer_password)
+        lst = []
+        lst.append((self.hot_book_id, 100))
+        new_ord = NewOrder(b, self.hot_store_id, lst, self.famous_seller)
         return new_ord
 ```
 
@@ -4867,18 +4868,21 @@ session:
 
 ```py
 def gen_hot_test_procedure(self):
-        for i in range(0, self.workload.procedure_per_session):
+        for i in range(0, int(self.workload.procedure_per_session/10)+5):
             new_order = self.workload.get_hot_order()
             self.new_order_request.append(new_order)
 
     def all_buy_one(self):
         for new_order in self.new_order_request:
             ok, order_id = new_order.run()
-            if ok==200:
-                payment = Payment(new_order.buyer, order_id,new_order.seller,new_order.store_id)
+            if ok == 200:
+                payment = Payment(new_order.buyer, order_id, new_order.seller,
+                                  new_order.store_id)
                 self.payment_request.append(payment)
+            else:
+                self.workload.logging_print(ok)
         for payment in self.payment_request:
-                    ok = payment.run()
+            ok = payment.run()
 ```
 
 主要的并发点在于多个session并发执行new_order.run()导致的部分用户购买失败。我们期望在这种情况下系统内的金额总数能够保持不变。
@@ -4886,12 +4890,6 @@ def gen_hot_test_procedure(self):
 #### 代码测试
 
 使用check函数检查金额一致性，与性能测试一致，在此不赘述。
-
-
-
-
-
-
 
 ## Ⅳ  github协作
 
@@ -4941,8 +4939,6 @@ def gen_hot_test_procedure(self):
 
 #### 代码覆盖率为94%
 
-#todo 需要粘贴最新的结果
-
 绝大多数未覆盖到的代码为一些未知异常（如事务冲突，机器掉电）引发的统一错误处理。
 
 以下为test.sh的详细输出,您也可以尝试运行test.sh来获得结果
@@ -4950,167 +4946,189 @@ def gen_hot_test_procedure(self):
 ```
 $ bash script/test.sh
 ============================= test session starts =============================
-platform win32 -- Python 3.11.4, pytest-8.1.1, pluggy-1.4.0 -- C:\Users\Limbo\AppData\Local\Programs\Python\Python311\python.exe
+platform win32 -- Python 3.8.1, pytest-8.1.1, pluggy-1.4.0 -- c:\users\alex\appdata\local\programs\python\python38\python.exe
 cachedir: .pytest_cache
-rootdir: D:\DS_bookstore\Project_1\bookstore
-plugins: anyio-4.0.0
+rootdir: D:\dbproject\Project_1\bookstore
 collecting ... frontend begin test
  * Serving Flask app 'be.serve' (lazy loading)
  * Environment: production
    WARNING: This is a development server. Do not use it in a production deployment.
    Use a production WSGI server instead.
  * Debug mode: off
-2024-04-30 10:32:54,128 [Thread-1 (ru] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
-collected 88 items
+2024-06-06 13:32:21,121 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+collected 108 items
 
-fe/test/test_add_book.py::TestAddBook::test_ok PASSED                    [  1%]
-fe/test/test_add_book.py::TestAddBook::test_error_non_exist_store_id PASSED [  2%]
-fe/test/test_add_book.py::TestAddBook::test_error_exist_book_id PASSED   [  3%]
-fe/test/test_add_book.py::TestAddBook::test_error_non_exist_user_id PASSED [  4%]
+fe/test/test_add_book.py::TestAddBook::test_ok PASSED                    [  0%]
+fe/test/test_add_book.py::TestAddBook::test_error_non_exist_store_id PASSED [  1%]
+fe/test/test_add_book.py::TestAddBook::test_error_exist_book_id PASSED   [  2%]
+fe/test/test_add_book.py::TestAddBook::test_error_non_exist_user_id PASSED [  3%]
+fe/test/test_add_book.py::TestAddBook::test_store_type_ex PASSED         [  4%]
 fe/test/test_add_funds.py::TestAddFunds::test_ok PASSED                  [  5%]
 fe/test/test_add_funds.py::TestAddFunds::test_error_user_id PASSED       [  6%]
 fe/test/test_add_funds.py::TestAddFunds::test_error_password PASSED      [  7%]
-fe/test/test_add_funds.py::TestAddFunds::test_decrease_more_than_having PASSED [  9%]
+fe/test/test_add_funds.py::TestAddFunds::test_decrease_more_than_having PASSED [  8%]
+fe/test/test_add_funds.py::TestAddFunds::test_user_amount_exceeds PASSED [  9%]
 fe/test/test_add_stock_level.py::TestAddStockLevel::test_error_user_id PASSED [ 10%]
 fe/test/test_add_stock_level.py::TestAddStockLevel::test_error_store_id PASSED [ 11%]
 fe/test/test_add_stock_level.py::TestAddStockLevel::test_error_book_id PASSED [ 12%]
-fe/test/test_add_stock_level.py::TestAddStockLevel::test_ok PASSED       [ 13%]
-fe/test/test_add_stock_level.py::TestAddStockLevel::test_error_book_stock PASSED [ 14%]
-fe/test/test_bench.py::test_bench PASSED                                 [ 15%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_unpaid_order_ok PASSED [ 17%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_cancel_paid_order_refund_ok PASSED [ 18%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_order_stock_ok PASSED [ 19%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_non_exist_order_id PASSED [ 20%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_non_prossessing_order_id PASSED [ 21%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_cancel_error_user_id PASSED [ 22%]
-fe/test/test_cancel_order.py::TestCancelOrder::test_delivering_order_id PASSED [ 23%]
-fe/test/test_create_store.py::TestCreateStore::test_ok PASSED            [ 25%]
-fe/test/test_create_store.py::TestCreateStore::test_error_exist_store_id PASSED [ 26%]
-fe/test/test_hot_book.py::test_hot_book PASSED                           [ 27%]
-fe/test/test_login.py::TestLogin::test_ok PASSED                         [ 28%]
-fe/test/test_login.py::TestLogin::test_error_user_id PASSED              [ 29%]
-fe/test/test_login.py::TestLogin::test_error_password PASSED             [ 30%]
-fe/test/test_new_order.py::TestNewOrder::test_non_exist_book_id PASSED   [ 31%]
-fe/test/test_new_order.py::TestNewOrder::test_low_stock_level PASSED     [ 32%]
-fe/test/test_new_order.py::TestNewOrder::test_ok PASSED                  [ 34%]
-fe/test/test_new_order.py::TestNewOrder::test_non_exist_user_id PASSED   [ 35%]
-fe/test/test_new_order.py::TestNewOrder::test_non_exist_store_id PASSED  [ 36%]
-fe/test/test_password.py::TestPassword::test_ok PASSED                   [ 37%]
-fe/test/test_password.py::TestPassword::test_error_password PASSED       [ 38%]
-fe/test/test_password.py::TestPassword::test_error_user_id PASSED        [ 39%]
-fe/test/test_payment.py::TestPayment::test_ok PASSED                     [ 40%]
-fe/test/test_payment.py::TestPayment::test_authorization_error PASSED    [ 42%]
-fe/test/test_payment.py::TestPayment::test_non_exists_order PASSED       [ 43%]
-fe/test/test_payment.py::TestPayment::test_wrong_user_id PASSED          [ 44%]
-fe/test/test_payment.py::TestPayment::test_not_suff_funds PASSED         [ 45%]
-fe/test/test_payment.py::TestPayment::test_repeat_pay PASSED             [ 46%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_ok PASSED          [ 47%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_unmatch_user_id_receive PASSED [ 48%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_not_paid_receive PASSED [ 50%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_no_fund_receive PASSED [ 51%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_error_order_id_receive PASSED [ 52%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_error_user_id_receive PASSED [ 53%]
-fe/test/test_receive_order.py::TestreceiveOrder::test_no_send_receive PASSED [ 54%]
-fe/test/test_register.py::TestRegister::test_register_ok PASSED          [ 55%]
-fe/test/test_register.py::TestRegister::test_unregister_ok PASSED        [ 56%]
-fe/test/test_register.py::TestRegister::test_unregister_error_authorization PASSED [ 57%]
-fe/test/test_register.py::TestRegister::test_register_error_exist_user_id PASSED [ 59%]
-fe/test/test_register.py::TestRegister::test_unregister_with_buyer_or_seller_order PASSED [ 60%]
-fe/test/test_scanner.py::TestScanner::test_auto_cancel PASSED            [ 61%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_id PASSED  [ 62%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_title PASSED [ 63%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_author PASSED [ 64%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_tags PASSED [ 65%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_isbn PASSED [ 67%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_price PASSED [ 68%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_pub_year PASSED [ 69%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_store_id PASSED [ 70%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_publisher PASSED [ 71%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_translator PASSED [ 72%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_binding PASSED [ 73%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_stock PASSED [ 75%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_non_exist_store PASSED [ 76%]
-fe/test/test_search_book.py::TestSearchBook::test_search_book_with_order PASSED [ 77%]
-fe/test/test_search_order.py::TestSearchOrder::test_search_orders_detail_ok PASSED [ 78%]
-fe/test/test_search_order.py::TestSearchOrder::test_search_invalid_orders_detail PASSED [ 79%]
-fe/test/test_search_order.py::TestSearchOrder::test_buyer_search_order_ok PASSED [ 80%]
-fe/test/test_search_order.py::TestSearchOrder::test_buyer_search_error_user_order PASSED [ 81%]
-fe/test/test_search_order.py::TestSearchOrder::test_buyer_search_empty_order PASSED [ 82%]
-fe/test/test_search_order.py::TestSearchOrder::test_buyer_one_order_ok PASSED [ 84%]
-fe/test/test_search_order.py::TestSearchOrder::test_buyer_many_orders_ok PASSED [ 85%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_search_order_ok PASSED [ 86%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_search_empty_order_ok PASSED [ 87%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_search_error_seller_order PASSED [ 88%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_search_error_store_order PASSED [ 89%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_search_unmatch_order PASSED [ 90%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_one_order_ok PASSED [ 92%]
-fe/test/test_search_order.py::TestSearchOrder::test_seller_many_orders_ok PASSED [ 93%]
-fe/test/test_send_order.py::TestSendOrder::test_unmatch_send PASSED      [ 94%]
-fe/test/test_send_order.py::TestSendOrder::test_ok PASSED                [ 95%]
-fe/test/test_send_order.py::TestSendOrder::test_not_paid_send PASSED     [ 96%]
-fe/test/test_send_order.py::TestSendOrder::test_no_fund_send PASSED      [ 97%]
-fe/test/test_send_order.py::TestSendOrder::test_error_order_id_send PASSED [ 98%]
-fe/test/test_send_order.py::TestSendOrder::test_error_store_id_send PASSED [100%]D:\DS_bookstore\Project_1\bookstore\be\serve.py:19: UserWarning: The 'environ['werkzeug.server.shutdown']' function is deprecated and will be removed in Werkzeug 2.1.
+fe/test/test_add_stock_level.py::TestAddStockLevel::test_ok PASSED       [ 12%]
+fe/test/test_add_stock_level.py::TestAddStockLevel::test_error_book_stock PASSED [ 13%]
+fe/test/test_bench.py::test_bench PASSED                                 [ 14%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_unpaid_order_ok PASSED [ 15%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_muti_cancel PASSED [ 16%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_cancel_paid_order_refund_ok PASSED [ 17%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_order_stock_ok PASSED [ 18%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_non_exist_order_id PASSED [ 19%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_non_prossessing_order_id PASSED [ 20%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_cancel_error_user_id PASSED [ 21%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_buyer_cancel_delivering_order_id PASSED [ 22%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_cancel_unpaid_order_ok PASSED [ 23%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_cancel_paid_order_refund_ok PASSED [ 24%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_order_stock_ok PASSED [ 25%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_non_exist_order_id PASSED [ 25%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_non_prossessing_order_id PASSED [ 26%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_cancel_non_exist_store_id PASSED [ 27%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_cancel_unmatched_store_id PASSED [ 28%]
+fe/test/test_cancel_order.py::TestCancelOrder::test_seller_cancel_delivering_order_id PASSED [ 29%]
+fe/test/test_create_store.py::TestCreateStore::test_ok PASSED            [ 30%]
+fe/test/test_create_store.py::TestCreateStore::test_error_exist_store_id PASSED [ 31%]
+fe/test/test_empty_stock.py::TestDelBook::test_ok PASSED                 [ 32%]
+fe/test/test_empty_stock.py::TestDelBook::test_db_clean_ok PASSED        [ 33%]
+fe/test/test_empty_stock.py::TestDelBook::test_error_non_exist_store_id PASSED [ 34%]
+fe/test/test_empty_stock.py::TestDelBook::test_error_non_exist_book PASSED [ 35%]
+fe/test/test_empty_stock.py::TestDelBook::test_error_non_exist_book_id PASSED [ 36%]
+fe/test/test_empty_stock.py::TestDelBook::test_error_non_exist_user_id PASSED [ 37%]
+fe/test/test_hot_book.py::test_hot_book PASSED                           [ 37%]
+fe/test/test_login.py::TestLogin::test_ok PASSED                         [ 38%]
+fe/test/test_login.py::TestLogin::test_error_user_id PASSED              [ 39%]
+fe/test/test_login.py::TestLogin::test_error_password PASSED             [ 40%]
+fe/test/test_new_order.py::TestNewOrder::test_non_exist_book_id PASSED   [ 41%]
+fe/test/test_new_order.py::TestNewOrder::test_low_stock_level PASSED     [ 42%]
+fe/test/test_new_order.py::TestNewOrder::test_ok PASSED                  [ 43%]
+fe/test/test_new_order.py::TestNewOrder::test_non_exist_user_id PASSED   [ 44%]
+fe/test/test_new_order.py::TestNewOrder::test_non_exist_store_id PASSED  [ 45%]
+fe/test/test_new_order.py::TestNewOrder::test_order_book_type_ex PASSED  [ 46%]
+fe/test/test_password.py::TestPassword::test_ok PASSED                   [ 47%]
+fe/test/test_password.py::TestPassword::test_error_password PASSED       [ 48%]
+fe/test/test_password.py::TestPassword::test_error_user_id PASSED        [ 49%]
+fe/test/test_payment.py::TestPayment::test_ok PASSED                     [ 50%]
+fe/test/test_payment.py::TestPayment::test_authorization_error PASSED    [ 50%]
+fe/test/test_payment.py::TestPayment::test_non_exists_order PASSED       [ 51%]
+fe/test/test_payment.py::TestPayment::test_wrong_user_id PASSED          [ 52%]
+fe/test/test_payment.py::TestPayment::test_not_suff_funds PASSED         [ 53%]
+fe/test/test_payment.py::TestPayment::test_repeat_pay PASSED             [ 54%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_ok PASSED          [ 55%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_seller_fund_ok PASSED [ 56%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_unmatch_user_id_receive PASSED [ 57%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_not_paid_receive PASSED [ 58%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_no_fund_receive PASSED [ 59%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_error_order_id_receive PASSED [ 60%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_error_user_id_receive PASSED [ 61%]
+fe/test/test_receive_order.py::TestreceiveOrder::test_no_send_receive PASSED [ 62%]
+fe/test/test_register.py::TestRegister::test_register_ok PASSED          [ 62%]
+fe/test/test_register.py::TestRegister::test_unregister_ok PASSED        [ 63%]
+fe/test/test_register.py::TestRegister::test_unregister_error_authorization PASSED [ 64%]
+fe/test/test_register.py::TestRegister::test_register_error_exist_user_id PASSED [ 65%]
+fe/test/test_register.py::TestRegister::test_unregister_with_buyer_or_seller_order PASSED [ 66%]
+fe/test/test_scanner.py::TestScanner::test_auto_cancel PASSED            [ 67%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_id PASSED  [ 68%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_title PASSED [ 69%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_author PASSED [ 70%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_tags PASSED [ 71%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_isbn PASSED [ 72%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_price PASSED [ 73%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_pub_year PASSED [ 74%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_store_id PASSED [ 75%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_publisher PASSED [ 75%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_translator PASSED [ 76%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_binding PASSED [ 77%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_stock PASSED [ 78%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_non_exist_store PASSED [ 79%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_with_order PASSED [ 80%]
+fe/test/test_search_book.py::TestSearchBook::test_search_book_detail PASSED [ 81%]
+fe/test/test_search_order.py::TestSearchOrder::test_search_orders_detail_ok PASSED [ 82%]
+fe/test/test_search_order.py::TestSearchOrder::test_search_invalid_orders_detail PASSED [ 83%]
+fe/test/test_search_order.py::TestSearchOrder::test_buyer_search_order_ok PASSED [ 84%]
+fe/test/test_search_order.py::TestSearchOrder::test_buyer_search_error_user_order PASSED [ 85%]
+fe/test/test_search_order.py::TestSearchOrder::test_buyer_search_empty_order PASSED [ 86%]
+fe/test/test_search_order.py::TestSearchOrder::test_buyer_one_order_ok PASSED [ 87%]
+fe/test/test_search_order.py::TestSearchOrder::test_buyer_many_orders_ok PASSED [ 87%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_search_order_ok PASSED [ 88%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_search_empty_order_ok PASSED [ 89%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_search_error_seller_order PASSED [ 90%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_search_error_store_order PASSED [ 91%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_search_unmatch_order PASSED [ 92%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_one_order_ok PASSED [ 93%]
+fe/test/test_search_order.py::TestSearchOrder::test_seller_many_orders_ok PASSED [ 94%]
+fe/test/test_send_order.py::TestSendOrder::test_unmatch_send PASSED      [ 95%]
+fe/test/test_send_order.py::TestSendOrder::test_ok PASSED                [ 96%]
+fe/test/test_send_order.py::TestSendOrder::test_not_paid_send PASSED     [ 97%]
+fe/test/test_send_order.py::TestSendOrder::test_no_fund_send PASSED      [ 98%]
+fe/test/test_send_order.py::TestSendOrder::test_error_order_id_send PASSED [ 99%]
+fe/test/test_send_order.py::TestSendOrder::test_error_store_id_send PASSED [100%]D:\dbproject\Project_1\bookstore\be\serve.py:19: UserWarning: The 'environ['werkzeug.server.shutdown']' function is deprecated and will be removed in Werkzeug 2.1.
   func()
-2024-04-30 10:46:45,286 [Thread-18482] [INFO ]  127.0.0.1 - - [30/Apr/2024 10:46:45] "GET /shutdown HTTP/1.1" 200 -
+2024-06-06 13:45:29,820 [Thread-9069 ] [INFO ]  127.0.0.1 - - [06/Jun/2024 13:45:29] "GET /shutdown HTTP/1.1" 200 -
 
 
-======================= 88 passed in 833.48s (0:13:53) ========================
+======================= 108 passed in 826.48s (0:13:46) =======================
 frontend end test
 No data to combine
 Name                              Stmts   Miss Branch BrPart  Cover
 -------------------------------------------------------------------
 be\__init__.py                        0      0      0      0   100%
-be\app.py                             3      3      2      0     0%
+be\app.py                             5      5      2      0     0%
+be\conf.py                            4      0      0      0   100%
 be\model\__init__.py                  0      0      0      0   100%
-be\model\book.py                     70      9     44      3    88%
-be\model\buyer.py                   141      8     60      7    92%
-be\model\db_conn.py                  29      5      8      0    81%
-be\model\error.py                    45      3      0      0    93%
-be\model\scanner.py                  34      4     10      3    84%
-be\model\seller.py                   92     10     42      6    87%
-be\model\store.py                    72      5     10      5    88%
-be\model\user.py                    143     14     52      5    85%
-be\serve.py                          43      1      4      1    96%
+be\model\book.py                    102      7     40      1    93%
+be\model\buyer.py                   227     22    102     18    86%
+be\model\db_conn.py                  26      4      0      0    85%
+be\model\error.py                    54      4      0      0    93%
+be\model\scanner.py                  40      9     14      2    72%
+be\model\seller.py                  199     26     80      6    83%
+be\model\store.py                    96      4      8      4    92%
+be\model\user.py                    175     27     52      5    81%
+be\serve.py                          43      1      2      1    96%
 be\view\__init__.py                   0      0      0      0   100%
-be\view\auth.py                      71      0     14      0   100%
-be\view\buyer.py                     54      0     14      0   100%
-be\view\seller.py                    45      0     10      0   100%
+be\view\auth.py                      71      0      0      0   100%
+be\view\buyer.py                     54      0      2      0   100%
+be\view\seller.py                    60      0      0      0   100%
 fe\__init__.py                        0      0      0      0   100%
 fe\access\__init__.py                 0      0      0      0   100%
-fe\access\auth.py                    42      0      0      0   100%
-fe\access\book.py                    68      2     12      1    96%
-fe\access\buyer.py                   55      0      2      0   100%
+fe\access\auth.py                    48      0      0      0   100%
+fe\access\book.py                    75      0     12      1    99%
+fe\access\buyer.py                   58      0      2      0   100%
 fe\access\new_buyer.py                8      0      0      0   100%
 fe\access\new_seller.py               8      0      0      0   100%
-fe\access\seller.py                  44      0      0      0   100%
+fe\access\seller.py                  59      0      0      0   100%
 fe\bench\__init__.py                  0      0      0      0   100%
-fe\bench\check.py                    11      0      4      0   100%
-fe\bench\run.py                      27      0     12      0   100%
-fe\bench\session.py                 117      3     40      2    97%
-fe\bench\workload.py                228      3     22      3    98%
-fe\conf.py                           11      0      0      0   100%
+fe\bench\check.py                    14      0      4      1    94%
+fe\bench\run.py                      31      1     14      1    96%
+fe\bench\session.py                 123      9     40      5    90%
+fe\bench\workload.py                229      2     22      3    98%
+fe\conf.py                           12      0      0      0   100%
 fe\conftest.py                       19      0      0      0   100%
-fe\test\gen_book_data.py             55      1     20      2    96%
-fe\test\test_add_book.py             37      0     12      0   100%
-fe\test\test_add_funds.py            26      0      2      0   100%
-fe\test\test_add_stock_level.py      48      0     14      0   100%
+fe\test\gen_book_data.py             58      1     20      2    96%
+fe\test\test_add_book.py             47      0     12      0   100%
+fe\test\test_add_funds.py            30      0      0      0   100%
+fe\test\test_add_stock_level.py      54      0     12      0   100%
 fe\test\test_bench.py                 7      2      0      0    71%
-fe\test\test_cancel_order.py         96      0     14      4    96%
-fe\test\test_create_store.py         20      0      2      0   100%
+fe\test\test_cancel_order.py        263      0     24      4    99%
+fe\test\test_create_store.py         20      0      0      0   100%
+fe\test\test_empty_stock.py          68      0     24      0   100%
 fe\test\test_hot_book.py              7      2      0      0    71%
-fe\test\test_login.py                28      0      2      0   100%
-fe\test\test_new_order.py            40      0      2      0   100%
-fe\test\test_password.py             33      0      2      0   100%
-fe\test\test_payment.py              70      1      6      1    97%
-fe\test\test_receive_order.py        84      0      2      0   100%
-fe\test\test_register.py             55      0      2      0   100%
-fe\test\test_scanner.py              46      2      8      0    96%
-fe\test\test_search_book.py         201      2     90      8    97%
-fe\test\test_search_order.py        140      0      8      0   100%
-fe\test\test_send_order.py           71      0      2      0   100%
+fe\test\test_login.py                28      0      0      0   100%
+fe\test\test_new_order.py            51      0      4      0   100%
+fe\test\test_password.py             35      0      0      0   100%
+fe\test\test_payment.py              70      1      4      1    97%
+fe\test\test_receive_order.py       123      0      0      0   100%
+fe\test\test_register.py             55      0      0      0   100%
+fe\test\test_scanner.py              47      2      6      0    96%
+fe\test\test_search_book.py         216      6     94      8    95%
+fe\test\test_search_order.py        144      0      6      0   100%
+fe\test\test_send_order.py           72      0      0      0   100%
 -------------------------------------------------------------------
-TOTAL                              2544     80    550     51    95%
+TOTAL                              3235    135    602     63    94%
 Wrote HTML report to htmlcov\index.html
+
 ```
 
