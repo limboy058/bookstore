@@ -60,7 +60,7 @@ class Store:
 
         cur.execute("create table book_info("+
             "book_id varchar(255),store_id varchar(255),price int,stock_level int,sales int, "+
-            "title TEXT,author varchar(255), tags TEXT[], "+
+            "title varchar(255),author varchar(255), tags TEXT[], "+
             "publisher varchar(255),original_title varchar(255),translator varchar(255),"+   
             "pub_year varchar(255),pages int,currency_unit varchar(255),"+         
             "binding varchar(255),isbn bigint,author_intro varchar(255),"+     
@@ -81,7 +81,7 @@ class Store:
         cur.execute("create index book_info_pub_year_idx on book_info (pub_year)")
         cur.execute("create index book_info_binding_idx on book_info using hash(binding)")
         cur.execute("create index book_info_isbn_idx on book_info (isbn)")
-        cur.execute("create index book_info_title_idx on book_info (title)")
+        cur.execute("create index book_info_title_idx on book_info (title varchar_pattern_ops)")
 
         cur.execute("create table dead_user("+
             "user_id varchar(255),primary key(user_id)"        
@@ -160,15 +160,3 @@ def clean_db():
     if (database_instance == None):
         init_database()
     database_instance.clean_tables()
-
-
-if __name__=="__main__":
-    clear_db()
-    build_db()
-    conn=get_db_conn()
-    cur=conn.cursor()
-    cur.execute("insert into dead_user values ('abc')")
-    cur.execute("select * from dead_user")
-    res=cur.fetchall()
-    for i in res:
-        print(i,len(i[0]))
