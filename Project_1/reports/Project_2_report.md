@@ -61,12 +61,12 @@ select datname from pg_database;
 
 设置隔离级别方式如下：
 
-```
+```sql
 SELECT current_setting('default_transaction_isolation');
-alter system set default_transaction_isolation to 'read committed';
+ALTER DATABASE "609A" SET default_transaction_isolation TO 'read committed';
 ```
 
-第一句为显示当前默认隔离性。第二句为设置数据库默认隔离性为读已提交。您可以将read committed改为serializable(可串行化)或repeatable read(可重复读)。在设置后，请重启postgres服务，再进行第一句语句查看隔离级别是否更改成功。
+第一句为显示当前默认隔离性。第二句为设置我们的609A数据库默认隔离性为读已提交。您可以将read committed改为serializable(可串行化)或repeatable read(可重复读)。在设置后，请重启postgres服务，再进行第一句语句查看隔离级别是否更改成功。
 
 
 
@@ -104,7 +104,7 @@ alter system set default_transaction_isolation to 'read committed';
 
 详见Ⅲ3
 
-##### 6.解决捕捉事务并发冲突导致的异常，并实现常数次等待重试机制解决此类异常。
+##### 6.解决捕捉可串行化隔离级别下的事务并发冲突导致的异常：实现常数次等待重试机制解决此类异常。
 
 详见Ⅲ5
 
@@ -891,7 +891,7 @@ def new_order(self, user_id: str, store_id: str,
             return 200, "ok", order_id
 ```
 
-我们在test_bench性能测试过程中，随着并发数增大，会捕捉到许多psycopg2的抛错。经过添加临时代码进行测试，我们发现该类抛错的pgcode均等于40001，而它们抛出的perror描述有以下两种：
+当我们的数据库隔离级别设置为可串行化时，我们在test_bench性能测试过程中，随着并发数增大，会捕捉到许多psycopg2的抛错。经过添加临时代码进行测试，我们发现该类抛错的pgcode均等于40001，而它们抛出的perror描述有以下两种：
 
 ```
 
@@ -2675,7 +2675,7 @@ order_id = ""
 
 #### 亮点
 
-1.通过常数次等待重试机制处理事务冲突。
+1.通过常数次等待重试机制处理可串行化隔离级别下导致的事务冲突。
 
 2.通过乐观锁解决保证数据正确性（货物存货量不会降至负数）。
 
@@ -4750,21 +4750,23 @@ def checkSumMoney(money):
 
 #### 性能测试结果
 
-```
-06-03-2024 13:03:55 root:INFO:load data
-06-05-2024 13:05:18 root:INFO:seller data loaded.
-06-05-2024 13:05:20 root:INFO:buyer data loaded.
-06-07-2024 13:07:00 root:INFO:TPS_C=99, NO=OK:100 Thread_num:100 TOTAL:100 LATENCY:0.11042803764343262 , P=OK:100 Thread_num:100 TOTAL:100 LATENCY:0.16381752729415894 , C=OK:33 Thread_num:33 TOTAL:33 LATENCY:0.4224800268809001 , S=OK:67 Thread_num:67 TOTAL:67 LATENCY:0.1389973199189599 , R=OK:67 Thread_num:67 TOTAL:67 LATENCY:0.17381894410546148
-06-07-2024 13:07:02 root:INFO:TPS_C=100, NO=OK:200 Thread_num:100 TOTAL:200 LATENCY:0.1281508505344391 , P=OK:200 Thread_num:100 TOTAL:200 LATENCY:0.1561751651763916 , C=OK:66 Thread_num:33 TOTAL:66 LATENCY:0.3821654428135265 , S=OK:134 Thread_num:67 TOTAL:134 LATENCY:0.13803538813519833 , R=OK:134 Thread_num:67 TOTAL:134 LATENCY:0.19505602744088243
-06-07-2024 13:07:05 root:INFO:TPS_C=102, NO=OK:300 Thread_num:100 TOTAL:300 LATENCY:0.14657383839289348 , P=OK:300 Thread_num:100 TOTAL:300 LATENCY:0.17002438147862753 , C=OK:99 Thread_num:33 TOTAL:99 LATENCY:0.3404335084587637 , S=OK:201 Thread_num:67 TOTAL:201 LATENCY:0.13942299434794717 , R=OK:201 Thread_num:67 TOTAL:201 LATENCY:0.18237746295644275
-06-07-2024 13:07:06 root:INFO:TPS_C=98, NO=OK:400 Thread_num:100 TOTAL:400 LATENCY:0.14190217912197112 , P=OK:400 Thread_num:100 TOTAL:400 LATENCY:0.17195502996444703 , C=OK:132 Thread_num:33 TOTAL:132 LATENCY:0.39156557755036786 , S=OK:268 Thread_num:67 TOTAL:268 LATENCY:0.13918575155201243 , R=OK:268 Thread_num:67 TOTAL:268 LATENCY:0.17537212727674797
-06-07-2024 13:07:09 root:INFO:TPS_C=97, NO=OK:500 Thread_num:100 TOTAL:500 LATENCY:0.13813079357147218 , P=OK:500 Thread_num:100 TOTAL:500 LATENCY:0.17156523036956786 , C=OK:165 Thread_num:33 TOTAL:165 LATENCY:0.3764591809475061 , S=OK:335 Thread_num:67 TOTAL:335 LATENCY:0.13856501081096592 , R=OK:335 Thread_num:67 TOTAL:335 LATENCY:0.20613662164602706
+(测试于**读已提交**的隔离级别)
 
+```
+07-43-2024 00:43:04 root:INFO:load data
+07-44-2024 00:44:05 root:INFO:seller data loaded.
+07-44-2024 00:44:07 root:INFO:buyer data loaded.
+07-44-2024 00:44:36 root:INFO:528
+07-45-2024 00:45:04 root:INFO:TPS_C=242, NO=OK:100 Thread_num:100 TOTAL:100 LATENCY:0.08651914358139039 , P=OK:100 Thread_num:100 TOTAL:100 LATENCY:0.07686635732650757 , C=OK:33 Thread_num:33 TOTAL:33 LATENCY:0.08781321843465169 , S=OK:67 Thread_num:67 TOTAL:67 LATENCY:0.08003783581861809 , R=OK:67 Thread_num:67 TOTAL:67 LATENCY:0.08185614756683805
+07-45-2024 00:45:04 root:INFO:TPS_C=242, NO=OK:200 Thread_num:100 TOTAL:200 LATENCY:0.08438158869743347 , P=OK:200 Thread_num:100 TOTAL:200 LATENCY:0.0793265438079834 , C=OK:66 Thread_num:33 TOTAL:66 LATENCY:0.08539348660093365 , S=OK:134 Thread_num:67 TOTAL:134 LATENCY:0.08058395848345401 , R=OK:134 Thread_num:67 TOTAL:134 LATENCY:0.08260242262882973
+07-45-2024 00:45:05 root:INFO:TPS_C=241, NO=OK:300 Thread_num:100 TOTAL:300 LATENCY:0.08614051103591919 , P=OK:300 Thread_num:100 TOTAL:300 LATENCY:0.07987997929255168 , C=OK:99 Thread_num:33 TOTAL:99 LATENCY:0.08509150900021949 , S=OK:201 Thread_num:67 TOTAL:201 LATENCY:0.080814339035186 , R=OK:201 Thread_num:67 TOTAL:201 LATENCY:0.08242483044145119
+07-45-2024 00:45:05 root:INFO:TPS_C=239, NO=OK:400 Thread_num:100 TOTAL:400 LATENCY:0.08808270514011383 , P=OK:400 Thread_num:100 TOTAL:400 LATENCY:0.08044260501861572 , C=OK:132 Thread_num:33 TOTAL:132 LATENCY:0.08659265438715617 , S=OK:268 Thread_num:67 TOTAL:268 LATENCY:0.08021402003160163 , R=OK:268 Thread_num:67 TOTAL:268 LATENCY:0.08212836375877039
+07-45-2024 00:45:05 root:INFO:TPS_C=236, NO=OK:499 Thread_num:100 TOTAL:500 LATENCY:0.08934203004837037 , P=OK:499 Thread_num:99 TOTAL:499 LATENCY:0.08080979291805046 , C=OK:165 Thread_num:33 TOTAL:165 LATENCY:0.08707177133271188 , S=OK:334 Thread_num:66 TOTAL:334 LATENCY:0.0805920291089726 , R=OK:334 Thread_num:66 TOTAL:334 LATENCY:0.08212059129497962
 ```
 
 可以看到，现在的性能测试中所有请求均被完成，
 
-在函数未增加重试机制时，可能会出现有请求无法被完成的情况，通过增加临时调试代码得到如下信息：
+在函数未增加重试机制并且使用可串行化隔离级别时，可能会出现有请求无法被完成的情况，通过增加临时调试代码得到如下信息：
 
 ```
 02-05-2024 17:05:46 root:INFO:load data
@@ -4847,7 +4849,7 @@ HINT:  该事务如果重试，有可能成功.
 
 图中说明一些请求由于事务间的并发冲突而无法完成。我们使用重试机制解决了该问题。
 
-### 20 热门书籍并发购买测试
+### 22 热门书籍并发购买测试
 
 代码路径：fe/bench/session.py	fe/bench/workload.py	fe/bench/check.py	fe/test/test_hot_book.py
 
@@ -4995,21 +4997,21 @@ def gen_hot_test_procedure(self):
 
 以下为test.sh的详细输出,您也可以尝试运行test.sh来获得结果
 
-#####todo再运行一次
+**如果您设置的609A数据库的默认事务隔离级别为读已提交，则将不会运行到解决事务冲突的重试机制代码，这将导致代码覆盖率降低1%。您可以通过报告开头提到的方式将事务隔离级别设置为可串行化以测试重试机制代码。**
 
 ```
-$ bash script/test.sh
 ============================= test session starts =============================
-platform win32 -- Python 3.8.1, pytest-8.1.1, pluggy-1.4.0 -- c:\users\alex\appdata\local\programs\python\python38\python.exe
+platform win32 -- Python 3.11.4, pytest-8.1.1, pluggy-1.4.0 -- C:\Users\Limbo\AppData\Local\Programs\Python\Python311\python.exe
 cachedir: .pytest_cache
-rootdir: D:\dbproject\Project_1\bookstore
+rootdir: D:\DS_bookstore\Project_1\bookstore
+plugins: anyio-4.0.0
 collecting ... frontend begin test
  * Serving Flask app 'be.serve' (lazy loading)
  * Environment: production
    WARNING: This is a development server. Do not use it in a production deployment.
    Use a production WSGI server instead.
  * Debug mode: off
-2024-06-06 13:32:21,121 [Thread-1    ] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
+2024-06-06 23:47:00,538 [Thread-1 (ru] [INFO ]   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
 collected 108 items
 
 fe/test/test_add_book.py::TestAddBook::test_ok PASSED                    [  0%]
@@ -5119,69 +5121,69 @@ fe/test/test_send_order.py::TestSendOrder::test_ok PASSED                [ 96%]
 fe/test/test_send_order.py::TestSendOrder::test_not_paid_send PASSED     [ 97%]
 fe/test/test_send_order.py::TestSendOrder::test_no_fund_send PASSED      [ 98%]
 fe/test/test_send_order.py::TestSendOrder::test_error_order_id_send PASSED [ 99%]
-fe/test/test_send_order.py::TestSendOrder::test_error_store_id_send PASSED [100%]D:\dbproject\Project_1\bookstore\be\serve.py:19: UserWarning: The 'environ['werkzeug.server.shutdown']' function is deprecated and will be removed in Werkzeug 2.1.
+fe/test/test_send_order.py::TestSendOrder::test_error_store_id_send PASSED [100%]D:\DS_bookstore\Project_1\bookstore\be\serve.py:19: UserWarning: The 'environ['werkzeug.server.shutdown']' function is deprecated and will be removed in Werkzeug 2.1.
   func()
-2024-06-06 13:45:29,820 [Thread-9069 ] [INFO ]  127.0.0.1 - - [06/Jun/2024 13:45:29] "GET /shutdown HTTP/1.1" 200 -
+2024-06-06 23:58:31,101 [Thread-9200 ] [INFO ]  127.0.0.1 - - [06/Jun/2024 23:58:31] "GET /shutdown HTTP/1.1" 200 -
 
 
-======================= 108 passed in 826.48s (0:13:46) =======================
+======================= 108 passed in 706.08s (0:11:46) =======================
 frontend end test
 No data to combine
 Name                              Stmts   Miss Branch BrPart  Cover
 -------------------------------------------------------------------
 be\__init__.py                        0      0      0      0   100%
-be\app.py                             5      5      2      0     0%
+be\app.py                             3      3      2      0     0%
 be\conf.py                            4      0      0      0   100%
 be\model\__init__.py                  0      0      0      0   100%
 be\model\book.py                    102      7     40      1    93%
-be\model\buyer.py                   227     22    102     18    86%
+be\model\buyer.py                   230     22    117     18    87%
 be\model\db_conn.py                  26      4      0      0    85%
 be\model\error.py                    54      4      0      0    93%
-be\model\scanner.py                  40      9     14      2    72%
-be\model\seller.py                  199     26     80      6    83%
+be\model\scanner.py                  38      9     18      3    71%
+be\model\seller.py                  198     26    114      6    85%
 be\model\store.py                    96      4      8      4    92%
-be\model\user.py                    175     27     52      5    81%
-be\serve.py                          43      1      2      1    96%
+be\model\user.py                    173     27     79      5    83%
+be\serve.py                          43      1      4      1    96%
 be\view\__init__.py                   0      0      0      0   100%
-be\view\auth.py                      71      0      0      0   100%
-be\view\buyer.py                     54      0      2      0   100%
-be\view\seller.py                    60      0      0      0   100%
+be\view\auth.py                      71      0     14      0   100%
+be\view\buyer.py                     54      0     14      0   100%
+be\view\seller.py                    60      0     14      0   100%
 fe\__init__.py                        0      0      0      0   100%
 fe\access\__init__.py                 0      0      0      0   100%
 fe\access\auth.py                    48      0      0      0   100%
-fe\access\book.py                    75      0     12      1    99%
+fe\access\book.py                    75      0     12      2    98%
 fe\access\buyer.py                   58      0      2      0   100%
 fe\access\new_buyer.py                8      0      0      0   100%
 fe\access\new_seller.py               8      0      0      0   100%
 fe\access\seller.py                  59      0      0      0   100%
 fe\bench\__init__.py                  0      0      0      0   100%
 fe\bench\check.py                    14      0      4      1    94%
-fe\bench\run.py                      31      1     14      1    96%
+fe\bench\run.py                      27      0     12      0   100%
 fe\bench\session.py                 123      9     40      5    90%
 fe\bench\workload.py                229      2     22      3    98%
 fe\conf.py                           12      0      0      0   100%
 fe\conftest.py                       19      0      0      0   100%
-fe\test\gen_book_data.py             58      1     20      2    96%
-fe\test\test_add_book.py             47      0     12      0   100%
-fe\test\test_add_funds.py            30      0      0      0   100%
-fe\test\test_add_stock_level.py      54      0     12      0   100%
+fe\test\gen_book_data.py             56      1     20      2    96%
+fe\test\test_add_book.py             47      0     14      0   100%
+fe\test\test_add_funds.py            30      0      2      0   100%
+fe\test\test_add_stock_level.py      54      0     14      0   100%
 fe\test\test_bench.py                 7      2      0      0    71%
-fe\test\test_cancel_order.py        263      0     24      4    99%
-fe\test\test_create_store.py         20      0      0      0   100%
-fe\test\test_empty_stock.py          68      0     24      0   100%
+fe\test\test_cancel_order.py        263      0     26      4    99%
+fe\test\test_create_store.py         20      0      2      0   100%
+fe\test\test_empty_stock.py          68      0     26      0   100%
 fe\test\test_hot_book.py              7      2      0      0    71%
-fe\test\test_login.py                28      0      0      0   100%
-fe\test\test_new_order.py            51      0      4      0   100%
-fe\test\test_password.py             35      0      0      0   100%
-fe\test\test_payment.py              70      1      4      1    97%
-fe\test\test_receive_order.py       123      0      0      0   100%
-fe\test\test_register.py             55      0      0      0   100%
-fe\test\test_scanner.py              47      2      6      0    96%
-fe\test\test_search_book.py         216      6     94      8    95%
-fe\test\test_search_order.py        144      0      6      0   100%
-fe\test\test_send_order.py           72      0      0      0   100%
+fe\test\test_login.py                28      0      2      0   100%
+fe\test\test_new_order.py            49      0      6      0   100%
+fe\test\test_password.py             33      0      2      0   100%
+fe\test\test_payment.py              70      1      6      1    97%
+fe\test\test_receive_order.py       122      0      2      0   100%
+fe\test\test_register.py             55      0      2      0   100%
+fe\test\test_scanner.py              47      2      8      0    96%
+fe\test\test_search_book.py         215      3     96      9    96%
+fe\test\test_search_order.py        142      0      8      0   100%
+fe\test\test_send_order.py           71      0      2      0   100%
 -------------------------------------------------------------------
-TOTAL                              3235    135    602     63    94%
+TOTAL                              3216    129    754     65    94%
 Wrote HTML report to htmlcov\index.html
 
 ```
